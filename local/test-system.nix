@@ -1,8 +1,15 @@
-rec {
-  pkgs = import <nixpkgs> {};
-  nixos = import <nixpkgs/nixos>;
+{
+  overrides ? x: {}
+  , pkgs ? import <nixpkgs> {}
+  , nixos ? import <nixpkgs/nixos>
+}:
+pkgs.lib.makeExtensible (self: with self; {
+  default = step default (x: {});
+  override = overrides: let new = step new overrides; in new;
 
-  stage1 = import ../fat-initramfs.nix {
+  inherit pkgs nixos;
+
+  stage1 = (import ../fat-initramfs.nix {}).extend (s1self: s1super: {
     mountScript = ''
       modprobe atkbd
       sh ${./mount-partitions.sh}
@@ -10,7 +17,7 @@ rec {
     firmwarePackages = pkgs: [];
     modprobeConfig = builtins.readFile ./modprobe.conf;
     blacklistUdevRules = ["80-net-name-slot.rules"];
-  };
+  });
 
   swPieces = import ../system-sw-pieces.nix { inherit pkgs; };
  
@@ -248,4 +255,4 @@ rec {
 
   nixosTools = (import <nixpkgs/nixos/modules/installer/tools/tools.nix> 
     {inherit pkgs; config={}; modulesPath = null;}).config.system.build;
-}
+})

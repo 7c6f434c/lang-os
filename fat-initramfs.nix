@@ -1,18 +1,19 @@
 {
-  mountScript ? "/bin/sh -i;",
-  pkgs ? (import <nixpkgs> {}),
-  kernelPackages ? pkgs: pkgs.linuxPackagesFor pkgs.linux_latest,
-  udevPackages ? pkgs: [],
-  kernelModulePackages ? kp: [],
-  firmwarePackages ? pkgs: [pkgs.firmwareLinuxNonfree],
-  tools ? pkgs: [],
-  modprobeConfig ? "",
-  blacklistUdevRules ? [],
-  qemu ? pkgs: pkgs.kvm,
-  qemuArgs ? "--enable-kvm -m 2G -bios ${pkgs.OVMF.fd}/FV/OVMF.fd"
+  pkgs ? (import <nixpkgs> {})
 }:
-rec {
+pkgs.lib.makeExtensible (self: with self; {
   maybeCall = f: arg: if builtins.isFunction f then f arg else f;
+
+  mountScript = "/bin/sh -i;";
+  kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux_latest;
+  udevPackages = pkgs: [];
+  kernelModulePackages = kp: [];
+  firmwarePackages = pkgs: [pkgs.firmwareLinuxNonfree];
+  tools = pkgs: [];
+  modprobeConfig = "";
+  blacklistUdevRules = [];
+  qemu = pkgs: pkgs.kvm;
+  qemuArgs = "--enable-kvm -m 2G -bios ${pkgs.OVMF.fd}/FV/OVMF.fd";
 
   kernel = (maybeCall kernelPackages pkgs).kernel;
   bzImage = kernel + "/bzImage";
@@ -46,8 +47,6 @@ rec {
     done
     ${pkgs.eudev}/bin/udevadm hwdb -u -r "$out"
   '';
-
-  inherit modprobeConfig;
 
   modprobeConf = pkgs.writeText "modprobe.conf" (''
     blacklist evbug
@@ -180,4 +179,4 @@ rec {
       ${qemuArgs} -kernel ${bzImage} -initrd ${initrd}/initrd \
       -nographic -append "console=ttyS0" "$@"
   '';
-}
+})
