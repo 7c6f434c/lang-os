@@ -1,0 +1,101 @@
+{ 
+  pkgs ? import <nixpkgs> {}, firefox ? p: p.firefox, firefoxName ? "firefox"
+  , marionette ? p: p.python2Packages.marionette-harness
+  , profileContent ? null
+  , baseProfile ? import ./firefox-profile.nix { inherit pkgs firefox; finalContent = profileContent; }
+  , name ? "firefox-launcher"
+}:
+rec {
+  socatCmd = (pkgs.lib.getBin pkgs.socat) + "/bin/socat";
+  unshareCmd = (pkgs.lib.getBin pkgs.utillinux) + "/bin/unshare";
+  firefoxCmd = (pkgs.lib.getBin pkgs.firefox) + "/bin/" + firefoxName;
+  unionfsCmd = (pkgs.lib.getBin pkgs.unionfs-fuse) + "/bin/unionfs";
+  fuserCmd = (pkgs.lib.getBin pkgs.psmisc) + "/bin/fuser";
+  marionette_ = if builtins.isFunction marionette then marionette pkgs else marionette;
+  marionetteEnv = pkgs.runCommand "marionette-env" { buildInputs = [ marionette_ ]; } ''
+    echo "export PYTHONPATH='$PYTHONPATH'; export PATH='$PATH'" > "$out"
+  '';
+  marionettePythonPrologue = ''
+    from marionette_driver.marionette import Marionette;
+    import os;
+    import sys;
+    session = Marionette(host="127.0.0.1",port=os.getenv("MARIONETTE_PORT") or 2828,bin=False,socket_timeout=5);
+    session.start_session();
+    while True:
+      try:
+        print(eval(sys.stdin.readline()))
+      except:
+        exit()
+  '';
+  combineProfileScript = ''
+    if test -n "$FIREFOX_PROFILE"; then
+      _FIREFOX_PROFILE="$FIREFOX_PROFILE"
+    else
+      mkdir -p "/''${TMPDIR:-tmp}/ff.$USER/profiles/"
+      _FIREFOX_PROFILE="$(mktemp -d -p "/''${TMPDIR:-/tmp}/ff.$USER/profiles/")"
+    fi
+    test -n "${baseProfile}" && yes n | cp -riT "${baseProfile}" "$_FIREFOX_PROFILE"
+  '';
+  homeScript = ''
+    if test -z "$HOME"; then
+      HOME="$(mktemp -d)"
+      _HOME_KILL="$HOME"
+    else
+      _HOME_KILL=
+    fi;
+  '';
+  marionettePythonRunner = pkgs.writeScript "marionette-runner" ''
+    python -u -c '${marionettePythonPrologue}'
+  '';
+  marionetteScript = ''
+    if test -n "$MARIONETTE_SOCKET"; then
+      export MARIONETTE_PORT="''${MARIONETTE_PORT:-2828}"
+      export PYTHONIOENCODING=utf-8:surrogateescape
+      (
+        source "${marionetteEnv}"
+        "${socatCmd}" -t 60 unix-listen:"$MARIONETTE_SOCKET",forever,fork,rcvbuf=1,sndbuf=1 exec:'${marionettePythonRunner}',rcvbuf=1,sndbuf=1 &
+        "${socatCmd}" -t 60 unix-listen:"$MARIONETTE_SOCKET.port",forever,fork tcp-connect:127.0.0.1:"$MARIONETTE_PORT" &
+	while ! ( test -e "$MARIONETTE_SOCKET" && test -e "$MARIONETTE_SOCKET.port" ; ); do
+	  sleep 0.1
+	done
+	chmod a+rw "$MARIONETTE_SOCKET"{,.port}
+        echo "MARIONETTE_SOCKET=$MARIONETTE_SOCKET" >&2
+      )
+    fi
+  '';
+  cleanupScript = ''
+    if test -n "$_HOME_KILL"; then
+      rm -rf "$_HOME_KILL"
+    fi
+    if test -n "$MARIONETTE_SOCKET"; then
+      "${fuserCmd}" "$MARIONETTE_SOCKET"
+      rm -f "$MARIONETTE_SOCKET"
+    fi
+    chmod a+rwX -R "$FIREFOX_PROFILE"/* 2> /dev/null
+  '';
+  firefoxProfileCombiner = pkgs.writeScriptBin "combine-firefox-profile" ''
+    export FIREFOX_PROFILE="$1"
+    ${combineProfileScript}
+    echo "$_FIREFOX_PROFILE"
+  '';
+  firefoxLauncher = pkgs.writeScriptBin name ''
+    ${homeScript}
+    ${marionetteScript}
+    echo "$FIREFOX_EXTRA_PREFS" >> "$FIREFOX_PROFILE/prefs.js"
+    if test -n "$MARIONETTE_PORT"; then
+      sed -e '/marionette[.]defaultPrefs[.]port/d' -i "$FIREFOX_PROFILE/prefs.js"
+      echo "user_pref(\"marionette.defaultPrefs.port\",\"$MARIONETTE_PORT\");" >> "$FIREFOX_PROFILE/prefs.js"
+      "${firefoxCmd}" --profile "$FIREFOX_PROFILE" --new-instance --marionette "$@"
+    else
+      "${firefoxCmd}" --profile "$FIREFOX_PROFILE" --new-instance "$@"
+    fi
+    exit_value="$?"
+    ${cleanupScript}
+    exit $exit_value
+  '';
+  firefoxScripts = pkgs.runCommand "firefox-scripts" {} ''
+    mkdir -p "$out/bin"
+    ln -s "${firefoxProfileCombiner}"/bin/* "$out/bin"
+    ln -s "${firefoxLauncher}"/bin/* "$out/bin"
+  '';
+}
