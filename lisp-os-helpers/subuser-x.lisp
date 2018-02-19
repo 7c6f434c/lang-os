@@ -23,7 +23,7 @@
   subuser-command-with-x
   (command 
     &key
-    display setup
+    display setup verbose-errors
     name environment options system-socket)
   (let*
     ((display
@@ -40,6 +40,13 @@
 	   ()
 	   (ask-server (with-uid-auth `(subuser-uid ,name))))))
      (x-socket (format nil "/tmp/.X11-unix/X~a" display))
+     (options
+       (append
+         options
+         (unless (find "nsjail" options
+                       :test 'equal :key
+                       (lambda (x) (and (listp x) (first x))))
+           `(("nsjail" ("mounts"))))))
      )
     (uiop:run-program
       (list "setfacl" "-m" (format nil "u:~a:rw" uid)
@@ -91,7 +98,8 @@
 					 (list (list "-B" x-socket x-socket)))
 				   result))
                            (return (reverse result))))))
-		    (t o))))))))))
+		    (t o))))))
+        :verbose verbose-errors))))
 
 (defun reset-firefox-launcher (&key profile-contents nix-path nix-wrapper-file)
   (setf *firefox-profile-contents* profile-contents)
@@ -140,12 +148,12 @@
 
 
 (defun subuser-firefox
-  (arguments &key display prefs
+  (arguments &key display prefs raw-prefs launcher-wrappers
              environment marionette-socket home profile-storage name
              (firefox-launcher *firefox-launcher*) (slay t) (wait t)
              (netns t) network-ports pass-stderr pass-stdout full-dev
-             mounts system-socket setup hostname grab-devices
-             (path "/var/current-system/sw/bin"))
+             mounts system-socket setup hostname grab-devices fake-passwd
+             (path "/var/current-system/sw/bin") verbose-errors mount-sys)
   (let*
     (
      (combined-profile
@@ -200,26 +208,33 @@
       (unwind-protect
         (prog1
           (subuser-command-with-x
-            `(,firefox-launcher ,@arguments)
+            `(,@ launcher-wrappers
+              ,firefox-launcher ,@arguments)
             :setup setup
             :display display :name name
             :environment
             `(
               ,@ environment
               ("MARIONETTE_SOCKET" ,(or marionette-socket ""))
-              ("HOME" ,(or home ""))
+              ,@(when home `(("HOME" ,home)))
               ("FIREFOX_PROFILE" ,combined-profile)
 	      ("FIREFOX_PROFILE_KILL" ,(if profile-storage "" "1"))
               ("FIREFOX_EXTRA_PREFS"
                ,(format
                   nil "~{user_pref(\"~a\",~a);~%~}"
-                  (loop 
-                    for pair in prefs
-                    for name := (first pair)
-                    for value := (second pair)
-                    for representation :=
-                    (firefox-pref-value-js value)
-		    collect name collect representation)))
+                  (append
+                    (loop 
+                      for pair in prefs
+                      for name := (first pair)
+                      for value := (second pair)
+                      for representation :=
+                      (firefox-pref-value-js value)
+                      collect name collect representation)
+                    (loop
+                      for pair in raw-prefs
+                      for name := (first pair)
+                      for value := (second pair)
+                      collect name collect value))))
               ("PATH" ,path)
               )
             :options
@@ -228,18 +243,21 @@
               ,@(when wait `("wait"))
               ("nsjail" "network"
                ,@(when full-dev `("full-dev"))
+               ,@(when fake-passwd `("fake-passwd"))
 	       ("hostname" ,hostname)
                ("mounts"
                 (("-B" ,combined-profile)
                  ("-B" "/dev/dri")
 		 ,@(when marionette-socket
 		     `(("-B" ,(directory-namestring marionette-socket))))
+                 ,@(when mount-sys `(("-B" "/sys")))
                  ,@ mounts)))
               ,@(when netns `(("netns" ,network-ports)))
               ,@(when pass-stdout `(("stdout-fd" "stdout")))
               ,@(when pass-stderr `(("stderr-fd" "stderr")))
               )
-            :system-socket *ambient-system-socket*)
+            :system-socket *ambient-system-socket*
+            :verbose-errors verbose-errors)
           (ask-server `(close-received-fds)))
         (ignore-errors
           (uiop:run-program

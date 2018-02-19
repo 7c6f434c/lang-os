@@ -65,12 +65,15 @@ rec {
   '';
   cleanupScript = ''
     if test -n "$_HOME_KILL"; then
+      echo "Removing [[$_HOME_KILL]]" >&2
       rm -rf "$_HOME_KILL"
+      echo "Removed [[$_HOME_KILL]]" >&2
     fi
     if test -n "$MARIONETTE_SOCKET"; then
-      "${fuserCmd}" "$MARIONETTE_SOCKET"
+      "${fuserCmd}" "$MARIONETTE_SOCKET" -k -s 2> /dev/null
       rm -f "$MARIONETTE_SOCKET"
     fi
+    echo "making accessible [[$FIREFOX_PROFILE]]" >&2
     chmod a+rwX -R "$FIREFOX_PROFILE"/* 2> /dev/null
   '';
   firefoxProfileCombiner = pkgs.writeScriptBin "combine-firefox-profile" ''
@@ -89,6 +92,7 @@ rec {
     else
       "${firefoxCmd}" --profile "$FIREFOX_PROFILE" --new-instance "$@"
     fi
+    echo "${firefoxName} finished" >&2
     exit_value="$?"
     ${cleanupScript}
     exit $exit_value

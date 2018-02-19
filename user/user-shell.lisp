@@ -23,6 +23,8 @@
 (use-package :lisp-os-helpers/timestamp)
 (use-package :lisp-os-helpers/marionette)
 
+(setf *random-state* (make-random-state t))
+
 (defpackage :sudo (:use))
 
 (defun loadrc () (load *rc-path*))
@@ -44,11 +46,12 @@
   sudo::start-x (&optional (display 0) command)
   (with-system-socket 
     ()
-    (ask-server
-      (with-uid-auth 
-	(with-presence-auth
-	  "X11 session"
-	  `(start-x ,display))))
+    (take-reply-value
+      (ask-server
+        (with-uid-auth 
+	  (with-presence-auth
+	    "X11 session"
+	    `(start-x ,display)))))
     (when command
       (uiop:run-program
 	(add-command-env
@@ -75,7 +78,13 @@
 	    `(quit)))))))
 
 (defun-export
- sudo::system-rebuild (path &optional (nix-path (uiop:getenv "NIX_PATH")))
+ sudo::system-rebuild
+ (&optional
+   (path
+     (namestring
+       (truename
+         (format nil "~a/.lang-os-expression.nix" (uiop:getenv "HOME")))))
+   (nix-path (uiop:getenv "NIX_PATH")))
  (format
   t "System: ~s~%"
   (nix-build "systemInstance"
@@ -88,7 +97,7 @@
   (ask-server
    (with-password-auth
     "Rebuild the system"
-    `(rebuild-from-path ,path ,nix-path)
+    `(rebuild-from-path ,(namestring (truename path)) ,nix-path)
     :user "root"))))
 
 (defun-export
@@ -184,12 +193,130 @@
 	"Shutdown the system: reboot"
 	`(system-reboot)))))
 
+(defun-export
+  sudo::grab-devices (devices &optional subuser)
+  (with-system-socket
+    ()
+    (ask-server
+      (with-uid-auth
+        `(grab-devices
+           ,(mapcar
+              'namestring
+              (reduce
+                'append
+                (mapcar
+                  'directory
+                  devices)))
+           ,subuser)))))
+
+(defun-export
+  sudo::set-brightness (brightness)
+  (with-system-socket
+    ()
+    (ask-server
+      (with-presence-auth
+        "Set screen brightness"
+        `(set-brightness ,brightness)))))
+
 (defun update-firefox-launcher ()
-  (reset-firefox-launcher :nix-path (list ($ :home))
-                          :nix-wrapper-file (format nil "~a/lang-os/wrapped-firefox-launcher.nix"
+  (reset-firefox-launcher :nix-path (list ($ :home) "/home/repos")
+                          :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
                                                     ($ :home))
                           :profile-contents
-                          (format nil "~a/lang-os/user/firefox-profile-skel/"
+                          (format nil "~a/src/nix/lang-os/user/firefox-profile-skel/"
                                   ($ :home))))
 
 (unless lisp-os-helpers/subuser-x:*firefox-launcher* (update-firefox-launcher))
+
+(defun firefox (ff-args &rest args &key
+                        (pass-stderr t) (pass-stdout t)
+                        (no-netns nil no-netns-p)
+                        (netns t) mounts prefs
+                        (socks-proxy nil)
+                        (http-proxy (unless socks-proxy 3128))
+                        (dns t) environment network-ports file
+                        (marionette-socket (unless (or no-netns (not netns)) t))
+                        data
+                        &allow-other-keys)
+  (apply
+    'subuser-firefox
+    `(,@ff-args 
+       ,@(when file
+           `(,(format
+                nil "file:///~a"
+                (namestring (truename file))))))
+    :pass-stderr pass-stderr
+    :pass-stdout pass-stdout
+    :network-ports
+    `(
+      ,@(when dns `( ((53 :udp)) ((53 :tcp))  ))
+      ,@(when http-proxy `(((3128 tcp))))
+      ,@(when socks-proxy `(((1080 tcp))))
+      ,@ network-ports)
+    :environment
+    `(
+      ,@ environment
+      ,@(when http-proxy
+          `(
+            ("proxy"         "http://127.0.0.1:3128")
+            ("http_proxy"    "http://127.0.0.1:3128")
+            ("https_proxy"   "http://127.0.0.1:3128")
+            ("ftp_proxy"     "http://127.0.0.1:3128")
+            ))
+      ,@(when socks-proxy
+          `(
+            ("proxy"         "socks5://127.0.0.1:1080")
+            ("socks_proxy"   "socks5://127.0.0.1:1080")
+            ("SOCKS_SERVER"  "127.0.0.1")
+            ("SOCKS_PORT"    "1080")
+            ("SOCKS_VERSION" "5")
+            ))
+      )
+    :prefs
+    `(
+      ,@ prefs
+      ,@ (when socks-proxy
+           `(
+             ("network.proxy.socks" "127.0.0.1")
+             ("network.proxy.socks_port" ,socks-proxy)
+             ("network.proxy.socks_version" 5)
+             ("network.proxy.type" 1)
+             ))
+      )
+    :mounts
+    `(
+      ,@ mounts
+      ,@ (when file `(("-B" ,file)))
+      ,@ (when data `(("-B" ,data "/home/data")))
+      )
+    :marionette-socket marionette-socket
+    :allow-other-keys t
+    (append
+      (when no-netns-p `(:netns nil))
+      args)))
+
+(defun-export
+  sudo::root-urxvt
+  (&key (display 0)
+        (command
+          (list
+            "my-screen"
+            (format nil "for-su-from-~a" (get-current-user-name))
+            "bash")))
+  (&&
+    (sudo:run
+      "su" "root" "-l" "-c"
+      (collapse-command
+        `("env" "--" 
+          ,(format nil "DISPLAY=:~a" display)
+          "MY_SCREEN_TITLE=su screen"
+          ,(which "urxvt") "-e" ,@ command)))))
+
+(defun-export
+  sudo::wifi (interface &optional (dhclient t))
+  (with-system-socket
+    ()
+    (ask-server
+      (with-presence-auth
+        "Connect to WiFi"
+        `(ensure-wifi ,interface ,dhclient)))))

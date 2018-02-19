@@ -32,8 +32,8 @@ pkgs.runCommand "system-bin" {} ''
   }
 
   script activate '"$basedir/setup"'
-  script switch '"$basedir/activate"' '"$basedir/boot"'
-  script boot '"$basedir/assemble-grub-config"'
+  script switch '"$basedir/set-as-current"' '"$basedir/activate"' '"$basedir/boot"'
+  script boot '"$basedir"/set-as-current' '"$basedir/assemble-grub-config" "$@"'
   script grub-print-header '"${./grub-print-header.sh}" "$@"'
   script assemble-grub-config 'export grub_print_header="$basedir/grub-print-header"' '"${./assemble-grub-config.sh}" "$@"'
   script install-efi-grub 'target="''${1:-/boot}"; shift' \

@@ -4,9 +4,6 @@
   , nixos ? import <nixpkgs/nixos>
 }:
 pkgs.lib.makeExtensible (self: with self; {
-  default = step default (x: {});
-  override = overrides: let new = step new overrides; in new;
-
   inherit pkgs nixos;
 
   stage1 = (import ../fat-initramfs.nix {}).extend (s1self: s1super: {
@@ -51,6 +48,7 @@ pkgs.lib.makeExtensible (self: with self; {
   loopStarter = command: pkgs.writeScript "loop-starter" ''
           trap : 1 2 3 13 14 15
           while true; do
+                sleep 1
                 ${command}
           done
   '';
@@ -98,6 +96,21 @@ pkgs.lib.makeExtensible (self: with self; {
 	};
   NixOSWithX = nixos {configuration = NixOSXConfig;};
 
+  swPackages = swPieces.corePackages ++ (with pkgs; [
+        glibcLocales
+        vim monotone screen rxvt_unicode xorg.xprop
+        sbcl lispPackages.clwrapper lispPackages.uiop asdf gerbil
+	postgresql-package
+        nsjail unionfs-fuse
+        lispPackages.stumpwm alsaTools
+        xdummy
+        (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
+        (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
+        (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])
+        (swPieces.cProgram "numeric-su" ../c/numeric-su.c [] [])
+        lispOsHelpers
+      ]) ++ (with stage1; [firmwareSet] ++ _kernelModulePackages);
+
   systemParts = {
     bin = import ../system-bin.nix {
       initScript = ''
@@ -120,20 +133,7 @@ pkgs.lib.makeExtensible (self: with self; {
     };
     sw = pkgs.buildEnv rec {
       name = "system-path";
-      paths = swPieces.corePackages ++ (with pkgs; [
-        glibcLocales
-        vim monotone screen rxvt_unicode xorg.xprop
-        sbcl lispPackages.clwrapper lispPackages.uiop asdf gerbil
-	postgresql-package
-        nsjail unionfs-fuse
-        lispPackages.stumpwm alsaTools
-        xdummy
-        (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
-        (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
-        (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])
-        (swPieces.cProgram "numeric-su" ../c/numeric-su.c [] [])
-        lispOsHelpers
-      ]) ++ (with stage1; [firmwareSet] ++ _kernelModulePackages);
+      paths = swPackages;
       extraOutputsToInstall = swPieces.allOutputNames paths;
       ignoreCollisions = true;
       pathsToLink = ["/"];

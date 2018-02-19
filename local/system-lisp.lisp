@@ -2,6 +2,8 @@
 
 (defparameter *socket-main-thread-preexisting* *socket-main-thread*)
 
+(setf *random-state* (make-random-state t))
+
 (format t "~s~%Preexisting socket: ~s~%Helpers: ~s~%"
         "Initialising Common Lisp system daemon"
         *socket-main-thread-preexisting*
@@ -23,6 +25,8 @@
 (use-package :lisp-os-helpers/unix-users)
 (use-package :lisp-os-helpers/vt)
 (use-package :lisp-os-helpers/socket-command-definitions)
+(use-package :lisp-os-helpers/auth-data)
+(use-package :lisp-os-helpers/kernel)
 
 (unless *socket-main-thread-preexisting*
   (format t "Starting the Common Lisp system daemon at ~a~%" (local-time:now)))
@@ -47,6 +51,17 @@
 	      ))
 	  :name (format nil "Console spawner ~a" vtn))))))
 
+(unless
+  (ignore-errors
+    (with-open-file (f "/etc/shadow")
+      (loop for l := (read-line f nil nil)
+            while l
+            when (alexandria:starts-with-subseq "root:" l)
+            return t)))
+  (with-open-file (f "/etc/shadow" :direction :output :if-exists :append)
+    (format f "root:!:1::::::~%"))
+  (set-password "root" "initial-password-to-change"))
+
 (defparameter
   *socket-main-thread*
   (or *socket-main-thread*
@@ -61,39 +76,44 @@
             "nix-store" "--check-validity" "/run/current-system/")))
   (system-service "" "nix-daemon"))
 
-(ensure-daemon-user "postgres")
-(ensure-daemon-user "named")
-(grant-to-user "named" "/var/lib/bind/")
-(grant-to-group "named" "/var/lib/bind/")
-(ensure-daemon-user "cups")
-(ensure-daemon-group "lp")
-(grant-to-user "cups" "/var/lib/cups/")
-(grant-to-group "lp" "/var/lib/cups/")
+(format
+  t "Daemon operations: ~s~%"
+  (multiple-value-list
+    (ignore-errors
+      (ensure-daemon-user "postgres")
+      (ensure-daemon-user "named")
+      (grant-to-user "named" "/var/lib/bind/")
+      (grant-to-group "named" "/var/lib/bind/")
+      (ensure-daemon-user "cups")
+      (ensure-daemon-group "lp")
+      (grant-to-user "cups" "/var/lib/cups/")
+      (grant-to-group "lp" "/var/lib/cups/")
 
-(unless
-  (port-open-p 22)
-  (system-service "" "from-nixos/openssh"))
+      (unless
+        (port-open-p 22)
+        (system-service "" "from-nixos/openssh"))
 
-(unless
-  (run-program-return-success
-    (uiop:run-program
-      (list "pgrep" "-x" "udevd")))
-  (system-service "" "udevd"))
+      (unless
+        (run-program-return-success
+          (uiop:run-program
+            (list "pgrep" "-x" "udevd")))
+        (system-service "" "udevd"))
 
-(unless
-  (port-open-p 631)
-  (system-service "" "from-nixos/cups"))
+      (unless
+        (port-open-p 631)
+        (system-service "" "from-nixos/cups"))
 
-(unless
-  (port-open-p 53)
-  (system-service "" "from-nixos/bind"))
+      (unless
+        (port-open-p 53)
+        (system-service "" "from-nixos/bind"))
 
-(unless
-  (port-open-p 5432)
-  (daemon-with-logging 
-    "daemon/postgresql"
-    (list "su" "postgres" "-s" "/bin/sh" "-c"
-	  "env -i /run/current-system/services/from-nixos/postgresql")))
+      (unless
+        (port-open-p 5432)
+        (daemon-with-logging 
+          "daemon/postgresql"
+          (list "su" "postgres" "-s" "/bin/sh" "-c"
+                "env -i /run/current-system/services/from-nixos/postgresql")))
+      t)))
 
 (defun socket-command-server-commands::run (context &rest command)
   (require-root context)
@@ -169,11 +189,7 @@
       (gethash (list (context-uid context) :owner) *user-info*)))
   (require-presence context)
   (run-link-dhclient interface)
-  (when copy-resolv
-    (alexandria:write-string-into-file
-      (alexandria:read-file-into-string
-	"/etc/resolv.conf.dhclient")
-      "/etc/resolv.conf")))
+  (when copy-resolv (dhcp-resolv-conf)))
 
 (defun socket-command-server-commands::add-ip-address (context interface address &optional (netmask-length 24))
   (assert
@@ -194,7 +210,14 @@
   (uiop:run-program
     `("/run/current-system/bin/update-self-from-expression"
       ,path
-      ,@(when nix-path `("-I" ,nix-path)))))
+      ,@(when nix-path
+          (loop
+            for path in
+            (if
+              (stringp nix-path)
+              (cl-ppcre:split ":" nix-path) nix-path)
+            collect "-I" collect path)))
+    :error-output t))
 
 (defun socket-command-server-commands::wpa-supplicant-status (interface)
   (loop
@@ -205,9 +228,11 @@
     collect (list (string-downcase (symbol-name key)) value)))
 
 (defun start-x-allowed-p (context display)
+  display
   (require-presence context) t)
 
 (defun grab-device-allowed-p (user subuser device)
+  subuser
   (and
     (gethash (list user :owner) *user-info*)
     (or
@@ -225,14 +250,42 @@
     (equal from to)
     (and
       (or
-        (alexandria:starts-with-subseq "/home/" target)
-        (alexandria:starts-with-subseq "/tmp/" target)
+        (alexandria:starts-with-subseq "/home/" from)
+        (alexandria:starts-with-subseq "/tmp/" from)
         )
       (or
-        (alexandria:starts-with-subseq "/home/" internal-target)
-        (alexandria:starts-with-subseq "/tmp/" internal-target)
+        (alexandria:starts-with-subseq "/home/" to)
+        (alexandria:starts-with-subseq "/tmp/" to)
         ))
     ))
+
+(defun socket-command-server-commands::wifi-modules (context)
+  context
+  (modprobe "iwlwifi"))
+
+(defun socket-command-server-commands::ensure-wifi (context interface &optional (dhclient t))
+  (require-presence context)
+  (modprobe "iwlwifi")
+  (ensure-wpa-supplicant interface "/root/src/rc/wpa_supplicant.conf")
+  (unless
+    (wpa-supplicant-wait-connection interface)
+    (error "WiFi connection failed on ~a" interface))
+  (when dhclient
+    (run-link-dhclient interface)
+    (when (equalp dhclient "use-resolv-conf")
+      (dhcp-resolv-conf)))
+  "OK")
+
+(defun socket-command-server-commands::local-resolv-conf (context)
+  (require-presence context)
+  (local-resolv-conf)
+  "OK")
+
+(setf
+  lisp-os-helpers/fbterm-requests:*fbterm-settings*
+  (append
+    lisp-os-helpers/fbterm-requests:*fbterm-settings*
+    `((:font-size ,25))))
 
 (unless
   *socket-main-thread-preexisting*

@@ -42,13 +42,22 @@
 	  (error "Operation ~a (using package: ~a) not known"
 		 (first form) *socket-command-package*))
         (list "value" (apply op-sym context (rest form)))))
-    (error (e) (values (list "error" (format nil "~a" e)) e))))
+    (error (e) (values
+                 (list "error"
+                       (format nil "~a" e)
+                       (with-output-to-string (s)
+                         (trivial-backtrace:print-backtrace-to-stream s)))
+                 e))))
 
-(defun take-reply-value (reply)
+(defun take-reply-value (reply &key verbose)
   (if
     (equal "value" (first reply))
     (second reply)
-    (error (second reply))))
+    (progn
+      (when verbose
+        (format *error-output* "Error backtrace:~%~a~%"
+                (third reply)))
+      (error (second reply)))))
 
 (defun socket-command-server-commands::ping
   (context &optional (reply "alive")) context reply)
@@ -279,12 +288,12 @@
     (let*
       ((key (format nil "~36r" (random (expt 36 20))))
        (socket-address (concatenate 'string (string #\Null) key)))
+      (format *error-output* "FD socket key: ~s~%" key)
       (funcall
         context :fd-socket
         (iolib:make-socket
           :connect :passive :address-family :local :type :datagram
           :local-filename socket-address))
-      (socket-command-server-commands::close-received-fds context)
       (funcall context :fd-socket-name key)
       key)))
 (defun socket-command-server-commands::receive-fd (context tag)
@@ -310,7 +319,7 @@
          for file := (format nil "/sys/class/backlight/~a/brightness" name)
          when (probe-file file) return file
          finally (return (first (directory "/sys/class/backlight/*/brightness"))))))
-    (alexandria:write-string-into-file (format nil "~a" n) f)))
+    (alexandria:write-string-into-file (format nil "~a" n) f :if-exists :overwrite)))
 (defun socket-command-server-commands::system-shutdown (context)
   (unless (ignore-errors (require-root context) t)
     (require-presence context))

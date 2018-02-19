@@ -172,7 +172,7 @@
 	   (internal-uid uid) (internal-gid gid)
            fake-passwd
            skip-mount-check
-	   full-dev
+	   full-dev (home (format nil "/tmp/home.~a" uid) homep)
 	   (rlimit-as "max") (rlimit-core "0") (rlimit-cpu "max")
 	   (rlimit-fsize "max") (rlimit-nofile "max")
 	   (rlimit-nproc "max") (rlimit-stack "max")
@@ -200,6 +200,7 @@
 	   "-R" "/var/current-system" "-R" "/run/current-system"
 	   "-R" "/run/opengl-driver/" "-R" "/run/opengl-driver-32/"
 	   "-R" "/etc/fonts"
+           ,(if homep "-B" "-T") ,home
 	   ))
      ,@(when full-dev `("-B" "/dev/" "-B" "/dev/shm"))
      ,@(when hostname `("-H" ,hostname))
@@ -209,7 +210,8 @@
 	   (f (format nil 
 		      "/tmp/system-lisp/subuser-passwd/~a" uid)
 	      :direction :output :if-exists :supersede)
-	   (format f ".~a:x:~a:~a::/:/bin/sh~%" uid uid gid)
+	   (format f "root:x:0:0::/:/bin/sh~%")
+	   (format f ".~a:x:~a:~a::~a:/bin/sh~%" uid uid gid home)
 	   (format f ".~a:x:~a:~a::/:/bin/sh~%" 65534 65534 65534)
 	   )
 	 (list "-R" (format nil "/tmp/system-lisp/subuser-passwd/~a:/etc/passwd" uid)))
@@ -231,10 +233,11 @@
      ,@(when proc-rw `("--proc_rw"))
      ,@(when network `("-N"))
      "-E" "PATH="
+     "-E" ,(format nil "HOME=~a" home)
      "--"
      ,@ command))
 
-(defun add-command-netns (command &key ports-out uid gid
+(defun add-command-netns (command &key ports-out uid gid (directory "/")
 				  (path "/var/current-system/sw/bin"))
   (let* 
     ((*print-right-margin* (expt 10 9))
@@ -274,16 +277,29 @@
 	 finally (return (list connect-commands listen-commands))))
      (connect-commands (first socat-commands))
      (listen-commands (second socat-commands))
-     (inner-unshare `("unshare" "-U" ,@ command))
+     (inner-unshare `("nsjail"
+                      "-e" "-Q" "-B" "/"
+                      "-u" ,(format nil "~a:0" uid)
+                      "-D" ,directory
+                      "--disable_clone_newnet"
+                      "--disable_clone_newuts"
+                      "--rlimit_as"     "max"
+                      "--rlimit_core"   "max"
+                      "--rlimit_cpu"    "max"
+                      "--rlimit_fsize"  "max"
+                      "--rlimit_nofile" "max"
+                      "--rlimit_nproc"  "max"
+                      "--rlimit_stack"  "max"
+                      ,@ command))
      (lo-up-command `("ip" "link" "set" "lo" "up"))
      (inner-setup
        (list
 	 "/bin/sh" "-c"
 	 (format
-	   nil "~a ; ~{ ~a & ~} sleep 0.3; ~a; exit_value=$?; pkill -INT -P $$; exit $exit_value"
+	   nil "~a ; ~{ ~a & ~} sleep 0.3; mkdir -p \"$HOME\"; cd; ~a; exit_value=$?; pkill -INT -P $$; exit $exit_value"
 	   (collapse-command lo-up-command)
 	   (mapcar 'collapse-command listen-commands)
-	   inner-unshare)))
+	   (collapse-command inner-unshare))))
      (outer-unshare `("unshare" "-U" "-r" "-n" ,@ inner-setup))
      (result
        (list

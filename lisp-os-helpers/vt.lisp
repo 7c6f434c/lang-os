@@ -28,9 +28,11 @@
           command))))
 
 (defun kill-vt-users (vt)
-  (uiop:run-program `("fuser" "-k" "-15" ,(format nil "/dev/tty~a" vt)))
+  (uiop:run-program `("fuser" "-k" "-15" ,(format nil "/dev/tty~a" vt)) :ignore-error-status t)
   (sleep 0.3)
-  (uiop:run-program `("fuser" "-k" "-9" ,(format nil "/dev/tty~a" vt))))
+  (uiop:run-program `("fuser" "-k"  "-9" ,(format nil "/dev/tty~a" vt)) :ignore-error-status t)
+  (uiop:run-program `("fuser" "-k"  "-CONT" ,(format nil "/dev/tty~a" vt)) :ignore-error-status t)
+  )
 
 (defun chvt (n)
   (uiop:run-program (list "chvt" (format nil "~a" n))))

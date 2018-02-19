@@ -10,6 +10,7 @@
     #:cd #:ls #:ls* #:ps
     #:build-shell
     #:create-eval-socket
+    #:>file
     ))
 (in-package :lisp-os-helpers/user-abbreviations)
 
@@ -281,3 +282,9 @@
 		  :name "User socket evaluator connection handler")))
 	    ))
 	:name "User socket evaluator"))))
+
+(defun >file (string)
+  (uiop:with-temporary-file
+    (:pathname p :stream s :keep t)
+    (write string :stream s)
+    p))

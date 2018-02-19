@@ -1,5 +1,6 @@
 (defpackage :lisp-os-helpers/network
-  (:use :common-lisp :lisp-os-helpers/shell)
+  (:use :common-lisp :lisp-os-helpers/shell 
+        :lisp-os-helpers/daemon)
   (:export
     #:parsed-ip-address-show
     #:add-ip-address
@@ -9,7 +10,14 @@
     #:run-link-dhclient
     #:port-open-p
     #:wpa-supplicant-status
+    #:ensure-wpa-supplicant
+    #:restart-wpa-supplicant
+    #:start-wpa-supplicant
+    #:stop-wpa-supplicant
+    #:wpa-supplicant-wait-connection
+    #:wpa-supplicant-running-p
     #:local-resolv-conf
+    #:dhcp-resolv-conf
     ))
 (in-package :lisp-os-helpers/network)
 
@@ -162,9 +170,52 @@
       collect (intern (string-upcase k) :keyword)
       collect v)))
 
+(defun wpa-supplicant-running-p (interface)
+  (ignore-errors
+    (wpa-supplicant-status interface)
+    t))
+
+(defun start-wpa-supplicant (interface config-file &key driver)
+  (daemon-with-logging
+    "daemon/wpa-supplicant"
+    (list "wpa_supplicant" "-i" interface "-c" config-file
+          "-D" (or driver "nl80211"))))
+
+(defun stop-wpa-supplicant (interface)
+  (uiop:run-program
+    (list "wpa_cli" "-i" interface "terminate")
+    :ignore-error-status t))
+
+(defun ensure-wpa-supplicant (interface config-file &key driver)
+  (unless
+    (wpa-supplicant-running-p interface)
+    (start-wpa-supplicant interface config-file :driver driver)))
+
+(defun restart-wpa-supplicant (interface config-file &key driver)
+  (stop-wpa-supplicant interface)
+  (start-wpa-supplicant interface config-file :driver driver))
+
+(defun wpa-supplicant-wait-connection
+  (interface &key
+             (timeout 30) (step 0.2) (state "COMPLETED"))
+  (loop
+    for current-state := (ignore-errors
+                           (getf (wpa-supplicant-status interface)
+                                 :wpa_state))
+    for elapsed := 0 then (+ elapsed step)
+    while (< elapsed timeout)
+    when (equalp current-state state) return t
+    do (sleep step)))
+
 (defun local-resolv-conf (&optional search)
   (with-open-file
     (f "/var/etc/resolv.conf" :direction :output :if-exists :supersede)
     (when search
       (format f "search ~a~%" search))
     (format f "nameserver 127.0.0.1~%")))
+
+(defun dhcp-resolv-conf ()
+  (alexandria:write-string-into-file
+    (alexandria:read-file-into-string
+      "/etc/resolv.conf.dhclient")
+    "/etc/resolv.conf"))

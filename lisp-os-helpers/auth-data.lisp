@@ -41,26 +41,33 @@
     ((uid (iolib/syscalls:getuid)))
     (unless (= uid 0) (error "root access required"))
     (let*
-      ((passwd-process (uiop:launch-program
-		     (list
-		       pty-helper
-		       "/run/current-system/bin/system-passwd" user)
-		     :input :stream :output :stream))
+      ((passwd-process
+         (uiop:launch-program
+           (list
+             pty-helper
+             "/run/current-system/bin/system-passwd" user)
+           :input :stream :output :stream))
        (passwd-in (uiop:process-info-input passwd-process))
        (passwd-out (uiop:process-info-output passwd-process)))
       (loop
-	for k from 1 to 2
-	do
-	(progn
-	  (loop
-	    for c := (read-char passwd-out nil)
-	    while (not (equal c #\:)))
-	  (format passwd-in "~a~%" password)
-	  (finish-output passwd-in)))
+        for k from 1 to 2
+        do
+        (progn
+          (loop
+            with line := nil
+            for c := (read-char passwd-out nil)
+            do (when c (push c line))
+            unless c do
+            (format
+              *error-output* "Weird data from passwd:~%~a~%"
+              (map 'string 'identity (reverse line)))
+            while (and c (not (equal c #\:))))
+          (format passwd-in "~a~%" password)
+          (finish-output passwd-in)))
       (unwind-protect
-	(= 0 (uiop:wait-process passwd-process))
-	(ignore-errors (close passwd-in))
-	(ignore-errors (close passwd-out))))))
+        (= 0 (uiop:wait-process passwd-process))
+        (ignore-errors (close passwd-in))
+        (ignore-errors (close passwd-out))))))
 
 (defvar *auth-challenge-directory* "/run/auth-challenges")
 

@@ -11,4 +11,8 @@
       sh ${./mount-partitions-thinkpad.sh}
     '';
   });
+
+  swPackages = super.swPackages ++ (with self.pkgs; [
+    zsh python xterm mlterm expect firmwareLinuxNonfree
+  ]);
 })

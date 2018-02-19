@@ -11,6 +11,7 @@
   (
    (:file "util")
    (:file "shell")
+   (:file "kernel" :depends-on ("shell"))
    (:file "file-locks")
    (:file "vt" :depends-on ("shell" "file-locks"))
    (:file "references")
@@ -18,8 +19,8 @@
    (:file "safe-read")
    (:file "auth-data" :depends-on ("shell"))
    (:file "timestamp")
-   (:file "network" :depends-on ("shell"))
    (:file "daemon" :depends-on ("shell" "timestamp"))
+   (:file "network" :depends-on ("shell" "daemon"))
    (:file "global-sqlite")
    (:file "nix" :depends-on ("shell"))
    (:file "unix-users")

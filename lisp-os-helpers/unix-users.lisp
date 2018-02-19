@@ -18,11 +18,15 @@
 
 (defun add-daemon-group (name)
   (uiop:run-program
-    (list "groupadd" "-r" "-R" "/var/auth" name)))
+    (list "groupadd" "-r" "-R" "/var/auth" name)
+    :error-output t))
 
 (defun add-daemon-user (name)
   (uiop:run-program
-    (list "useradd" "-R" "/var/auth" "-r" "-g" name "-s" "/run/current-system/sw/bin/nologin" "-d" "/var/empty" name)))
+    (list
+      "useradd" "-R" "/var/auth" "-r" "-g" name
+      "-s" "/run/current-system/sw/bin/nologin" "-d" "/var/empty" name)
+    :error-output t))
 
 (defun ensure-daemon-user (name)
   (unless (getgrnam name) (add-daemon-group name))

@@ -47,6 +47,10 @@
       (uiop:run-program
         (list "chmod" "u=rw,og="
               (namestring value-path) (namestring value-path)))
+      (uiop:run-program (list "/bin/sh" "-c"
+                              (format nil "echo '~{~%~a~}'" 
+                                      (make-list 1000 :initial-element "")))
+                        :input vtdev :output vtdev)
       (let*
         (
          (script
@@ -54,6 +58,7 @@
              nil
              "
              sayintr() { echo interrupt > ~a ; exit 1; } ; trap sayintr 2;
+             echo
              echo ~a;
              IFS= read -r -t ~a ~a x || echo fail > ~a;
              echo \"$x\" >~a;
