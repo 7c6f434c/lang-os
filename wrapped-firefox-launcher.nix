@@ -24,8 +24,8 @@ rec {
     while True:
       try:
         print(eval(sys.stdin.readline()))
-      except:
-        exit()
+      except Exception as e:
+        print(e)
   '';
   combineProfileScript = ''
     if test -n "$FIREFOX_PROFILE"; then

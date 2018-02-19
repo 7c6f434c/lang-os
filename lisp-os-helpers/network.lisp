@@ -197,15 +197,15 @@
 
 (defun wpa-supplicant-wait-connection
   (interface &key
-             (timeout 30) (step 0.2) (state "COMPLETED"))
+             (timeout 30) (sleep 0.2) (state "COMPLETED"))
   (loop
+    with start-time := (get-universal-time)
     for current-state := (ignore-errors
                            (getf (wpa-supplicant-status interface)
                                  :wpa_state))
-    for elapsed := 0 then (+ elapsed step)
-    while (< elapsed timeout)
+    while (< (- (get-universal-time) start-time) timeout)
     when (equalp current-state state) return t
-    do (sleep step)))
+    do (sleep sleep)))
 
 (defun local-resolv-conf (&optional search)
   (with-open-file
