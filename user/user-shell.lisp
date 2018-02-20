@@ -457,54 +457,33 @@
   (sleep 0.2)
   (grab-sound))
 
-(defmacro define-scoped-shell-command
-  (name (command-var &key
-                     skip-command-var arguments
-                     default-command
-                     (runner `(append
-                                (list "screen" "-X" "screen")
-                                ,command-var)))
-        before after)
-  (let*
-    ((fifo (gensym))
-     (thread (gensym)))
-    `(defun ,name (,@(unless skip-command-var (list command-var))
-                    ,@arguments)
-       (let*
-         ((,fifo (make-temporary-fifo))
-          (,thread (bordeaux-threads:make-thread 
-                     (lambda () (wait-on-fifo ,fifo))
-                     :name "FIFO wait thread for a scoped command"))
-          (,command-var (add-command-fifo-fd
-                          (or ,command-var ,default-command)
-                          ,fifo)))
-         ,before
-         (unless
-           (run-program-return-success
-             (uiop:run-program ,runner))
-           (bordeaux-threads:destroy-thread ,thread))
-         (ignore-errors (bordeaux-threads:join-thread ,thread))
-         ,after))))
+(defmacro define-scoped-command
+  (name arguments (before after) &rest code)
+  `(defun ,name ,arguments
+     (unwind-protect
+       (progn ,before ,@code)
+       ,after)))
 
 (defun rootp () (equal "root" (get-current-user-name)))
 (defun non-root-p () (not (rootp)))
 
-(define-scoped-shell-command
-  shell-with-mounted-devices (command
-                               :default-command "$SHELL"
-                               :arguments (&rest devices))
-  (ask-with-auth
-    (:presence (non-root-p))
-    (cons
-      "list"
-      (loop for device in devices
-            collect `(mount ,@(if (stringp device) (list device) device)))))
-  (ask-with-auth
-    (:presence (non-root-p))
-    (cons
-      "list"
-      (loop for device in devices
-            collect `(unmount ,@(if (stringp device) (list device) device))))))
+(define-scoped-command
+  shell-with-mounted-devices (command &rest devices)
+  (
+   (ask-with-auth
+     (:presence (non-root-p))
+     (cons
+       "list"
+       (loop for device in devices
+             collect `(mount ,@(if (stringp device) (list device) device)))))
+   (ask-with-auth
+     (:presence (non-root-p))
+     (cons
+       "list"
+       (loop for device in devices
+             collect `(unmount ,@(if (stringp device) (list device) device)))))
+   )
+  (wait-on-shell-command (or command "$SHELL")))
 
 (defun-export
   sudo::tether-android ()

@@ -15,6 +15,7 @@
     #:make-temporary-fifo
     #:wait-on-fifo
     #:add-command-fifo-fd
+    #:wait-on-shell-command
     ))
 
 (in-package :lisp-os-helpers/shell)
@@ -150,3 +151,24 @@
     (format nil "exec ~a<>~a; ~a"
             fd (escape-for-shell fifo)
             (collapse-command command))))
+
+(defun wait-on-shell-command (command
+                               &key
+                               (runner (lambda (command)
+                                         `("screen" "-X" "screen"
+                                           ,@command)))
+                               run-options)
+  (let*
+    ((fifo (make-temporary-fifo))
+     (thread (bordeaux-threads:make-thread
+               (lambda () (wait-on-fifo fifo))
+               :name "FIFO wait thread for shell command")))
+    (unwind-protect
+      (let*
+        ((wrapped-command (add-command-fifo-fd command fifo))
+         (runner-command (funcall runner wrapped-command)))
+        (format t "~s~%" runner-command)
+        (apply
+          'uiop:run-program runner-command 
+          run-options))
+      (bordeaux-threads:join-thread thread))))
