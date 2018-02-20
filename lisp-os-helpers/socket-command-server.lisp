@@ -9,6 +9,7 @@
     #:require-uid
     #:require-root
     #:require-password
+    #:require-or
     #:take-reply-value
     #:*system-lisp-socket*
     ))
@@ -270,6 +271,13 @@
   (unless
     (equal user (funcall context :password-auth-user))
     (error "Expected password authentication for user ~a" user)))
+
+(defmacro require-or (message &rest options)
+  `(unless
+     (or
+       ,@(loop for o in options collect
+               `(ignore-errors ,o t)))
+     (error (or ,message "Access requirements not met"))))
 
 (defun close-received-fds (context)
   (loop

@@ -125,11 +125,17 @@
   (with-input-from-string (s input)
     (uiop:run-program command :output :string :input s)))
 (defun socket-command-server-commands::quit (context)
-  (require-presence context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
   (quit))
 
 (defun socket-command-server-commands::restart-udevd (context)
-  (require-presence context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
   (if
     (ignore-errors (uiop:run-program (list "udevadm" "control" "--exit")))
     (progn
@@ -148,7 +154,10 @@
     (error "Stopping openssh failed")))
 
 (defun socket-command-server-commands::restart-cups (context)
-  (require-presence context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
   (if
     (ignore-errors (kill-by-log "daemon/cups"))
     (progn
@@ -157,7 +166,10 @@
     (error "Stopping cupsd failed")))
 
 (defun socket-command-server-commands::restart-bind (context)
-  (require-presence context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
   (if (ignore-errors (kill-by-log "daemon/bind"))
     (progn
       (system-service "" "from-nixos/bind")
@@ -165,7 +177,12 @@
     (error "Stopping bind failed")))
 
 (defun socket-command-server-commands::restart-postgresql (context)
-  (require-presence context)
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
   (if (ignore-errors (kill-by-log "daemon/postgresql"))
     (progn
       (daemon-with-logging 
@@ -177,7 +194,10 @@
     (error "Stopping postgresql failed")))
 
 (defun socket-command-server-commands::restart-nix-daemon (context)
-  (require-presence context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
   (if (ignore-errors (kill-by-log "daemon/nix-daemon"))
     (progn
       (system-service "" "nix-daemon")
@@ -185,30 +205,27 @@
     (error "Stopping nix-daemon failed")))
 
 (defun socket-command-server-commands::dhclient (context interface &optional copy-resolv)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (gethash (list (context-uid context) :owner) *user-info*)))
+  (require-or
+    "Owner access not confirmed"
+    (require-root context)
+    (assert (gethash (list (context-uid context) :owner) *user-info*)))
   (require-presence context)
   (run-link-dhclient interface)
   (when copy-resolv (dhcp-resolv-conf)))
 
 (defun socket-command-server-commands::add-ip-address (context interface address &optional (netmask-length 24))
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (gethash (list (context-uid context) :owner) *user-info*)))
-  (require-presence context)
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
   (add-ip-address interface address netmask-length))
 
 (defun socket-command-server-commands::rebuild-from-path
   (context path &optional nix-path)
   (require-presence context)
   (require-root context)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (gethash (list (context-uid context) :owner) *user-info*)))
   (uiop:run-program
     `("/run/current-system/bin/update-self-from-expression"
       ,path
@@ -305,7 +322,10 @@
   (stop-wpa-supplicant interface))
 
 (defun socket-command-server-commands::local-resolv-conf (context)
-  (require-presence context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
   (local-resolv-conf)
   "OK")
 
@@ -315,55 +335,47 @@
     lisp-os-helpers/fbterm-requests:*fbterm-settings*
     `((:font-size ,25))))
 
-(defun socket-command-server-commands::add-ip-address
-  (context interface address
-           &optional netmask-length)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (and
-        (gethash (list (context-uid context) :owner) *user-info*)
-        (require-presence context))))
-  (add-ip-address interface address (or netmask-length 24)))
-
 (defun socket-command-server-commands::nix-collect-garbage (context)
-  (or
-    (ignore-errors (require-root context) t)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
     (require-presence context))
   (uiop:run-program (list "nix-collect-garbage" "-d")))
 
 (defun socket-command-server-commands::hostname
   (context hostname)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (and
-        (gethash (list (context-uid context) :owner) *user-info*)
-        (require-presence context))))
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
   (uiop:run-program (list "hostname" hostname)))
 
 (defun socket-command-server-commands::unmount-removable
   (context)
-  (or
-    (ignore-errors (require-root context) t)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
     (require-presence context))
   (unmount-removable))
 
 (defun socket-command-server-commands::power-state (context state)
-  (or
-    (ignore-errors (require-root context) t)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
     (require-presence context))
   (uiop:run-program (list "wpa_cli" "suspend") :ignore-error-status t)
   (power-state (intern (string-upcase state) :keyword))
   (uiop:run-program (list "wpa_cli" "resume") :ignore-error-status t))
 
 (defun socket-command-server-commands::mount (context device &optional set-user)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (and
-        (gethash (list (context-uid context) :owner) *user-info*)
-        (require-presence context))))
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
   (let*
     ((target (format nil "/media/~a/" (pathname-name device))))
     (ensure-directories-exist target)
@@ -373,20 +385,19 @@
             `("-o" ,(format nil "uid=~a" (context-uid context))))))))
 
 (defun socket-command-server-commands::unmount (context device)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (and
-        (gethash (list (context-uid context) :owner) *user-info*)
-        (require-presence context))))
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
   (uiop:run-program (list "umount" device)))
 
 (defun socket-command-server-commands::backup-to (context device)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (gethash (list (context-uid context) :owner) *user-info*)
-      ))
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (assert (gethash (list (context-uid context) :owner) *user-info*)))
   (let*
     ((full-path (format nil "/dev/~a" device))
      (media-path (format nil "/media/~a/" device))
@@ -425,11 +436,10 @@
       (t "ok"))))
 
 (defun socket-command-server-commands::tether-android (context)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (gethash (list (context-uid context) :owner) *user-info*)
-      ))
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (assert (gethash (list (context-uid context) :owner) *user-info*)))
   (let*
     ((user (context-uid context)))
     (uiop:run-program (list "pkill" "adb") :ignore-error-status t)
@@ -466,12 +476,12 @@
       (add-ip-address "usb0" "192.168.42.130"))))
 
 (defun socket-command-server-commands::load-sound (context choice)
-  (assert
-    (or
-      (ignore-errors (require-root context) t)
-      (and
-        (gethash (list (context-uid context) :owner) *user-info*)
-        (require-presence context))))
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
   (module-remove-recursive "snd")
   (module-remove-recursive "soundcore")
   (module-remove-recursive "snd-hda-core")
