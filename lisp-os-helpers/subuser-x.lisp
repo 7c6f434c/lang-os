@@ -12,12 +12,18 @@
     #:firefox-pref-value-js
     #:subuser-name-and-marionette-socket
     #:*firefox-launcher*
+    #:reset-bus-helpers
+    #:*dbus-helper*
+    #:*pulseaudio-helper*
+    #:subuser-nsjail-x-application
     ))
 (in-package :lisp-os-helpers/subuser-x)
 
 (defvar *firefox-profile-contents* nil)
 (defvar *firefox-profile-combiner* nil)
 (defvar *firefox-launcher* nil)
+(defvar *dbus-helper* nil)
+(defvar *pulseaudio-helper* nil)
 
 (defun
   subuser-command-with-x
@@ -110,6 +116,22 @@
     (setf *firefox-launcher*
           (format nil "~a/bin/~a" firefox-scripts "firefox-launcher"))))
 
+(defun reset-bus-helpers
+  (&key
+    (nix-path (cl-ppcre:split ":" (uiop:getenv "NIX_PATH"))) nix-file)
+  (setf
+    *dbus-helper* 
+    (format nil 
+            "~a/bin/with-dbus"
+            (nix-build "withDBus" :nix-file nix-file
+                       :nix-path nix-path))
+    *pulseaudio-helper*
+    (format nil 
+            "~a/bin/with-pulseaudio"
+            (nix-build "withPulseaudio" :nix-file nix-file
+                       :nix-path nix-path))
+    ))
+
 (defun firefox-pref-value-js (value)
   (cond
     ((null value) "false")
@@ -139,15 +161,115 @@
 	    (directory-namestring marionette-socket)))
     `(:name ,name :uid ,uid :marionette-socket ,marionette-socket)))
 
+(defun subuser-nsjail-x-application
+  (command
+    &key display
+    environment home name
+    (slay t) (wait t) (netns t) network-ports
+    pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
+    mounts system-socket setup hostname grab-devices fake-passwd
+    (path "/var/current-system/sw/bin") verbose-errors mount-sys
+    dns http-proxy socks-proxy with-dbus with-pulseaudio)
+  (let*
+    ((name (or name (timestamp-usec-recent-base36))))
+    (with-system-socket
+      (system-socket)
+      (when pass-stdout
+        (send-fd-over-unix-socket
+          (concatenate
+            'string (string #\Null)
+            (take-reply-value (ask-server `(fd-socket))))
+          1)
+        (ask-server `(receive-fd stdout)))
+      (when pass-stderr
+        (send-fd-over-unix-socket
+          (concatenate
+            'string (string #\Null)
+            (take-reply-value (ask-server `(fd-socket))))
+          2)
+        (ask-server `(receive-fd stderr)))
+      (when grab-dri
+        (take-reply-value
+          (ask-server 
+            (with-uid-auth
+              `(grab-devices
+                 ,(loop
+                    for d in (append (list "/dev/dri/card*")
+                                     (when with-pulseaudio (list "/dev/snd/*"))
+                                     grab-devices)
+                    for dl := (directory d)
+                    for dn := (mapcar 'namestring dl)
+                    append dn)
+                 ,name)))))
+      (unwind-protect
+        (prog1
+          (subuser-command-with-x
+            `(,@ launcher-wrappers
+                 ,@(when with-dbus (list *dbus-helper*))
+                 ,@(when with-pulseaudio (list *pulseaudio-helper*))
+                 ,@command)
+            :setup setup
+            :display display :name name
+            :environment
+            `(
+              ,@ environment
+              ,@(when http-proxy
+                  `(
+                    ("proxy"         "http://127.0.0.1:3128")
+                    ("http_proxy"    "http://127.0.0.1:3128")
+                    ("https_proxy"   "http://127.0.0.1:3128")
+                    ("ftp_proxy"     "http://127.0.0.1:3128")
+                    ))
+              ,@(when socks-proxy
+                  `(
+                    ("proxy"         "socks5://127.0.0.1:1080")
+                    ("http_proxy"    "socks5://127.0.0.1:1080")
+                    ("https_proxy"   "socks5://127.0.0.1:1080")
+                    ("ftp_proxy"     "socks5://127.0.0.1:1080")
+                    ("proxy"         "socks5://127.0.0.1:1080")
+                    ("socks_proxy"   "socks5://127.0.0.1:1080")
+                    ("SOCKS_SERVER"  "127.0.0.1")
+                    ("SOCKS_PORT"    "1080")
+                    ("SOCKS_VERSION" "5")
+                    ))
+              ,@(when home `(("HOME" ,home)))
+              ("PATH" ,path)
+              )
+            :options
+            `(
+              ,@(when slay `("slay"))
+              ,@(when wait `("wait"))
+              ("nsjail" "network"
+               ,@(when (or with-pulseaudio full-dev) `("full-dev"))
+               ,@(when (or with-pulseaudio fake-passwd) `("fake-passwd"))
+               ("hostname" ,hostname)
+               ("mounts"
+                (
+                 ,@(when grab-dri `(("-B" "/dev/dri")))
+                 ,@(when mount-sys `(("-B" "/sys")))
+                 ,@ mounts)))
+              ,@(when netns
+                  `(("netns"
+                     (
+                      ,@(when dns `( ((53 :udp)) ((53 :tcp))  ))
+                      ,@(when http-proxy `(((3128 tcp))))
+                      ,@(when socks-proxy `(((1080 tcp))))
+                      ,@network-ports))))
+              ,@(when pass-stdout `(("stdout-fd" "stdout")))
+              ,@(when pass-stderr `(("stderr-fd" "stderr")))
+              )
+            :system-socket *ambient-system-socket*
+            :verbose-errors verbose-errors)
+          (ask-server `(close-received-fds)))))))
 
 (defun subuser-firefox
-  (arguments &key display prefs raw-prefs launcher-wrappers
-             environment marionette-socket home profile-storage name
-             (firefox-launcher *firefox-launcher*) (slay t) (wait t)
-             (netns t) network-ports pass-stderr pass-stdout full-dev
-             mounts system-socket setup hostname grab-devices fake-passwd
-             (path "/var/current-system/sw/bin") verbose-errors mount-sys
-             certificate-overrides dns http-proxy socks-proxy)
+  (arguments
+    &rest options
+    &key prefs raw-prefs (grab-dri t)
+    environment marionette-socket profile-storage name
+    (firefox-launcher *firefox-launcher*) (slay t) (wait t)
+    mounts hostname certificate-overrides socks-proxy)
+  (declare (ignorable options))
   (let*
     (
      (combined-profile
@@ -156,15 +278,15 @@
          :output '(:string :stripped t) :error-output t))
      (name (or name (timestamp-usec-recent-base36)))
      (uid (take-reply-value
-	    (with-system-socket 
-	      ()
-	      (ask-server (with-uid-auth `(subuser-uid ,name))))))
+            (with-system-socket 
+              ()
+              (ask-server (with-uid-auth `(subuser-uid ,name))))))
      (marionette-socket
        (case marionette-socket
-	 ((t)
-	  (getf (subuser-name-and-marionette-socket :name name)
-		:marionette-socket))
-	 (t marionette-socket)))
+         ((t)
+          (getf (subuser-name-and-marionette-socket :name name)
+                :marionette-socket))
+         (t marionette-socket)))
      (hostname
        (or hostname (format nil "~a.~a" (get-current-user-name) name)))
      )
@@ -206,99 +328,34 @@
             collect name collect value)))
       (format nil "~a/prefs.js" combined-profile)
       :if-exists :append)
-    (with-system-socket
-      (system-socket)
-      (when pass-stdout
-        (send-fd-over-unix-socket
-          (concatenate
-            'string (string #\Null)
-            (take-reply-value (ask-server `(fd-socket))))
-          1)
-        (ask-server `(receive-fd stdout)))
-      (when pass-stderr
-        (send-fd-over-unix-socket
-          (concatenate
-            'string (string #\Null)
-            (take-reply-value (ask-server `(fd-socket))))
-          2)
-        (ask-server `(receive-fd stderr)))
-      (take-reply-value
-	(ask-server 
-	  (with-uid-auth
-	    `(grab-devices
-	       ,(loop
-		   for d in (append (list "/dev/dri/card*") grab-devices)
-		   for dl := (directory d)
-		   for dn := (mapcar 'namestring dl)
-		   append dn)
-	       ,name))))
-      (unwind-protect
-        (prog1
-          (subuser-command-with-x
-            `(,@ launcher-wrappers
-              ,firefox-launcher ,@arguments)
-            :setup setup
-            :display display :name name
-            :environment
-            `(
-              ,@ environment
-              ,@(when http-proxy
-                  `(
-                    ("proxy"         "http://127.0.0.1:3128")
-                    ("http_proxy"    "http://127.0.0.1:3128")
-                    ("https_proxy"   "http://127.0.0.1:3128")
-                    ("ftp_proxy"     "http://127.0.0.1:3128")
-                    ))
-              ,@(when socks-proxy
-                  `(
-                    ("proxy"         "socks5://127.0.0.1:1080")
-                    ("socks_proxy"   "socks5://127.0.0.1:1080")
-                    ("SOCKS_SERVER"  "127.0.0.1")
-                    ("SOCKS_PORT"    "1080")
-                    ("SOCKS_VERSION" "5")
-                    ))
-              ("MARIONETTE_SOCKET" ,(or marionette-socket ""))
-              ,@(when home `(("HOME" ,home)))
-              ("FIREFOX_PROFILE" ,combined-profile)
-              ("FIREFOX_PROFILE_KILL" ,(if profile-storage "" "1"))
-              ("PATH" ,path)
-              )
-            :options
-            `(
-              ,@(when slay `("slay"))
-              ,@(when wait `("wait"))
-              ("nsjail" "network"
-               ,@(when full-dev `("full-dev"))
-               ,@(when fake-passwd `("fake-passwd"))
-	       ("hostname" ,hostname)
-               ("mounts"
-                (("-B" ,combined-profile)
-                 ("-B" "/dev/dri")
-		 ,@(when marionette-socket
-		     `(("-B" ,(directory-namestring marionette-socket))))
-                 ,@(when mount-sys `(("-B" "/sys")))
-                 ,@ mounts)))
-              ,@(when netns
-                  `(("netns"
-                     (
-                      ,@(when dns `( ((53 :udp)) ((53 :tcp))  ))
-                      ,@(when http-proxy `(((3128 tcp))))
-                      ,@(when socks-proxy `(((1080 tcp))))
-                      ,@network-ports))))
-              ,@(when pass-stdout `(("stdout-fd" "stdout")))
-              ,@(when pass-stderr `(("stderr-fd" "stderr")))
-              )
-            :system-socket *ambient-system-socket*
-            :verbose-errors verbose-errors)
-          (ask-server `(close-received-fds)))
+    (unwind-protect
+      (apply
+        'subuser-nsjail-x-application
+        (cons firefox-launcher arguments)
+        :name name :grab-dri grab-dri
+        :slay slay :wait wait :hostname hostname
+        :environment
+        `(
+          ,@ environment
+          ("MARIONETTE_SOCKET" ,(or marionette-socket ""))
+          ("FIREFOX_PROFILE" ,combined-profile)
+          ("FIREFOX_PROFILE_KILL" ,(if profile-storage "" "1"))
+          )
+        :mounts
+        `(
+          ("-B" ,combined-profile)
+          ,@(when marionette-socket
+              `(("-B" ,(directory-namestring marionette-socket))))
+          ,@ mounts
+          )
+        options)
+      (ignore-errors
+        (uiop:run-program
+          (list
+            "rm" "-rf" combined-profile)
+          :error-output t))
+      (when marionette-socket
         (ignore-errors
           (uiop:run-program
-            (list
-              "rm" "-rf" combined-profile)
-	    :error-output t))
-	(when marionette-socket
-	  (ignore-errors
-	    (uiop:run-program
-	      (list "rm" "-rf" (directory-namestring marionette-socket))
-	      :error-output t)))
-	))))
+            (list "rm" "-rf" (directory-namestring marionette-socket))
+            :error-output t))))))

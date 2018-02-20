@@ -296,6 +296,7 @@
                       "--rlimit_nofile" "max"
                       "--rlimit_nproc"  "max"
                       "--rlimit_stack"  "max"
+                      "--"
                       ,@ command))
      (lo-up-command `("ip" "link" "set" "lo" "up"))
      (inner-setup

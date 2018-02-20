@@ -42,6 +42,10 @@
      (defmacro ,name ,args ,@code)
      (export ',name (find-package ,(package-name (symbol-package name))))))
 
+(defun ~ (&rest components)
+  (format nil "~a~{/~a~}"
+          ($ :home) components))
+
 (defun-export
   sudo::start-x (&optional (display 0) command)
   (with-system-socket 
@@ -141,7 +145,7 @@
 
 (defmacro
   !su (&rest data)
-  `(apply 'sudo:run
+  `(apply 'sudo::run
      ,(multiple-value-bind
 	(command arguments environment)
 	(lisp-os-helpers/user-abbreviations::split-command data)
@@ -235,7 +239,10 @@
                                                     ($ :home))
                           :profile-contents
                           (format nil "~a/src/nix/lang-os/user/firefox-profile-skel/"
-                                  ($ :home))))
+                                  ($ :home)))
+  (reset-bus-helpers
+    :nix-path (list ($ :home) "/home/repos" (cl-ppcre:split ":" ($ :nix_path)))
+    :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")))
 
 (unless lisp-os-helpers/subuser-x:*firefox-launcher* (update-firefox-launcher))
 
@@ -289,7 +296,7 @@
             (format nil "for-su-from-~a" (get-current-user-name))
             "bash")))
   (&&
-    (sudo:run
+    (sudo::run
       "su" "root" "-l" "-c"
       (collapse-command
         `("env" "--" 
@@ -326,8 +333,8 @@
  (! lisp-shell-server))
 
 (defun full-refresh ()
-  (sudo:system-rebuild)
-  (sudo:restart-system-lisp)
+  (sudo::system-rebuild)
+  (sudo::restart-system-lisp)
   (restart-lisp-shell-server :rebuild t)
   (load-helpers)
   (loadrc)
@@ -353,10 +360,6 @@
                   ,(when dhcp-resolv-conf "use-dhcp-resolv-conf"))
     `(restart-bind))
   (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home))))
-
-(defun ~ (&rest components)
-  (format nil "~a~{/~a~}"
-          ($ :home) components))
 
 (defun
   enter-master-password ()
@@ -428,19 +431,19 @@
                     `(eval ,,code-string))))
 
 (defun grab-sound (&optional name)
-  (sudo:grab-devices `("/dev/snd/*") name))
+  (sudo::grab-devices `("/dev/snd/*") name))
 
 (defun grab-video (&optional name)
-  (sudo:grab-devices `("/dev/video*") name))
+  (sudo::grab-devices `("/dev/video*") name))
 
 (defun grab-for-videochat (&optional name)
-  (sudo:grab-devices `("/dev/video*" "/dev/snd/*") name))
+  (sudo::grab-devices `("/dev/video*" "/dev/snd/*") name))
 
 (defun grab-kvm (&optional name)
-  (sudo:grab-devices `("/dev/kvm") name))
+  (sudo::grab-devices `("/dev/kvm") name))
 
 (defun grab-fuse (&optional name)
-  (sudo:grab-devices `("/dev/fuse") name))
+  (sudo::grab-devices `("/dev/fuse") name))
 
 (defun-export 
   sudo::load-sound (choice)
@@ -448,10 +451,11 @@
                  `(load-sound ,choice)))
 
 (defun grab-default-devices ()
-  (sudo:load-sound "usb")
-  (grab-sound)
+  (sudo::load-sound "usb")
   (grab-kvm)
-  (grab-fuse))
+  (grab-fuse)
+  (sleep 0.2)
+  (grab-sound))
 
 (defmacro define-scoped-shell-command
   (name (command-var &key
