@@ -259,6 +259,17 @@
       (or
         (alexandria:starts-with-subseq "/home/" to)
         (alexandria:starts-with-subseq "/tmp/" to)
+        (not (find
+               (second (cl-ppcre:split "/" to))
+               '(
+                 "bin" "boot" "dev" "etc" "home"
+                 "initrd" "initramfs"
+                 "lost+found" "media"
+                 "mnt" "nix" "proc" "root" "run"
+                 "sys" "tmp" "usr" "var"
+                 "srv" "opt" "net"
+                 )
+               :test 'equalp))
         ))
     ))
 
@@ -307,11 +318,12 @@
 (defun socket-command-server-commands::add-ip-address
   (context interface address
            &optional netmask-length)
-  (or
-    (ignore-errors (require-root context) t)
-    (and
-      (gethash (list (context-uid context) :owner) *user-info*)
-      (require-presence context)))
+  (assert
+    (or
+      (ignore-errors (require-root context) t)
+      (and
+        (gethash (list (context-uid context) :owner) *user-info*)
+        (require-presence context))))
   (add-ip-address interface address (or netmask-length 24)))
 
 (defun socket-command-server-commands::nix-collect-garbage (context)
@@ -322,11 +334,12 @@
 
 (defun socket-command-server-commands::hostname
   (context hostname)
-  (or
-    (ignore-errors (require-root context) t)
-    (and
-      (gethash (list (context-uid context) :owner) *user-info*)
-      (require-presence context)))
+  (assert
+    (or
+      (ignore-errors (require-root context) t)
+      (and
+        (gethash (list (context-uid context) :owner) *user-info*)
+        (require-presence context))))
   (uiop:run-program (list "hostname" hostname)))
 
 (defun socket-command-server-commands::unmount-removable
@@ -345,11 +358,12 @@
   (uiop:run-program (list "wpa_cli" "resume") :ignore-error-status t))
 
 (defun socket-command-server-commands::mount (context device &optional set-user)
-  (or
-    (ignore-errors (require-root context) t)
-    (and
-      (gethash (list (context-uid context) :owner) *user-info*)
-      (require-presence context)))
+  (assert
+    (or
+      (ignore-errors (require-root context) t)
+      (and
+        (gethash (list (context-uid context) :owner) *user-info*)
+        (require-presence context))))
   (let*
     ((target (format nil "/media/~a/" (pathname-name device))))
     (ensure-directories-exist target)
@@ -359,17 +373,20 @@
             `("-o" ,(format nil "uid=~a" (context-uid context))))))))
 
 (defun socket-command-server-commands::unmount (context device)
-  (or
-    (ignore-errors (require-root context) t)
-    (and
-      (gethash (list (context-uid context) :owner) *user-info*)
-      (require-presence context)))
+  (assert
+    (or
+      (ignore-errors (require-root context) t)
+      (and
+        (gethash (list (context-uid context) :owner) *user-info*)
+        (require-presence context))))
   (uiop:run-program (list "umount" device)))
 
 (defun socket-command-server-commands::backup-to (context device)
-  (or
-    (ignore-errors (require-root context) t)
-    (require-presence context))
+  (assert
+    (or
+      (ignore-errors (require-root context) t)
+      (gethash (list (context-uid context) :owner) *user-info*)
+      ))
   (let*
     ((full-path (format nil "/dev/~a" device))
      (media-path (format nil "/media/~a/" device))
@@ -408,11 +425,11 @@
       (t "ok"))))
 
 (defun socket-command-server-commands::tether-android (context)
-  (or
-    (ignore-errors (require-root context) t)
-    (and
+  (assert
+    (or
+      (ignore-errors (require-root context) t)
       (gethash (list (context-uid context) :owner) *user-info*)
-      (require-presence context)))
+      ))
   (let*
     ((user (context-uid context)))
     (uiop:run-program (list "pkill" "adb") :ignore-error-status t)
@@ -424,13 +441,21 @@
       for subcommand in '(30 31 33) do
       (unless (find "usb0" (parsed-ip-address-show)
                     :test 'equal :key (getf-fun :interface-name))
-        (uiop:run-program
-          (list "su" user "-c"
-                (collapse-command
-                  (list "adb" "shell" "su" "-c"
-                        (collapse-command
-                          (list "service" "call"
-                                "connectivity" subcommand "i32" 1))))))
+        (loop
+          with inner-command-list :=
+          (list "service" "call" "connectivity"
+                (format nil "~a" subcommand) "i32" "1")
+          for inner-command in
+          (list
+            (collapse-command inner-command-list)
+            (format nil "~{ ~a~}" inner-command-list)
+            (format nil "'~{ ~a~}'" inner-command-list))
+          do
+          (uiop:run-program
+            (list "su" user "-c"
+                  (collapse-command
+                    (list "adb" "shell" "su" "-c" inner-command)))
+            :ignore-error-status t))
         (sleep 0.1)))
     (when
       (wait (:timeout 1 :sleep 0.1)
@@ -441,11 +466,12 @@
       (add-ip-address "usb0" "192.168.42.130"))))
 
 (defun socket-command-server-commands::load-sound (context choice)
-  (or
-    (ignore-errors (require-root context) t)
-    (and
-      (gethash (list (context-uid context) :owner) *user-info*)
-      (require-presence context)))
+  (assert
+    (or
+      (ignore-errors (require-root context) t)
+      (and
+        (gethash (list (context-uid context) :owner) *user-info*)
+        (require-presence context))))
   (module-remove-recursive "snd")
   (module-remove-recursive "soundcore")
   (module-remove-recursive "snd-hda-core")

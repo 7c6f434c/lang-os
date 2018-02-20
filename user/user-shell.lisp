@@ -278,8 +278,8 @@
     `(
       ,@ mounts
       ,@ (when file `(("-B" ,file)))
-      ,@ (when data `(("-B" ,data "/data")))
-      ,@ (when data-ro `(("-R" ,data-ro "/data-ro")))
+      ,@ (when data `(("-B" ,data "/_data")))
+      ,@ (when data-ro `(("-R" ,data-ro "/_data-ro")))
       )
     :marionette-socket marionette-socket
     :allow-other-keys t
@@ -505,3 +505,15 @@
       "list"
       (loop for device in devices
             collect `(unmount ,@(if (stringp device) (list device) device))))))
+
+(defun-export
+  sudo::tether-android ()
+  (ask-with-auth
+    ()
+    `(tether-android)))
+
+(defun-export
+  sudo::backup-to (target)
+  (ask-with-auth
+    ()
+    `(backup-to ,target)))
