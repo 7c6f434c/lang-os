@@ -1,2 +1,3 @@
 #! /bin/sh
-rlwrap -c -e '' -b "'\"" -C user-lisp-shell "$@"
+touch ~/.user-lisp-shell_history
+rlwrap -f . -c -e '' -b "'\"() " -q "\"" -C user-lisp-shell "$@"

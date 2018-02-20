@@ -40,13 +40,6 @@
 	   ()
 	   (ask-server (with-uid-auth `(subuser-uid ,name))))))
      (x-socket (format nil "/tmp/.X11-unix/X~a" display))
-     (options
-       (append
-         options
-         (unless (find "nsjail" options
-                       :test 'equal :key
-                       (lambda (x) (and (listp x) (first x))))
-           `(("nsjail" ("mounts"))))))
      )
     (uiop:run-program
       (list "setfacl" "-m" (format nil "u:~a:rw" uid)
@@ -153,7 +146,8 @@
              (firefox-launcher *firefox-launcher*) (slay t) (wait t)
              (netns t) network-ports pass-stderr pass-stdout full-dev
              mounts system-socket setup hostname grab-devices fake-passwd
-             (path "/var/current-system/sw/bin") verbose-errors mount-sys)
+             (path "/var/current-system/sw/bin") verbose-errors mount-sys
+             certificate-overrides dns http-proxy socks-proxy)
   (let*
     (
      (combined-profile
@@ -174,11 +168,44 @@
      (hostname
        (or hostname (format nil "~a.~a" (get-current-user-name) name)))
      )
+    (when certificate-overrides
+      (alexandria:write-string-into-file
+        (alexandria:read-file-into-string certificate-overrides)
+        (format nil "~a/cert_override.txt" combined-profile)
+        :if-exists :append :if-does-not-exist :create))
     (uiop:run-program
       (list "setfacl" "-R" "-m" (format nil "u:~a:rwX" uid) combined-profile)
       :error-output t)
     (uiop:run-program
       (list "chmod" "-R" "u=rwX" combined-profile) :error-output t)
+    (alexandria:write-string-into-file
+      (format
+        nil "~{user_pref(\"~a\",~a);~%~}"
+        (append
+          (loop 
+            for pair in
+            `(
+              ,@ prefs
+              ,@ (when socks-proxy
+                   `(
+                     ("network.proxy.socks" "127.0.0.1")
+                     ("network.proxy.socks_port" ,socks-proxy)
+                     ("network.proxy.socks_version" 5)
+                     ("network.proxy.type" 1)
+                     ))
+              )
+            for name := (first pair)
+            for value := (second pair)
+            for representation :=
+            (firefox-pref-value-js value)
+            collect name collect representation)
+          (loop
+            for pair in raw-prefs
+            for name := (first pair)
+            for value := (second pair)
+            collect name collect value)))
+      (format nil "~a/prefs.js" combined-profile)
+      :if-exists :append)
     (with-system-socket
       (system-socket)
       (when pass-stdout
@@ -215,26 +242,25 @@
             :environment
             `(
               ,@ environment
+              ,@(when http-proxy
+                  `(
+                    ("proxy"         "http://127.0.0.1:3128")
+                    ("http_proxy"    "http://127.0.0.1:3128")
+                    ("https_proxy"   "http://127.0.0.1:3128")
+                    ("ftp_proxy"     "http://127.0.0.1:3128")
+                    ))
+              ,@(when socks-proxy
+                  `(
+                    ("proxy"         "socks5://127.0.0.1:1080")
+                    ("socks_proxy"   "socks5://127.0.0.1:1080")
+                    ("SOCKS_SERVER"  "127.0.0.1")
+                    ("SOCKS_PORT"    "1080")
+                    ("SOCKS_VERSION" "5")
+                    ))
               ("MARIONETTE_SOCKET" ,(or marionette-socket ""))
               ,@(when home `(("HOME" ,home)))
               ("FIREFOX_PROFILE" ,combined-profile)
-	      ("FIREFOX_PROFILE_KILL" ,(if profile-storage "" "1"))
-              ("FIREFOX_EXTRA_PREFS"
-               ,(format
-                  nil "~{user_pref(\"~a\",~a);~%~}"
-                  (append
-                    (loop 
-                      for pair in prefs
-                      for name := (first pair)
-                      for value := (second pair)
-                      for representation :=
-                      (firefox-pref-value-js value)
-                      collect name collect representation)
-                    (loop
-                      for pair in raw-prefs
-                      for name := (first pair)
-                      for value := (second pair)
-                      collect name collect value))))
+              ("FIREFOX_PROFILE_KILL" ,(if profile-storage "" "1"))
               ("PATH" ,path)
               )
             :options
@@ -252,7 +278,13 @@
 		     `(("-B" ,(directory-namestring marionette-socket))))
                  ,@(when mount-sys `(("-B" "/sys")))
                  ,@ mounts)))
-              ,@(when netns `(("netns" ,network-ports)))
+              ,@(when netns
+                  `(("netns"
+                     (
+                      ,@(when dns `( ((53 :udp)) ((53 :tcp))  ))
+                      ,@(when http-proxy `(((3128 tcp))))
+                      ,@(when socks-proxy `(((1080 tcp))))
+                      ,@network-ports))))
               ,@(when pass-stdout `(("stdout-fd" "stdout")))
               ,@(when pass-stderr `(("stderr-fd" "stderr")))
               )

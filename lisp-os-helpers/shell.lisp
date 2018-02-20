@@ -9,6 +9,12 @@
     #:*line-break-regexpr*
     #:add-command-env
     #:collapse-command
+    #:file-lines
+    #:overwrite-file
+    #:grant-acl
+    #:make-temporary-fifo
+    #:wait-on-fifo
+    #:add-command-fifo-fd
     ))
 
 (in-package :lisp-os-helpers/shell)
@@ -67,6 +73,19 @@
         stdout)
       result)))
 
+(defun file-lines (filename)
+  (cl-ppcre:split
+    *line-break-regexpr*
+    (string-right-trim
+      '(#\Newline #\Return)
+      (alexandria:read-file-into-string filename))))
+
+(defun overwrite-file (string filename)
+  (with-open-file (f filename :direction :output
+                     :external-format :utf-8
+                     :if-exists :overwrite :element-type 'character)
+    (format f "~a" string)))
+
 (defun add-command-env (command env &key (env-helper "env"))
   (let*
     ((prefix
@@ -92,3 +111,42 @@
 (defun collapse-command (command)
   (if (stringp command) command
     (format nil "~{~a ~}" (mapcar 'escape-for-shell command))))
+
+(defun grant-acl (user file &key recursive (mode "rwX") (mask nil))
+  (uiop:run-program
+    `("setfacl" "-m" ,(format nil "u:~a:~a" user mode)
+      ,@(when recursive `("-R"))
+      ,@(if mask (mapcar 'namestring (directory file)) `(,file)))))
+
+(defun make-temporary-fifo (&optional (mode #o600))
+  (let*
+    ((fifo-directory
+       (format nil "/run/user/~a/lock-fifos/~a/"
+               (iolib/syscalls:getuid) (iolib/syscalls:getpid)))
+     (fifo-real-dir
+       (progn
+         (ensure-directories-exist fifo-directory)
+         (uiop:run-program
+           (list "mktemp" "-d" "-p" fifo-directory)
+           :output '(:string :stripped t))))
+     (fifo (format nil "~a/lock-fifo" fifo-real-dir)))
+    (iolib/syscalls:mkfifo fifo mode)
+    fifo))
+
+(defun wait-on-fifo (fifo &key (remove t))
+  (unwind-protect
+    (with-open-file (f fifo)
+      (read-char f nil nil))
+    (when remove
+      (ignore-errors
+        (uiop:run-program
+          (list "rm" "-rf"
+                (directory-namestring fifo))))))
+  t)
+
+(defun add-command-fifo-fd (command fifo &optional (fd 14))
+  (list
+    "/bin/sh" "-c"
+    (format nil "exec ~a<>~a; ~a"
+            fd (escape-for-shell fifo)
+            (collapse-command command))))

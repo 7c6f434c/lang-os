@@ -46,11 +46,15 @@
       while (not (equal (second reply) marker)))))
 
 (defun ask-server (form &key (socket *ambient-system-socket*))
-  (let
-    ((socket (coerce-to-socket-stream socket)))
-    (skip-server-messages socket)
-    (send-to-server socket form)
-    (read-from-server socket)))
+  (let*
+    ((close-socket-p (not (streamp socket)))
+     (socket (coerce-to-socket-stream socket)))
+    (unwind-protect
+      (progn
+        (skip-server-messages socket)
+        (send-to-server socket form)
+        (read-from-server socket))
+      (when close-socket-p (close socket)))))
 
 (defun coerce-to-socket-stream (socket)
   (etypecase socket
@@ -62,9 +66,14 @@
     (null (coerce-to-socket-stream *system-lisp-socket*))))
 
 (defmacro with-system-socket ((&optional socket) &body body)
-  `(let*
-     ((*ambient-system-socket* (coerce-to-socket-stream ,socket)))
-     ,@body))
+  `(unwind-protect
+     (let*
+       ((*ambient-system-socket* (coerce-to-socket-stream ,socket)))
+       (unwind-protect
+         (progn
+           ,@body)
+         (unless (streamp ,socket)
+           (close *ambient-system-socket*))))))
 
 (defun get-current-user-name ()
   (iolib/syscalls:getpwuid (iolib/syscalls:getuid)))

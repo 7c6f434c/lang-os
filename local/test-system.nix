@@ -129,6 +129,7 @@ pkgs.lib.makeExtensible (self: with self; {
         { name = "su"; src="${pkgs.shadow.su}/bin/su"; setuid=true; }
         { name = "unix_chkpwd"; src="${pkgs.pam}/bin/unix_chkpwd.orig"; setuid=true; }
         { name = "fusermount"; src="${pkgs.fuse}/bin/fusermount"; setuid=true; }
+        { name = "fusermount3"; src="${pkgs.fuse3}/bin/fusermount3"; setuid=true; }
       ];
     };
     sw = pkgs.buildEnv rec {

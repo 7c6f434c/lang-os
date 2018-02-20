@@ -1,5 +1,6 @@
 (defpackage :lisp-os-helpers/fbterm-requests
-  (:use :common-lisp :lisp-os-helpers/vt :lisp-os-helpers/file-locks :lisp-os-helpers/shell)
+  (:use :common-lisp :lisp-os-helpers/vt :lisp-os-helpers/file-locks
+        :lisp-os-helpers/shell)
   (:export
     #:*fb-device*
     #:*fbterm-settings*
@@ -47,10 +48,7 @@
       (uiop:run-program
         (list "chmod" "u=rw,og="
               (namestring value-path) (namestring value-path)))
-      (uiop:run-program (list "/bin/sh" "-c"
-                              (format nil "echo '~{~%~a~}'" 
-                                      (make-list 1000 :initial-element "")))
-                        :input vtdev :output vtdev)
+      (overwrite-file (make-string 1000 :initial-element #\Newline) vtdev)
       (let*
         (
          (script
@@ -113,7 +111,7 @@
       :vt-lock-helper vt-lock-helper
       :vt-lock-directory vt-lock-directory
       :file-lock-helper file-lock-helper)
-    (kill-vt-users vtn)
+    (overwrite-file "k" "/proc/sysrq-trigger")
     (let*
       ((vtdev (format nil "/dev/tty~d" vtn)))
       (unless

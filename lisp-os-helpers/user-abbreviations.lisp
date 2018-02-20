@@ -83,7 +83,7 @@
 	for e in l
 	for lt on l
 	for parameter := nil then parameter-next
-	for parameter-next := (and (not parameter) (not environment-entry) (keywordp e))
+	for parameter-next := (and (not parameter) (keywordp e))
 	for environment-entry := nil then environment-next
 	for environment-next := (equal e :=)
 	do
@@ -267,18 +267,19 @@
 	      (ignore-errors
 		(bordeaux-threads:make-thread
 		  (lambda ()
-		    (loop
-		      for form := (read client-socket nil nil)
-		      while form
-		      do (format client-socket "~s~%"
-				 (eval
-				   `(let
-				      ((client-socket ,client-socket))
-				      client-socket
-				      ,form)))
-		      do (finish-output client-socket)
-		      do (sleep 0.05))
-		    (ignore-errors (close client-socket)))
+                    (unwind-protect
+                      (loop
+                        for form := (read client-socket nil nil)
+                        while form
+                        do (format client-socket "~s~%"
+                                   (eval
+                                     `(let
+                                        ((client-socket ,client-socket))
+                                        client-socket
+                                        ,form)))
+                        do (finish-output client-socket)
+                        do (sleep 0.05))
+                      (ignore-errors (close client-socket))))
 		  :name "User socket evaluator connection handler")))
 	    ))
 	:name "User socket evaluator"))))

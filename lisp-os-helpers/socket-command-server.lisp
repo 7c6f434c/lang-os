@@ -308,18 +308,6 @@
                (funcall context :fd-socket-fd-plist)))
     fd))
 
-(defun socket-command-server-commands::set-brightness (context n)
-  (unless (ignore-errors (require-root context) t)
-    (require-presence context))
-  (let*
-    ((f
-       (loop
-         for name in
-         (list "intel_backlight" "acpi_backlight" "acpi_backlight0" "nv_backlight" "radeon_backlight")
-         for file := (format nil "/sys/class/backlight/~a/brightness" name)
-         when (probe-file file) return file
-         finally (return (first (directory "/sys/class/backlight/*/brightness"))))))
-    (alexandria:write-string-into-file (format nil "~a" n) f :if-exists :overwrite)))
 (defun socket-command-server-commands::system-shutdown (context)
   (unless (ignore-errors (require-root context) t)
     (require-presence context))

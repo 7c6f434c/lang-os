@@ -8,6 +8,7 @@
 	:lisp-os-helpers/util
 	:lisp-os-helpers/auth-data
 	:lisp-os-helpers/fbterm-requests
+	:lisp-os-helpers/kernel
 	)
   (:export
     #:start-x-allowed-p
@@ -189,3 +190,8 @@
 	    (assert (equal first second))
 	    first)))
     (error "Password change failed for ~a" (context-uid context))))
+
+(defun socket-command-server-commands::set-brightness (context n)
+  (unless (ignore-errors (require-root context) t)
+    (require-presence context))
+  (set-brightness n))

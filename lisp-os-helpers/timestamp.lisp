@@ -8,6 +8,8 @@
     #:timestamp-base63
     #:*recency-epoch*
     #:timestamp-usec-recent-base36
+    #:wait
+    #:timestamp-numeric-nsec
     ))
 (in-package :lisp-os-helpers/timestamp)
 
@@ -21,12 +23,7 @@
     nil (local-time:now)
     :format `((:year 4) (:month 2) (:day 2) #\- (:hour 2) (:min 2) (:sec 2) #\. (:usec 6))))
 
-(defun timestamp-nsec ()
-  (local-time:format-timestring
-    nil (local-time:now)
-    :format `((:year 4) (:month 2) (:day 2) #\- (:hour 2) (:min 2) (:sec 2) #\. (:nsec 9))))
-
-(defun timestamp-nsec-base36 ()
+(defun timestamp-numeric-nsec ()
   (let*
     (
      (tnow (local-time:now))
@@ -34,7 +31,15 @@
      (nsecs (local-time:nsec-of tnow))
      (n (+ nsecs (* secs (expt 10 9))))
      )
-    (format nil "~36,13,'0r" (truncate n))))
+    n))
+
+(defun timestamp-nsec ()
+  (local-time:format-timestring
+    nil (local-time:now)
+    :format `((:year 4) (:month 2) (:day 2) #\- (:hour 2) (:min 2) (:sec 2) #\. (:nsec 9))))
+
+(defun timestamp-nsec-base36 ()
+    (format nil "~36,13,'0r" (truncate (timestamp-numeric-nsec))))
 
 (defun format-number-with (n alphabet &optional (l 1))
   (map
@@ -76,3 +81,14 @@
      )
     (string-downcase (format nil "~36,10,'0r" (truncate n)))))
 
+(defmacro wait ((&key (timeout 15) (sleep 0.1)) &rest code)
+  (let*
+    ((start-time (gensym))
+     (success (gensym)))
+    `(loop
+       with ,start-time := (timestamp-numeric-nsec)
+       for ,success := (progn ,@code)
+       when ,success return ,success
+       while (<= (- (timestamp-numeric-nsec) ,start-time)
+                 (* (expt 10 9) ,timeout))
+       do (sleep ,sleep))))

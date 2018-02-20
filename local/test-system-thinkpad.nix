@@ -14,5 +14,6 @@
 
   swPackages = super.swPackages ++ (with self.pkgs; [
     zsh python xterm mlterm expect firmwareLinuxNonfree
+    androidenv.androidsdk_4_2 
   ]);
 })

@@ -27,6 +27,8 @@
 (use-package :lisp-os-helpers/socket-command-definitions)
 (use-package :lisp-os-helpers/auth-data)
 (use-package :lisp-os-helpers/kernel)
+(use-package :lisp-os-helpers/util)
+(use-package :lisp-os-helpers/timestamp)
 
 (unless *socket-main-thread-preexisting*
   (format t "Starting the Common Lisp system daemon at ~a~%" (local-time:now)))
@@ -219,7 +221,8 @@
             collect "-I" collect path)))
     :error-output t))
 
-(defun socket-command-server-commands::wpa-supplicant-status (interface)
+(defun socket-command-server-commands::wpa-supplicant-status (context interface)
+  (declare (ignorable context))
   (loop
     for data := (wpa-supplicant-status interface) then (cddr data)
     for key := (first data)
@@ -263,18 +266,32 @@
   context
   (modprobe "iwlwifi"))
 
-(defun socket-command-server-commands::ensure-wifi (context interface &optional (dhclient t))
+(defun socket-command-server-commands::ensure-wifi
+  (context interface &rest options)
   (require-presence context)
+  (unless
+    (find-if (lambda (x)
+               (alexandria:starts-with-subseq
+                 "wlan" (getf x :interface-name)))
+             (parsed-ip-address-show))
+    (module-remove "iwlwifi"))
   (modprobe "iwlwifi")
+  (when (find "restart" options :test 'equalp)
+    (stop-wpa-supplicant interface))
   (ensure-wpa-supplicant interface "/root/src/rc/wpa_supplicant.conf")
   (unless
     (wpa-supplicant-wait-connection interface)
     (error "WiFi connection failed on ~a" interface))
-  (when dhclient
+  (unless (find "no-dhcp" options :test 'equalp)
     (run-link-dhclient interface)
-    (when (equalp dhclient "use-resolv-conf")
+    (when (find "use-dhcp-resolv-conf" options :test 'equalp)
       (dhcp-resolv-conf)))
   "OK")
+
+(defun socket-command-server-commands::kill-wifi
+  (context interface)
+  (require-presence context)
+  (stop-wpa-supplicant interface))
 
 (defun socket-command-server-commands::local-resolv-conf (context)
   (require-presence context)
@@ -286,6 +303,187 @@
   (append
     lisp-os-helpers/fbterm-requests:*fbterm-settings*
     `((:font-size ,25))))
+
+(defun socket-command-server-commands::add-ip-address
+  (context interface address
+           &optional netmask-length)
+  (or
+    (ignore-errors (require-root context) t)
+    (and
+      (gethash (list (context-uid context) :owner) *user-info*)
+      (require-presence context)))
+  (add-ip-address interface address (or netmask-length 24)))
+
+(defun socket-command-server-commands::nix-collect-garbage (context)
+  (or
+    (ignore-errors (require-root context) t)
+    (require-presence context))
+  (uiop:run-program (list "nix-collect-garbage" "-d")))
+
+(defun socket-command-server-commands::hostname
+  (context hostname)
+  (or
+    (ignore-errors (require-root context) t)
+    (and
+      (gethash (list (context-uid context) :owner) *user-info*)
+      (require-presence context)))
+  (uiop:run-program (list "hostname" hostname)))
+
+(defun socket-command-server-commands::unmount-removable
+  (context)
+  (or
+    (ignore-errors (require-root context) t)
+    (require-presence context))
+  (unmount-removable))
+
+(defun socket-command-server-commands::power-state (context state)
+  (or
+    (ignore-errors (require-root context) t)
+    (require-presence context))
+  (uiop:run-program (list "wpa_cli" "suspend") :ignore-error-status t)
+  (power-state (intern (string-upcase state) :keyword))
+  (uiop:run-program (list "wpa_cli" "resume") :ignore-error-status t))
+
+(defun socket-command-server-commands::mount (context device &optional set-user)
+  (or
+    (ignore-errors (require-root context) t)
+    (and
+      (gethash (list (context-uid context) :owner) *user-info*)
+      (require-presence context)))
+  (let*
+    ((target (format nil "/media/~a/" (pathname-name device))))
+    (ensure-directories-exist target)
+    (uiop:run-program
+      `("mount" ,device ,target
+        ,@(when set-user
+            `("-o" ,(format nil "uid=~a" (context-uid context))))))))
+
+(defun socket-command-server-commands::unmount (context device)
+  (or
+    (ignore-errors (require-root context) t)
+    (and
+      (gethash (list (context-uid context) :owner) *user-info*)
+      (require-presence context)))
+  (uiop:run-program (list "umount" device)))
+
+(defun socket-command-server-commands::backup-to (context device)
+  (or
+    (ignore-errors (require-root context) t)
+    (require-presence context))
+  (let*
+    ((full-path (format nil "/dev/~a" device))
+     (media-path (format nil "/media/~a/" device))
+     (backup-path (format nil "~a/backup/" media-path))
+     (marker-path (format nil "~a/auto-backup-here" backup-path))
+     )
+    (cond
+      ((not (cl-ppcre:scan "^sd[b-z][1-9]$" device)) "wrong-device-name")
+      ((not (ignore-errors (modprobe "uas") (modprobe "usb-storage") t))
+       "modprobe-failure")
+      ((not (probe-file full-path)) "no-device")
+      ((not (prog1
+              (ignore-errors
+                (and
+                  (ignore-errors
+                    (ensure-directories-exist media-path)
+                    (uiop:run-program 
+                      (list "mount" full-path media-path)
+                      :error-output
+                      (format nil "/tmp/backup-mount-~a.log" device)
+                      )
+                    t)
+                  (probe-file media-path)
+                  (probe-file marker-path)
+                  (ignore-errors
+                    (uiop:run-program
+                      (list "/root/script/backup_notebook" backup-path)
+                      :output
+                      (format nil "/tmp/backup-~a.log" device)
+                      :error-output :output)
+                    t)
+                  ))
+              (ignore-errors (uiop:run-program (list "umount" full-path)))
+              (ignore-errors (uiop:run-program (list "umount" media-path)))
+              )) "backup-failed")
+      (t "ok"))))
+
+(defun socket-command-server-commands::tether-android (context)
+  (or
+    (ignore-errors (require-root context) t)
+    (and
+      (gethash (list (context-uid context) :owner) *user-info*)
+      (require-presence context)))
+  (let*
+    ((user (context-uid context)))
+    (uiop:run-program (list "pkill" "adb") :ignore-error-status t)
+    (modprobe "cdc-ether")
+    (modprobe "rndis-host")
+    (sleep 0.3)
+    (grant-acl user "/dev/bus/usb/" :recursive t)
+    (loop
+      for subcommand in '(30 31 33) do
+      (unless (find "usb0" (parsed-ip-address-show)
+                    :test 'equal :key (getf-fun :interface-name))
+        (uiop:run-program
+          (list "su" user "-c"
+                (collapse-command
+                  (list "adb" "shell" "su" "-c"
+                        (collapse-command
+                          (list "service" "call"
+                                "connectivity" subcommand "i32" 1))))))
+        (sleep 0.1)))
+    (when
+      (wait (:timeout 1 :sleep 0.1)
+            (find "usb0" (parsed-ip-address-show)
+                  :test 'equal :key (getf-fun :interface-name))
+            )
+      (enable-ip-link "usb0")
+      (add-ip-address "usb0" "192.168.42.130"))))
+
+(defun socket-command-server-commands::load-sound (context choice)
+  (or
+    (ignore-errors (require-root context) t)
+    (and
+      (gethash (list (context-uid context) :owner) *user-info*)
+      (require-presence context)))
+  (module-remove-recursive "snd")
+  (module-remove-recursive "soundcore")
+  (module-remove-recursive "snd-hda-core")
+  (module-remove-recursive "snd-hda-intel")
+  (module-remove-recursive "snd-usb-audio")
+  (modprobe "snd-pcm")
+  (modprobe "snd-hda-codec-conexant")
+  (cond
+    ((equal choice "usb")
+     (modprobe "snd-usb-audio")
+     (modprobe "snd-hda-intel" "index=1"))
+    ((equal choice "none"))
+    ((or
+       (equal choice "built-in")
+       (equal choice "intel")
+       (equal choice ""))
+      (modprobe "snd-hda-intel")
+      (modprobe "snd-usb-audio")))
+  (or choice "OK"))
+
+(defun socket-command-server-commands::storage-modules (context)
+  (declare (ignorable context))
+  (modprobe "uas")
+  (modprobe "usb-storage")
+  (modprobe "mmc-block"))
+
+(defun socket-command-server-commands::usb-eth-modules (context)
+  (declare (ignorable context))
+  (modprobe "asix")
+  (modprobe "ax88179_178a")
+  (modprobe "smsc75xx")
+  (modprobe "cdc-ether")
+  (modprobe "rndis-host"))
+
+(defun socket-command-server-commands::usb-hid-modules (context)
+  (declare (ignorable context))
+  (modprobe "usbhid")
+  (modprobe "hid_generic"))
 
 (unless
   *socket-main-thread-preexisting*

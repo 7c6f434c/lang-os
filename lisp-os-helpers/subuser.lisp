@@ -115,9 +115,13 @@
     (uid)
     (select-subuser user :uid uid :name name)
     (when uid
-      (run-program-return-success
-	(uiop:run-program
-	  `("pkill" "-u" ,(format nil "~a" uid) "-KILL"))))))
+      (uiop:run-program
+        `("pkill" "-U" ,(format nil "~a" uid) "-KILL")
+        :ignore-error-status t)
+      (uiop:run-program
+        `("pkill" "-u" ,(format nil "~a" uid) "-KILL")
+        :ignore-error-status t)
+      )))
 
 (defun drop-subuser (user &key uid name slay)
   (multiple-value-bind
@@ -239,9 +243,11 @@
 
 (defun add-command-netns (command &key ports-out uid gid (directory "/")
 				  (path "/var/current-system/sw/bin"))
+  (ensure-directories-exist "/tmp/subuser-homes/")
   (let* 
     ((*print-right-margin* (expt 10 9))
-     (tmpdir (uiop:run-program "mktemp -d -p /tmp" :output '(:string :stripped t)))
+     (tmpdir (uiop:run-program "mktemp -d -p /tmp/subuser-homes/"
+                               :output '(:string :stripped t)))
      (mkdir-command (list "mkdir" "-p" tmpdir))
      (clean-dir-command (list "rm" "-rf" tmpdir))
      (socat-commands
