@@ -7,7 +7,7 @@
   (:export
     #:! #:!! #:& #:&& #:>> #:$ #:$=
     #:editor #:periodically
-    #:cd #:ls #:ls* #:ps
+    #:cd #:cwd #:ls #:ls* #:ps
     #:build-shell
     #:create-eval-socket
     #:>file
@@ -194,6 +194,8 @@
 (defun cd (&optional dir)
   (uiop:chdir (or dir ($ "HOME")))
   (setf *default-pathname-defaults* (pathname (uiop:getcwd))))
+
+(defun cwd () (namestring (uiop:getcwd)))
 
 (defun ls (&optional name &rest args)
   (mapcar

@@ -52,7 +52,9 @@ pkgs.lib.makeExtensible (self: with self; {
                 ${command}
           done
   '';
-  
+ 
+  systemFonts = [];
+
   NixOSXConfig = {
              fonts.fonts = [];
              hardware.opengl.driSupport = true;
@@ -206,6 +208,8 @@ pkgs.lib.makeExtensible (self: with self; {
 
   sessionVariables = {};
 
+  fontconfigConfPackages = [];
+
   systemEtc = pkgs.buildEnv {
     name = "system-etc";
     paths = [
@@ -229,10 +233,12 @@ pkgs.lib.makeExtensible (self: with self; {
       (etcPieces.deeplinkAttrset "etc-fonts"
        (fromNixOS.etcSelectComponent "fonts" {
           fonts = {
+            fonts = systemFonts;
             enableDefaultFonts = true;
             fontconfig = {
               enable = true;
               hinting.autohint = true;
+              confPackages = fontconfigConfPackages;
             };
           };
         }))

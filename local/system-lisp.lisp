@@ -136,13 +136,16 @@
     "User presence not confirmed"
     (require-root context)
     (require-presence context))
-  (if
-    (ignore-errors (uiop:run-program (list "udevadm" "control" "--exit")))
-    (progn
-      (system-service "" "udevd")
-      "OK")
-    (error "Stopping udevd failed")
-    ))
+  (ignore-errors
+    (uiop:run-program
+      (list "udevadm" "control" "--exit")
+      :error-output t :output t))
+  (ignore-errors (uiop:run-program (list "pkill" "udevd")))
+  (progn
+    (system-service "" "udevd")
+    (sleep 0.5)
+    (uiop:run-program (list "pgrep" "udev"))
+    "OK"))
 
 (defun socket-command-server-commands::restart-openssh (context)
   (require-presence context)
@@ -293,6 +296,15 @@
 (defun socket-command-server-commands::wifi-modules (context)
   context
   (modprobe "iwlwifi"))
+
+(defun socket-command-server-commands::reload-video-modules (context)
+  (require-or
+    "Owner user not confirmed"
+    (require-root)
+    (assert (gethash (list (context-uid context) :owner) *user-info*)))
+  (loop for m in `("i915" "nouveau" "radeon")
+        do (ignore-errors (module-remove m))
+        do (modprobe m)))
 
 (defun socket-command-server-commands::ensure-wifi
   (context interface &rest options)

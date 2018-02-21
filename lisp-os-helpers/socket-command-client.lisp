@@ -25,6 +25,7 @@
       (if (equal (symbol-package form) (find-package :keyword))
         (string-downcase (symbol-name form))
         (symbol-name form)))
+    (pathname (namestring form))
     (cons
       (cons
         (symbols-to-string (car form))

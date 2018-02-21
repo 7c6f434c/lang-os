@@ -25,6 +25,12 @@
 (defvar *dbus-helper* nil)
 (defvar *pulseaudio-helper* nil)
 
+(defun absolutise-command (command)
+  (if (listp (first command))
+    (cons (namestring (truename (which (first (first command)))))
+          (rest command))
+    command))
+
 (defun
   subuser-command-with-x
   (command 
@@ -63,7 +69,7 @@
 	  (with-uid-auth
 	    `(run-as-subuser
 	       ,name
-	       ,command
+	       ,(absolutise-command command)
 	       (,@environment
 		 ("DISPLAY" ,(format nil ":~a" display)))
 	       ,(loop
@@ -246,7 +252,7 @@
                ("mounts"
                 (
                  ,@(when grab-dri `(("-B" "/dev/dri")))
-                 ,@(when mount-sys `(("-B" "/sys")))
+                 ,@(when (or mount-sys grab-dri) `(("-B" "/sys")))
                  ,@ mounts)))
               ,@(when netns
                   `(("netns"

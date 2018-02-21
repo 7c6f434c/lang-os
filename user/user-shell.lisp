@@ -55,7 +55,11 @@
         (with-uid-auth 
 	  (with-presence-auth
 	    "X11 session"
-	    `(start-x ,display)))))
+	    `(list
+               ,@(unless (probe-file "/dev/dri/card1")
+                   `((reload-video-modules)))
+               (restart-udevd)
+               (start-x ,display))))))
     (when command
       (uiop:run-program
 	(add-command-env
@@ -233,6 +237,15 @@
         "Set screen brightness"
         `(set-brightness ,brightness)))))
 
+(defun-export
+  sudo::set-cpu-frequency (freq)
+  (with-system-socket
+    ()
+    (ask-server
+      (with-presence-auth
+        "Set CPU frequency"
+        `(set-cpu-frequency ,freq)))))
+
 (defun update-firefox-launcher ()
   (reset-firefox-launcher :nix-path (list ($ :home) "/home/repos")
                           :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
@@ -363,6 +376,7 @@
 
 (defun
   enter-master-password ()
+  (grab-fuse)
   (!! enter-master-password)
   (wait (:timeout 300 :sleep 1)
         (probe-file
@@ -496,3 +510,40 @@
   (ask-with-auth
     ()
     `(backup-to ,target)))
+
+(defun standby
+  (&key (state "mem") (sync t) (forget-secrets t) im-offline (re-wifi t) (randr t) kill-my-x x-lock)
+  (when x-lock (! := (:display (or ($ :display) ":0")) xscreensaver-command -lock))
+  (! sh -c "echo 5 > ~/.watchperiod")
+  (when sync (& sync))
+  (when im-offline (! im-offline))
+  (when randr (! := (:display (or ($ :display) ":0")) x-randr-options))
+  (when forget-secrets (! forget-secrets))
+  (when kill-my-x (! pkill "Xorg"))
+  (when sync (! sync))
+  (ignore-errors (ask-with-auth (:presence t) `(power-state ,state)))
+  (sleep 5)
+  (when randr (& := (:display (or ($ :display) ":0")) x-randr-options))
+  (when re-wifi (sudo::rewifi)))
+
+(defun boot-login-init ()
+  (sudo::hostname "localhost")
+  (&& (sudo::rewifi))
+  (! queryfs-session-run detach)
+  (sudo::set-brightness 50)
+  (sudo::set-cpu-frequency 2690)
+  (grab-default-devices))
+
+(defun true-executable (f)
+  (namestring (truename (which f))))
+
+(defun gvim-plus-zathura (file)
+  (let*
+    ((fullname (namestring (truename file)))
+     (directory (directory-namestring fullname))
+     (pdfname (cl-ppcre:regex-replace "([.][^.]*)?$" fullname ".pdf")))
+    (&& (subuser-nsjail-x-application
+          (list (true-executable "zathura") pdfname)
+          :mounts `(("-R" ,directory))
+          :pass-stderr t :grab-dri t))
+    (& gvim (or fullname) :error-output *error-output*)))
