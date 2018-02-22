@@ -171,13 +171,20 @@
   (command
     &key display
     environment home name
-    (slay t) (wait t) (netns t) network-ports
+    (slay t) (wait t) (netns t) network-ports grant
     pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
     mounts system-socket setup hostname grab-devices fake-passwd
     (path "/var/current-system/sw/bin") verbose-errors mount-sys
     dns http-proxy socks-proxy with-dbus with-pulseaudio)
   (let*
-    ((name (or name (timestamp-usec-recent-base36))))
+    ((name (or name (timestamp-usec-recent-base36)))
+     (uid 
+       (take-reply-value
+         (with-system-socket
+           ()
+           (ask-server
+             (with-uid-auth
+               `(subuser-uid ,name)))))))
     (with-system-socket
       (system-socket)
       (when pass-stdout
@@ -207,6 +214,11 @@
                     for dn := (mapcar 'namestring dl)
                     append dn)
                  ,name)))))
+      (loop
+        for g in grant
+        do
+        (uiop:run-program
+          (list "setfacl" "-R" "-m" (format nil "u:~a:rwX" uid) g)))
       (unwind-protect
         (prog1
           (subuser-command-with-x

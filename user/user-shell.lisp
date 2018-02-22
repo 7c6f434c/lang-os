@@ -1,3 +1,4 @@
+; vim:filetype=lisp
 (defun load-helpers ()
   (require :sb-posix)
   (require :sb-bsd-sockets)
@@ -259,6 +260,51 @@
 
 (unless lisp-os-helpers/subuser-x:*firefox-launcher* (update-firefox-launcher))
 
+(defun marionette-remove-hotkey-request (key modifier)
+  `(
+    (progn
+      (defun find-hotkey (key modifiers)
+        (ps:chain
+          document document-element
+          (query-selector
+            (+ "keyset key[key='" key "'][modifiers='" modifiers "']"))))
+      (let*
+        ((x (find-hotkey ,key ,modifier)))
+        (ps:chain x parent-node (remove-child x))))))
+
+(defun stumpwm-eval (form &key as-string to-string)
+  (let*
+    ((socket
+       (iolib:make-socket
+         :address-family :local :type :stream
+         :connect :active
+         :remote-filename
+         (format 
+           nil "~a/.stumpwm-socket/stumpwm-socket/socket"
+           ($ :home)))))
+    (unwind-protect
+      (progn
+        (when to-string (format socket "(format nil \"~~a\"~%"))
+        (format socket (if as-string "~a~%" "~s~%") form)
+        (when to-string (format socket ")~%"))
+        (finish-output socket)
+        (read socket))
+      (ignore-errors (close socket)))))
+
+(defun tag-firefox-windows (name tags)
+  (stumpwm-eval
+    `(act-on-matching-windows
+       (w :screen)
+       (equalp
+         (map 'string 'code-char
+              (funcall (find-symbol "GET-PROPERTY" :xlib)
+                       (window-xwin w) :wm_client_machine))
+         ,(format nil "~a.~a" (get-current-user-name) name))
+       (setf (window-tags w)
+             ',(loop for tt in (if (listp tags) tags (list tags))
+                     append (cl-ppcre:split "[ |]" (string-upcase tt)))))
+    :to-string t))
+
 (defun firefox (ff-args &rest args &key
                         (pass-stderr t) (pass-stdout t)
                         (no-netns nil no-netns-p)
@@ -267,38 +313,104 @@
                         (http-proxy (unless socks-proxy 3128))
                         (dns t) environment network-ports file
                         (marionette-socket (unless (or no-netns (not netns)) t))
-                        data data-ro
+                        data data-ro name javascript
                         (certificate-overrides
                           (uiop:getenv "FIREFOX_CERTIFICATE_OVERRIDES"))
+                        marionette-requests no-close after-marionette-requests
+                        marionette-requests-wait-content
+                        stumpwm-tags
                         &allow-other-keys)
-  (apply
-    'subuser-firefox
-    `(,@ff-args 
-       ,@(when file
-           `(,(format
-                nil "file:///~a"
-                (namestring (truename file))))))
-    :pass-stderr pass-stderr
-    :pass-stdout pass-stdout
-    :certificate-overrides certificate-overrides
-    :prefs prefs
-    :environment environment
-    :dns dns
-    :http-proxy http-proxy
-    :socks-proxy socks-proxy
-    :network-ports network-ports
-    :mounts
-    `(
-      ,@ mounts
-      ,@ (when file `(("-B" ,file)))
-      ,@ (when data `(("-B" ,data "/_data")))
-      ,@ (when data-ro `(("-R" ,data-ro "/_data-ro")))
-      )
-    :marionette-socket marionette-socket
-    :allow-other-keys t
-    (append
-      (when no-netns-p `(:netns nil))
-      args)))
+  (let*
+    ((name (or name (timestamp-usec-recent-base36)))
+     (marionette-socket
+       (cond
+         ((eq t marionette-socket)
+          (getf (subuser-name-and-marionette-socket :name name)
+                :marionette-socket))
+         (t marionette-socket)))
+     (marionette-requests
+       (append
+         (when no-close
+           (list
+             (marionette-remove-hotkey-request "Q" "accel")
+             (marionette-remove-hotkey-request "W" "accel")
+             ))
+         marionette-requests))
+     (arglist 
+       (append
+         (list         
+           :pass-stderr pass-stderr
+           :pass-stdout pass-stdout
+           :certificate-overrides certificate-overrides
+           :prefs `(
+                    ,@(when javascript 
+                        `(("javascript.enabled" t)))
+                    ,@prefs )
+           :environment environment
+           :dns dns
+           :http-proxy http-proxy
+           :socks-proxy socks-proxy
+           :network-ports network-ports
+           :mounts
+           `(
+             ,@ mounts
+             ,@ (when file `(("-B" ,file)))
+             ,@ (when data `(("-B" ,data "/_data")))
+             ,@ (when data-ro `(("-R" ,data-ro "/_data-ro")))
+             )
+           :marionette-socket marionette-socket
+           :name name
+           :allow-other-keys t)
+         (when no-netns-p `(:netns nil))
+         args)))
+    (when
+      (and 
+        (or marionette-requests
+            after-marionette-requests
+            stumpwm-tags)
+        marionette-socket)
+      (bordeaux-threads:make-thread
+        (lambda ()
+          (when
+            (wait (:timeout 30 :sleep 0.3)
+                  (ignore-errors
+                    (with-marionette
+                      (marionette-socket)
+                      (ask-marionette-parenscript "1"))))
+            (format *trace-output* "Marionette socket ~s responds~%"
+                    marionette-socket)
+            (with-marionette
+              (marionette-socket)
+              (marionette-wait-ready :context :chrome :timeout 15)
+              (when marionette-requests-wait-content
+                (marionette-wait-ready 
+                  :context :content :timeout
+                  (if (eq marionette-requests-wait-content t) 15
+                    marionette-requests-wait-content)))
+              (loop
+                for r in marionette-requests
+                do (format
+                     *trace-output*
+                     "Request~%~s~%translated as ~%~s~% gave response ~%~s~%"
+                     r (ps:ps* (first r))
+                     (ignore-errors (apply 'ask-marionette-parenscript r)))))
+            (format *trace-output* "Done feeding Marionette~%")
+            (when after-marionette-requests
+              (apply 
+                after-marionette-requests
+                :allow-other-keys t
+                arglist))
+            (when stumpwm-tags
+              (tag-firefox-windows name stumpwm-tags))))
+          :name "Marionette command feeder"))
+    (format t "~s~%" arglist)
+    (apply 'subuser-firefox
+           `(,@ff-args 
+              ,@(when file
+                  `(,(format
+                       nil "file:///~a"
+                       (namestring (truename file))))))
+           arglist)))
 
 (defun-export
   sudo::root-urxvt
@@ -373,6 +485,9 @@
                   ,(when dhcp-resolv-conf "use-dhcp-resolv-conf"))
     `(restart-bind))
   (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home))))
+
+(defun grab-fuse (&optional name)
+  (sudo::grab-devices `("/dev/fuse") name))
 
 (defun
   enter-master-password ()
@@ -456,9 +571,6 @@
 (defun grab-kvm (&optional name)
   (sudo::grab-devices `("/dev/kvm") name))
 
-(defun grab-fuse (&optional name)
-  (sudo::grab-devices `("/dev/fuse") name))
-
 (defun-export 
   sudo::load-sound (choice)
   (ask-with-auth (:presence "Load sound configuration")
@@ -468,7 +580,7 @@
   (sudo::load-sound "usb")
   (grab-kvm)
   (grab-fuse)
-  (sleep 0.2)
+  (sleep 1)
   (grab-sound))
 
 (defmacro define-scoped-command
@@ -547,3 +659,6 @@
           :mounts `(("-R" ,directory))
           :pass-stderr t :grab-dri t))
     (& gvim (or fullname) :error-output *error-output*)))
+
+(defun start-stumpwm (display)
+  (sudo::start-x display "stumpwm ; x-options ; x-daemons"))

@@ -31,17 +31,20 @@
         (iolib:make-socket
           :connect :active :address-family :local :type :stream
           :remote-filename ,socket-path
-	  :external-format :utf-8)))
-     ,@(when window
-         `((format ,socket-name "session.switch_to_window('~a')~%" ,window)
-           (finish-output ,socket-name)
-           (read-line ,socket-name)))
-     ,@(when context
-         `((format ,socket-name "session.set_context(session.CONTEXT_~a)~%"
-                   (string-upcase ,context))
-           (finish-output ,socket-name)
-           (read-line ,socket-name)))
-     ,@ code))
+          :external-format :utf-8)))
+     (unwind-protect
+       (progn
+         ,@(when window
+             `((format ,socket-name "session.switch_to_window('~a')~%" ,window)
+               (finish-output ,socket-name)
+               (read-line ,socket-name)))
+         ,@(when context
+             `((format ,socket-name "session.set_context(session.CONTEXT_~a)~%"
+                       (string-upcase ,context))
+               (finish-output ,socket-name)
+               (read-line ,socket-name)))
+         ,@ code)
+       (close ,socket-name))))
 
 (defun skip-marionette-messages (&key (socket *ambient-marionette-socket*))
   (let*
@@ -146,6 +149,7 @@
     :socket socket))
 
 (defun marionette-wait-ready (&key (socket *ambient-marionette-socket*)
+                                   (context :content)
                                    (state "complete")
                                    (timeout 15)
                                    (sleep 0.1))
@@ -159,7 +163,7 @@
     for current-state :=
     (ask-marionette-parenscript
       `(return (ps:chain document ready-state))
-      :socket socket)
+      :socket socket :context context)
     while (< (- (get-universal-time) start-time) timeout)
     when (and
            (not (equalp current-obsolete-state (list "obsolete")))
