@@ -16,9 +16,19 @@
     #:wait-on-fifo
     #:add-command-fifo-fd
     #:wait-on-shell-command
+    #:get-current-user-name
+    #:masked-username
     ))
 
 (in-package :lisp-os-helpers/shell)
+
+(defvar *machine-id* nil)
+(when (and (probe-file "/etc/machine-id") (not *machine-id*))
+  (setf *machine-id*
+        (alexandria:read-file-into-string "/etc/machine-id")))
+
+(defun get-current-user-name ()
+  (iolib/syscalls:getpwuid (iolib/syscalls:getuid)))
 
 (defun escape-for-shell (s)
   (concatenate
@@ -172,3 +182,17 @@
           'uiop:run-program runner-command 
           run-options))
       (bordeaux-threads:join-thread thread))))
+
+(defun masked-username (&rest additions)
+  (subseq
+    (cl-ppcre:regex-replace
+      " .*"
+      (with-output-to-string (hash)
+        (with-input-from-string
+          (data (format nil "~a:~a~{::~a~}"
+                        *machine-id* (get-current-user-name)
+                        (remove nil additions)))
+          (uiop:run-program (list "sha256sum") :input data :output hash)))
+      "")
+    0 32))
+

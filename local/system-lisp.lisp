@@ -78,6 +78,13 @@
             "nix-store" "--check-validity" "/run/current-system/")))
   (system-service "" "nix-daemon"))
 
+(unless
+  (run-program-return-success
+    (uiop:run-program
+      (list "env" "NIX_REMOTE=daemon"
+            "nix-store" "--check-validity" "/run/current-system/")))
+  (system-service "" "nix-daemon"))
+
 (format
   t "Daemon operations: ~s~%"
   (multiple-value-list
@@ -300,7 +307,7 @@
 (defun socket-command-server-commands::reload-video-modules (context)
   (require-or
     "Owner user not confirmed"
-    (require-root)
+    (require-root context)
     (assert (gethash (list (context-uid context) :owner) *user-info*)))
   (loop for m in `("i915" "nouveau" "radeon")
         do (ignore-errors (module-remove m))
@@ -532,6 +539,19 @@
   (declare (ignorable context))
   (modprobe "usbhid")
   (modprobe "hid_generic"))
+
+(defun socket-command-server-commands::set-cpu-frequency (context frequency)
+  (require-or
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
+  (set-cpu-frequency
+    (or
+      (and (numberp frequency) frequency)
+      (ignore-errors (parse-integer frequency))
+      (ignore-errors (intern (string-upcase frequency) :keyword))
+      frequency)))
 
 (unless
   *socket-main-thread-preexisting*

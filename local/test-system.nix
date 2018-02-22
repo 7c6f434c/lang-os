@@ -45,6 +45,13 @@ pkgs.lib.makeExtensible (self: with self; {
           '';
         };
 
+  systemGuile = import ../system-guile.nix { 
+          deps = [];
+	  code = ''
+             (load "${./system-guile.scm}")
+          '';
+        };
+
   loopStarter = command: pkgs.writeScript "loop-starter" ''
           trap : 1 2 3 13 14 15
           while true; do
@@ -101,7 +108,8 @@ pkgs.lib.makeExtensible (self: with self; {
   swPackages = swPieces.corePackages ++ (with pkgs; [
         glibcLocales
         vim monotone screen rxvt_unicode xorg.xprop
-        sbcl lispPackages.clwrapper lispPackages.uiop asdf gerbil
+        sbcl lispPackages.clwrapper lispPackages.uiop asdf
+        gerbil guile
 	postgresql-package
         nsjail unionfs-fuse
         lispPackages.stumpwm alsaTools
@@ -111,13 +119,15 @@ pkgs.lib.makeExtensible (self: with self; {
         (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])
         (swPieces.cProgram "numeric-su" ../c/numeric-su.c [] [])
         lispOsHelpers
-      ]) ++ (with stage1; [firmwareSet] ++ _kernelModulePackages);
+      ]) ++ (with stage1; [firmwareSet] ++ _kernelModulePackages)
+      ++ systemFonts;
 
   systemParts = {
     bin = import ../system-bin.nix {
       initScript = ''
         ${loopStarter "/run/current-system/services/language-daemon/system-lisp"} &
         ${loopStarter "/run/current-system/services/language-daemon/system-gerbil"} &
+        ${loopStarter "/run/current-system/services/language-daemon/system-guile"} &
         chvt 2
       '';
       setupScript = ''
@@ -191,8 +201,12 @@ pkgs.lib.makeExtensible (self: with self; {
       "nix-daemon" = pkgs.writeScript "nix-daemon" ''
         ${pkgs.nix}/bin/nix-daemon
       '';
+      "dmesg-logger" = pkgs.writeScript "dmesg-logger" ''
+        ${pkgs.utillinux}/bin/dmesg -w
+      '';
       "language-daemon/system-lisp" = systemLisp;
       "language-daemon/system-gerbil" = systemGerbil;
+      "language-daemon/system-guile" = systemGuile;
     };
   };
   systemInstance = import ../system-instance.nix {

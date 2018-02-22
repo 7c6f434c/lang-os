@@ -146,7 +146,7 @@
     ((stringp value) (format nil "~s" value))
     (t (error "Unrecognised preference type for value ~s" value))))
 
-(defun subuser-name-and-marionette-socket (&key name)
+(defun subuser-name-and-marionette-socket (&key name hostname-hidden-suffix)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
      (uid (take-reply-value
@@ -157,7 +157,8 @@
 		  `(subuser-uid ,name))))))
      (marionette-socket
        (format nil "/tmp/ff.~a/sockets/~a/marionette-socket"
-	       (get-current-user-name) name)))
+	       (get-current-user-name)
+               (masked-username name hostname-hidden-suffix))))
     (ensure-directories-exist marionette-socket)
     (iolib/syscalls:chmod 
       (directory-namestring marionette-socket)
@@ -170,10 +171,12 @@
 (defun subuser-nsjail-x-application
   (command
     &key display
-    environment home name
+    environment home name locale
     (slay t) (wait t) (netns t) network-ports grant
     pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
-    mounts system-socket setup hostname grab-devices fake-passwd
+    mounts system-socket setup
+    hostname hostname-suffix hostname-hidden-suffix
+    grab-devices fake-passwd
     (path "/var/current-system/sw/bin") verbose-errors mount-sys
     dns http-proxy socks-proxy with-dbus with-pulseaudio)
   (let*
@@ -252,6 +255,7 @@
                     ))
               ,@(when home `(("HOME" ,home)))
               ("PATH" ,path)
+              ("LANG" ,(or locale (uiop:getenv "LANG") "en_US.UTF-8"))
               )
             :options
             `(
@@ -260,7 +264,20 @@
               ("nsjail" "network"
                ,@(when (or with-pulseaudio full-dev) `("full-dev"))
                ,@(when (or with-pulseaudio fake-passwd) `("fake-passwd"))
-               ("hostname" ,hostname)
+               ("hostname"
+                ,(or
+                   hostname 
+                   (when (or hostname-suffix hostname-hidden-suffix)
+                     (cond
+                       ((or
+                          (eq hostname-suffix t)
+                          (equal hostname-suffix ""))
+                        (masked-username
+                          name hostname-hidden-suffix))
+                       (t (format nil "~a.~a"
+                                  (masked-username 
+                                    name hostname-hidden-suffix)
+                                  (or hostname-suffix "")))))))
                ("mounts"
                 (
                  ,@(when grab-dri `(("-B" "/dev/dri")))
@@ -286,7 +303,7 @@
     &key prefs raw-prefs (grab-dri t)
     environment marionette-socket profile-storage name
     (firefox-launcher *firefox-launcher*) (slay t) (wait t)
-    mounts hostname certificate-overrides socks-proxy)
+    mounts (hostname-suffix "") hostname-hidden-suffix certificate-overrides socks-proxy)
   (declare (ignorable options))
   (let*
     (
@@ -302,11 +319,11 @@
      (marionette-socket
        (case marionette-socket
          ((t)
-          (getf (subuser-name-and-marionette-socket :name name)
+          (getf (subuser-name-and-marionette-socket 
+                  :name name
+                  :hostname-hidden-suffix hostname-hidden-suffix)
                 :marionette-socket))
          (t marionette-socket)))
-     (hostname
-       (or hostname (format nil "~a.~a" (get-current-user-name) name)))
      )
     (when certificate-overrides
       (alexandria:write-string-into-file
@@ -351,7 +368,8 @@
         'subuser-nsjail-x-application
         (cons firefox-launcher arguments)
         :name name :grab-dri grab-dri
-        :slay slay :wait wait :hostname hostname
+        :slay slay :wait wait
+        :hostname-suffix hostname-suffix
         :environment
         `(
           ,@ environment

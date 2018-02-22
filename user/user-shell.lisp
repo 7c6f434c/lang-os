@@ -291,19 +291,19 @@
         (read socket))
       (ignore-errors (close socket)))))
 
-(defun tag-firefox-windows (name tags)
+(defun tag-firefox-windows (name tags &key hostname-hidden-suffix)
   (stumpwm-eval
-    `(act-on-matching-windows
-       (w :screen)
-       (equalp
-         (map 'string 'code-char
-              (funcall (find-symbol "GET-PROPERTY" :xlib)
-                       (window-xwin w) :wm_client_machine))
-         ,(format nil "~a.~a" (get-current-user-name) name))
-       (setf (window-tags w)
-             ',(loop for tt in (if (listp tags) tags (list tags))
-                     append (cl-ppcre:split "[ |]" (string-upcase tt)))))
+    `(set-tags-by-hostname 
+       ,(masked-username name hostname-hidden-suffix)
+       ,(if (stringp tags) (cl-ppcre:regex-replace-all "[|]" tags " ") tags))
     :to-string t))
+
+(defun stumpwm-app-tagger (tags &key (keep t) forever hostname-hidden-suffix)
+  (lambda (&key name)
+    (stumpwm-eval
+      `(wait-set-tags-by-hostname
+         ,(masked-username name hostname-hidden-suffix)
+         ,tags :keep ,keep :forever ,forever) :to-string t)))
 
 (defun firefox (ff-args &rest args &key
                         (pass-stderr t) (pass-stdout t)
@@ -319,6 +319,7 @@
                         marionette-requests no-close after-marionette-requests
                         marionette-requests-wait-content
                         stumpwm-tags
+                        hostname-hidden-suffix
                         &allow-other-keys)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
@@ -401,7 +402,9 @@
                 :allow-other-keys t
                 arglist))
             (when stumpwm-tags
-              (tag-firefox-windows name stumpwm-tags))))
+              (tag-firefox-windows name stumpwm-tags
+                                   :hostname-hidden-suffix
+                                   hostname-hidden-suffix))))
           :name "Marionette command feeder"))
     (format t "~s~%" arglist)
     (apply 'subuser-firefox
@@ -650,6 +653,7 @@
   (namestring (truename (which f))))
 
 (defun gvim-plus-zathura (file)
+  (with-open-file (f file :if-does-not-exist :create))
   (let*
     ((fullname (namestring (truename file)))
      (directory (directory-namestring fullname))
@@ -662,3 +666,35 @@
 
 (defun start-stumpwm (display)
   (sudo::start-x display "stumpwm ; x-options ; x-daemons"))
+
+(defun enter-home (&key ii (mcabber t) (brightness 25) (freq 2690)
+                        (interface "wlan0") (extra-ips `("192.168.0.203")))
+  (ask-with-auth
+    (:presence t)
+    `(ensure-wifi ,interface)
+    `(set-brightness ,brightness)
+    `(set-cpu-frequency ,freq)
+    `(list
+       ,@(loop for ip in extra-ips collect
+               `(add-ip-address ,interface ,ip))))
+  (enter-master-password)
+  (email-fetchers-fast)
+  (im-online-here
+    :skip-ii (not ii)
+    :skip-mcabber (not mcabber))
+  )
+
+(defun enter-labri (&rest args &key (brightness 400) (extra-ips `()))
+  (apply
+    'enter-home
+    :brightness brightness
+    :extra-ips extra-ips
+    args))
+
+(defun launch-process-and-tag-windows (command tags &key keep forever launch-parameters)
+  (let*
+    ((process (apply 'uiop:launch-program command launch-parameters))
+     (pid (uiop:process-info-pid process)))
+    (stumpwm-eval `(wait-set-tags-by-pid
+                     ,pid ',tags :keep ,keep :forever ,forever)
+                  :to-string t)))

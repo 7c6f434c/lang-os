@@ -1,9 +1,11 @@
 (defpackage :lisp-os-helpers/socket-command-client
-  (:use :common-lisp :lisp-os-helpers/safe-read :lisp-os-helpers/socket-command-server)
+  (:use :common-lisp
+        :lisp-os-helpers/safe-read :lisp-os-helpers/socket-command-server
+        :lisp-os-helpers/shell
+        )
   (:export
     #:ask-server
     #:coerce-to-socket-stream
-    #:get-current-user-name
     #:with-uid-auth
     #:with-presence-auth
     #:with-strong-presence-auth
@@ -75,9 +77,6 @@
            ,@body)
          (unless (streamp ,socket)
            (close *ambient-system-socket*))))))
-
-(defun get-current-user-name ()
-  (iolib/syscalls:getpwuid (iolib/syscalls:getuid)))
 
 (defun with-uid-auth (form &key (socket *ambient-system-socket*) user)
   (let*
