@@ -19,13 +19,18 @@ rec {
     from marionette_driver.marionette import Marionette;
     import os;
     import sys;
-    session = Marionette(host="127.0.0.1",port=os.getenv("MARIONETTE_PORT") or 2828,bin=False,socket_timeout=3600);
-    session.start_session();
+    session = Marionette(host="127.0.0.1",port=os.getenv("MARIONETTE_PORT") or 2828,bin=False,socket_timeout=3600,startup_timeout=1);
+    session.start_session(timeout=1) or exit()
     while True:
       try:
-        value = (eval(sys.stdin.readline()))
+        code = sys.stdin.readline()
+        if not code:
+          exit()
+        value = (eval(code))
         if value != None:
           print(value)
+      except EOFError:
+        exit()
       except Exception as e:
         print(e)
   '';

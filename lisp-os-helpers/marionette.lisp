@@ -26,25 +26,24 @@
                              &key window (context :content)
                              (socket-name '*ambient-marionette-socket*))
                            &rest code)
-  `(let*
-     ((,socket-name
-        (iolib:make-socket
-          :connect :active :address-family :local :type :stream
-          :remote-filename ,socket-path
-          :external-format :utf-8)))
-     (unwind-protect
-       (progn
-         ,@(when window
-             `((format ,socket-name "session.switch_to_window('~a')~%" ,window)
-               (finish-output ,socket-name)
-               (read-line ,socket-name)))
-         ,@(when context
-             `((format ,socket-name "session.set_context(session.CONTEXT_~a)~%"
-                       (string-upcase ,context))
-               (finish-output ,socket-name)
-               (read-line ,socket-name)))
-         ,@ code)
-       (close ,socket-name))))
+  `(progn
+     (let*
+       ((,socket-name
+          (iolib:make-socket
+            :connect :active :address-family :local :type :stream
+            :remote-filename ,socket-path
+            :external-format :utf-8)))
+       (unwind-protect
+         (progn
+           ,@(when window
+               `((format ,socket-name "session.switch_to_window('~a') and None~%" ,window)
+                 (finish-output ,socket-name)))
+           ,@(when context
+               `((format ,socket-name "session.set_context(session.CONTEXT_~a) and None~%"
+                         (string-upcase ,context))
+                 (finish-output ,socket-name)))
+           ,@ code)
+         (close ,socket-name)))))
 
 (defun skip-marionette-messages (&key (socket *ambient-marionette-socket*))
   (let*
@@ -64,12 +63,13 @@
                             context)
   (when context
     (format socket
-            "session.set_context(session.CONTEXT_~a)~%"
+            "session.set_context(session.CONTEXT_~a) and None~%"
             (string-upcase context)))
   (when (or reset-ready-state wait-ready)
     (format 
       socket
-      "session.execute_script('document.documentElement.setAttribute(\"documentObsoleteState\", \"obsolete\")')~%"))
+      "session.execute_script('document.documentElement.setAttribute(\"documentObsoleteState\", \"obsolete\")') and None~%"))
+  (finish-output socket)
   (skip-marionette-messages :socket socket)
   (format socket "~a~%" code)
   (finish-output socket)
@@ -135,7 +135,7 @@
 
 (defun marionette-close (&key (socket *ambient-marionette-socket*))
   (ask-marionette-parenscript
-    `(progn (close) (return t)) :socket socket :context :chrome))
+    `(progn (close) (ps-js:return t)) :socket socket :context :chrome))
 
 (defun marionette-refresh (&key (socket *ambient-marionette-socket*))
   (ask-marionette "session.refresh()" :socket socket))
@@ -157,12 +157,14 @@
     with start-time := (get-universal-time)
     for current-obsolete-state :=
     (ask-marionette-parenscript
-      `(return (ps:chain document document-element
-                         (get-attribute "documentObsoleteState")))
+      `(ps-js:return
+         (ps:chain document document-element
+                   (get-attribute "documentObsoleteState")))
       :socket socket)
     for current-state :=
     (ask-marionette-parenscript
-      `(return (ps:chain document ready-state))
+      `(ps-js:return
+         (ps:chain document ready-state))
       :socket socket :context context)
     while (< (- (get-universal-time) start-time) timeout)
     when (and

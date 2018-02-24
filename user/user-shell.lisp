@@ -313,10 +313,11 @@
                         (http-proxy (unless socks-proxy 3128))
                         (dns t) environment network-ports file
                         (marionette-socket (unless (or no-netns (not netns)) t))
-                        data data-ro name javascript
+                        data data-ro name javascript autorefresh
                         (certificate-overrides
                           (uiop:getenv "FIREFOX_CERTIFICATE_OVERRIDES"))
-                        marionette-requests no-close after-marionette-requests
+                        marionette-requests marionette-requests-quiet
+                        no-close after-marionette-requests
                         marionette-requests-wait-content
                         stumpwm-tags
                         hostname-hidden-suffix
@@ -346,6 +347,8 @@
            :prefs `(
                     ,@(when javascript 
                         `(("javascript.enabled" t)))
+                    ,@(when autorefresh
+                        `(("accessibility.blockautorefresh" nil)))
                     ,@prefs )
            :environment environment
            :dns dns
@@ -375,9 +378,15 @@
           (when
             (wait (:timeout 30 :sleep 0.3)
                   (ignore-errors
-                    (with-marionette
-                      (marionette-socket)
-                      (ask-marionette-parenscript "1"))))
+                    (and
+                      (probe-file marionette-socket)
+                      (progn
+                        (format t "Trying to connect to ~s~%"
+                                marionette-socket)
+                        t)
+                      (with-marionette
+                        (marionette-socket)
+                        (ask-marionette-parenscript '(ps-js:return "1"))))))
             (format *trace-output* "Marionette socket ~s responds~%"
                     marionette-socket)
             (with-marionette
@@ -390,11 +399,13 @@
                     marionette-requests-wait-content)))
               (loop
                 for r in marionette-requests
-                do (format
-                     *trace-output*
-                     "Request~%~s~%translated as ~%~s~% gave response ~%~s~%"
-                     r (ps:ps* (first r))
-                     (ignore-errors (apply 'ask-marionette-parenscript r)))))
+                do (if marionette-requests-quiet
+                     (ignore-errors (apply 'ask-marionette-parenscript r))
+                     (format
+                       *trace-output*
+                       "Request~%~s~%translated as ~%~s~% gave response ~%~s~%"
+                       r (ps:ps* (first r))
+                       (ignore-errors (apply 'ask-marionette-parenscript r))))))
             (format *trace-output* "Done feeding Marionette~%")
             (when after-marionette-requests
               (apply 
@@ -651,12 +662,16 @@
 (defun true-executable (f)
   (namestring (truename (which f))))
 
-(defun gvim-plus-zathura (file)
+(defun gvim-plus-zathura (file &key compiler)
   (with-open-file (f file :if-does-not-exist :create))
   (let*
     ((fullname (namestring (truename file)))
      (directory (directory-namestring fullname))
      (pdfname (cl-ppcre:regex-replace "([.][^.]*)?$" fullname ".pdf")))
+    (when compiler
+      (uiop:run-program
+        `("env" "-C" ,directory "--" ,@ compiler ,fullname)
+        :output t :error-output t))
     (&& (subuser-nsjail-x-application
           (list (true-executable "zathura") pdfname)
           :mounts `(("-R" ,directory))

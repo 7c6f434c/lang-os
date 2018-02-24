@@ -171,7 +171,7 @@
 (defun subuser-nsjail-x-application
   (command
     &key display
-    environment home name locale
+    environment home name locale locale-archive
     (slay t) (wait t) (netns t) network-ports grant
     pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
     mounts system-socket setup
@@ -256,6 +256,11 @@
               ,@(when home `(("HOME" ,home)))
               ("PATH" ,path)
               ("LANG" ,(or locale (uiop:getenv "LANG") "en_US.UTF-8"))
+              ("LOCALE_ARCHIVE"
+               ,(or
+                  locale-archive
+                  (uiop:getenv "LOCALE_ARCHIVE")
+                  "/run/current-system//sw/lib/locale/locale-archive"))
               )
             :options
             `(
@@ -325,6 +330,15 @@
                 :marionette-socket))
          (t marionette-socket)))
      )
+    (when marionette-socket
+      (ensure-directories-exist marionette-socket)
+      (iolib/syscalls:chmod 
+        (directory-namestring marionette-socket)
+        #o0700)
+      (uiop:run-program
+        (list "setfacl" "-m" (format nil "u:~a:rwx" uid)
+              (directory-namestring marionette-socket)))
+      )
     (when certificate-overrides
       (alexandria:write-string-into-file
         (alexandria:read-file-into-string certificate-overrides)
