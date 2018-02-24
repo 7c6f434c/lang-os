@@ -60,7 +60,7 @@
       (funcall
 	setup
 	:allow-other-keys t
-	:name name :uid uid
+	:name name :uid uid :options options :environment environment
 	:display display :x-socket x-socket :system-socket system-socket))
     (with-system-socket
       (system-socket)
@@ -300,7 +300,7 @@
 (defun subuser-firefox
   (arguments
     &rest options
-    &key prefs raw-prefs (grab-dri t)
+    &key prefs raw-prefs (grab-dri t) write-marionette-socket
     environment marionette-socket profile-storage name
     (firefox-launcher *firefox-launcher*) (slay t) (wait t)
     mounts (hostname-suffix "") hostname-hidden-suffix certificate-overrides socks-proxy)
@@ -363,6 +363,8 @@
             collect name collect value)))
       (format nil "~a/prefs.js" combined-profile)
       :if-exists :append)
+    (when write-marionette-socket
+      (format t "~a~%" marionette-socket))
     (unwind-protect
       (apply
         'subuser-nsjail-x-application
@@ -385,13 +387,14 @@
           ,@ mounts
           )
         options)
-      (ignore-errors
-        (uiop:run-program
-          (list
-            "rm" "-rf" combined-profile)
-          :error-output t))
-      (when marionette-socket
+      (when wait
         (ignore-errors
           (uiop:run-program
-            (list "rm" "-rf" (directory-namestring marionette-socket))
-            :error-output t))))))
+            (list
+              "rm" "-rf" combined-profile)
+            :error-output t))
+        (when marionette-socket
+          (ignore-errors
+            (uiop:run-program
+              (list "rm" "-rf" (directory-namestring marionette-socket))
+              :error-output t)))))))

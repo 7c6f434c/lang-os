@@ -113,7 +113,8 @@
                           (funcall context :fd-socket-fd-plist )
                           (intern (string-upcase (second o)) :keyword)))
 	   ))))
-    (if (typep value 'iolib/os:process) "OK" value)))
+    (if (typep value 'iolib/os:process)
+      (iolib/os:process-pid value) value)))
 
 (defun socket-command-server-commands::add-persistent-subuser (context name home)
   (subuser-uid

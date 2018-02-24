@@ -406,7 +406,6 @@
                                    :hostname-hidden-suffix
                                    hostname-hidden-suffix))))
           :name "Marionette command feeder"))
-    (format t "~s~%" arglist)
     (apply 'subuser-firefox
            `(,@ff-args 
               ,@(when file
