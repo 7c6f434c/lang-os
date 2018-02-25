@@ -101,7 +101,7 @@
                   :nix-path (if (stringp nix-path)
                               (cl-ppcre:split ":" nix-path)
                               nix-path))))
-    (format t "System: ~s~%" system-path)
+    (format *trace-output* "System: ~s~%" system-path)
     (unless
       (equal
         (truename system-path)
@@ -291,19 +291,27 @@
         (read socket))
       (ignore-errors (close socket)))))
 
-(defun tag-firefox-windows (name tags &key hostname-hidden-suffix)
-  (stumpwm-eval
-    `(set-tags-by-hostname 
-       ,(masked-username name hostname-hidden-suffix)
-       ,(if (stringp tags) (cl-ppcre:regex-replace-all "[|]" tags " ") tags))
-    :to-string t))
-
-(defun stumpwm-app-tagger (tags &key (keep t) forever hostname-hidden-suffix)
-  (lambda (&key name)
-    (stumpwm-eval
-      `(wait-set-tags-by-hostname
-         ,(masked-username name hostname-hidden-suffix)
-         ,tags :keep ,keep :forever ,forever) :to-string t)))
+(defun stumpwm-app-tagger (tags &key (keep t) forever
+                                (wait t) (now nil))
+  (lambda (&key options)
+    (let*
+      ((hostname
+         (second
+           (find
+             "hostname"
+             (cdr (find "nsjail" options
+                        :key 'first :test 'equalp))
+             :key 'first :test 'equalp))))
+      (when wait
+        (stumpwm-eval
+          `(wait-set-tags-by-hostname
+             ,hostname
+             ',tags :keep ,keep :forever ,forever) :to-string t))
+      (when now
+        (stumpwm-eval
+          `(set-tags-by-hostname
+             ,hostname
+             ',tags :keep ,keep) :to-string t)))))
 
 (defun firefox (ff-args &rest args &key
                         (pass-stderr t) (pass-stdout t)
@@ -380,10 +388,6 @@
                   (ignore-errors
                     (and
                       (probe-file marionette-socket)
-                      (progn
-                        (format t "Trying to connect to ~s~%"
-                                marionette-socket)
-                        t)
                       (with-marionette
                         (marionette-socket)
                         (ask-marionette-parenscript '(ps-js:return "1"))))))
@@ -413,9 +417,18 @@
                 :allow-other-keys t
                 arglist))
             (when stumpwm-tags
-              (tag-firefox-windows name stumpwm-tags
-                                   :hostname-hidden-suffix
-                                   hostname-hidden-suffix))))
+              (funcall
+                (stumpwm-app-tagger
+                  (if (stringp stumpwm-tags)
+                    (cl-ppcre:split "[| ]" stumpwm-tags)
+                    stumpwm-tags)
+                  :keep nil :wait nil :now t)
+                :options
+                `(("nsjail" 
+                   ("hostname" 
+                    ,(masked-username
+                       name hostname-hidden-suffix)))))
+              )))
           :name "Marionette command feeder"))
     (apply 'subuser-firefox
            `(,@ff-args 
@@ -465,7 +478,7 @@
 (defun restart-lisp-shell-server (&key rebuild)
  (when rebuild
    (! lisp-shell-build :< nil :&> nil)
-   (format t "Image rebuilt~%"))
+   (format *trace-output* "Image rebuilt~%"))
  (! screen "-S" lisp-shell-socket-evaluator "-X" quit)
  (sleep 0.5)
  (! lisp-shell-server))

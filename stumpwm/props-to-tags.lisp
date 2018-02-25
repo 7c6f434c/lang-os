@@ -15,7 +15,7 @@
        (act-on-matching-windows
          (,w :screen)
          ,condition
-         (unless keep (clear-tags ,w))
+         (unless keep (clear-tags nil ,w))
          (tag-window ,tags ,w)))))
 
 (defun-set-tags-by-condition
@@ -55,7 +55,7 @@
              (declare (ignorable args))
              (ignore-errors
                (when ,condition
-                 (unless keep (clear-tags ,w))
+                 (unless keep (clear-tags nil ,w))
                  (tag-window ,tags ,w)
                  (setf ,seen t)
                  (unless forever
