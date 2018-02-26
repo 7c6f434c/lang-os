@@ -82,6 +82,8 @@ rec {
     fi
     echo "making accessible [[$FIREFOX_PROFILE]]" >&2
     chmod a+rwX -R "$FIREFOX_PROFILE"/* 2> /dev/null
+    test -n "$FIREFOX_PROFILE_KILL" &&
+      rm -rf "$FIREFOX_PROFILE"
   '';
   firefoxProfileCombiner = pkgs.writeScriptBin "combine-firefox-profile" ''
     export FIREFOX_PROFILE="$1"

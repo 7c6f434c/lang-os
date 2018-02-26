@@ -35,4 +35,11 @@
         done
       done
     '')) ];
+
+  nixOptions = super.nixOptions // {
+    extraOptions = super.nixOptions.extraOptions or "" + ''
+          gc-keep-outputs = true
+          gc-keep-derivations = true
+    '';
+  };
 })

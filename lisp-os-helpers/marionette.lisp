@@ -97,10 +97,12 @@
      (js-code-escaped (escape-for-python js-code))
      (py-code
        (format nil "session.execute_script(\"~a\")"
-	       js-code-escaped)))
-    (ask-marionette py-code :socket socket :context context
-                    :reset-ready-state reset-ready-state
-                    :wait-ready wait-ready)))
+               js-code-escaped))
+     (result
+       (ask-marionette py-code :socket socket :context context
+                       :reset-ready-state reset-ready-state
+                       :wait-ready wait-ready)))
+    result))
 
 (defun firefox-pref-value-py (value)
   (cond
@@ -166,6 +168,11 @@
       `(ps-js:return
          (ps:chain document ready-state))
       :socket socket :context context)
+    for current-url :=
+    (ask-marionette-parenscript
+      `(ps-js:return
+         (ps:chain document location href))
+      :socket socket :context context)
     while (< (- (get-universal-time) start-time) timeout)
     when (and
            (not (equalp current-obsolete-state (list "obsolete")))
@@ -200,7 +207,7 @@
          do (sleep 1)
          when (probe-file ,marionette-socket-path) return nil
          finally (error "socket creation timeout"))
-       (format t "Socket: ~s~%" ,marionette-socket-path)
+       (format *trace-output* "Socket: ~s~%" ,marionette-socket-path)
        (loop
          for k from 1 to 6
          for test-thread :=
@@ -214,7 +221,6 @@
                       (ask-marionette "1")))))
                (unless
                  (equal (list "1") response)
-                 (format *error-output* "Response: ~s~%" response)
                  (sleep 100))))
            :name "Marionette test thread")
          do (sleep 3)

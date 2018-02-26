@@ -224,6 +224,10 @@ pkgs.lib.makeExtensible (self: with self; {
 
   fontconfigConfPackages = [];
 
+  nixOptions = {
+    useSandbox = true;
+  };
+
   systemEtc = pkgs.buildEnv {
     name = "system-etc";
     paths = [
@@ -258,9 +262,7 @@ pkgs.lib.makeExtensible (self: with self; {
         }))
       (etcPieces.deeplinkAttrset "etc-nix"
         (fromNixOS.etcSelectPrefix "nix/" {
-          nix = {
-            useSandbox = true;
-          };
+          nix = nixOptions;
         }))
       (etcPieces.deeplinkAttrset "etc-cups"
         {"cups" = "/var/lib/cups";})

@@ -483,6 +483,19 @@
  (sleep 0.5)
  (! lisp-shell-server))
 
+(defun system-build (&rest args &key
+                           (nix-path (uiop:getenv "NIX_PATH"))
+                           (nix-file (~ ".lang-os-expression.nix"))
+                           &allow-other-keys)
+  (apply 'nix-build "systemInstance"
+         (append
+           args
+           (list
+             :nix-file nix-file
+             :nix-path (if (stringp nix-path)
+                         (cl-ppcre:split ":" nix-path)
+                         nix-path)))))
+
 (defun full-refresh ()
   (sudo::system-rebuild)
   (sudo::restart-system-lisp)
@@ -654,6 +667,7 @@
   (when x-lock (! := (:display (or ($ :display) ":0")) xscreensaver-command -lock))
   (! sh -c "echo 5 > ~/.watchperiod")
   (when sync (& sync))
+  (! web-stream-updater-starter quit)
   (when im-offline (! im-offline))
   (when randr (! := (:display (or ($ :display) ":0")) x-randr-options))
   (when forget-secrets (! forget-secrets))
