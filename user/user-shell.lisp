@@ -706,7 +706,7 @@
     (& gvim (or fullname) :error-output *error-output*)))
 
 (defun start-stumpwm (display)
-  (sudo::start-x display "stumpwm ; x-options ; x-daemons"))
+  (sudo::start-x display "x-options; x-daemons; stumpwm"))
 
 (defun enter-home (&key ii (mcabber t) (brightness 25) (freq 2690)
                         (interface "wlan0") (extra-ips `("192.168.0.203")))
