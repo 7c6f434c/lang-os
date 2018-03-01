@@ -443,7 +443,7 @@
   (&key (display 0)
         (command
           (list
-            "my-screen"
+            (true-executable "my-screen")
             (format nil "for-su-from-~a" (get-current-user-name))
             "bash")))
   (&&
@@ -453,7 +453,7 @@
         `("env" "--" 
           ,(format nil "DISPLAY=:~a" display)
           "MY_SCREEN_TITLE=su screen"
-          ,(which "urxvt") "-e" ,@ command)))))
+          ,(true-executable "urxvt") "-e" ,@ command)))))
 
 (defun-export
   sudo::wifi (interface &optional (dhclient t))
@@ -726,7 +726,7 @@
   )
 
 (defun enter-labri (&rest args &key (brightness 400) (extra-ips `()))
-  (& x-options)
+  (! x-options)
   (apply
     'enter-home
     :brightness brightness
