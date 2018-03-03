@@ -42,4 +42,12 @@
           gc-keep-derivations = true
     '';
   };
+
+  systemEtc = super.systemEtc.override (x: {
+    paths = x.paths ++ [
+      (super.etcPieces.deeplinkAttrset "etc-lvm" {
+        "lvm" = "/var/etc/lvm";
+      })
+    ];
+  });
 })

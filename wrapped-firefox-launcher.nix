@@ -10,6 +10,8 @@ rec {
   unshareCmd = (pkgs.lib.getBin pkgs.utillinux) + "/bin/unshare";
   firefoxCmd = (pkgs.lib.getBin pkgs.firefox) + "/bin/" + firefoxName;
   unionfsCmd = (pkgs.lib.getBin pkgs.unionfs-fuse) + "/bin/unionfs";
+  xdummyCmd = (pkgs.lib.getBin pkgs.xdummy) + "/bin/xdummy";
+  xpropCmd = (pkgs.lib.getBin pkgs.xorg.xprop) + "/bin/xprop";
   fuserCmd = (pkgs.lib.getBin pkgs.psmisc) + "/bin/fuser";
   marionette_ = if builtins.isFunction marionette then marionette pkgs else marionette;
   marionetteEnv = pkgs.runCommand "marionette-env" { buildInputs = [ marionette_ ]; } ''
@@ -90,9 +92,20 @@ rec {
     ${combineProfileScript}
     echo "$_FIREFOX_PROFILE"
   '';
+  displayScript=''
+    if test -n "$FIREFOX_DISPLAY"; then
+      export DISPLAY="$FIREFOX_DISPLAY"
+      "${xdummyCmd}" "$DISPLAY" &
+      while ! "${xpropCmd}" -root; do
+        sleep 1;
+      done
+      echo "Virtual local DISPLAY=$DISPLAY" >&2
+    fi
+  '';
   firefoxLauncher = pkgs.writeScriptBin name ''
     ${homeScript}
     ${marionetteScript}
+    ${displayScript}
     echo "$FIREFOX_EXTRA_PREFS" >> "$FIREFOX_PROFILE/prefs.js"
     if test -n "$MARIONETTE_PORT"; then
       sed -e '/marionette[.]defaultPrefs[.]port/d' -i "$FIREFOX_PROFILE/prefs.js"

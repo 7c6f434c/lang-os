@@ -99,7 +99,7 @@
 (if (not main-socket)
   (begin
     (set! main-socket (socket PF_UNIX SOCK_STREAM 0))
-    (delete-file socket-path)
+    (catch #t (lambda () (delete-file socket-path)) (lambda (key . args) #f))
     (bind main-socket AF_UNIX socket-path)
     (listen main-socket 3)
     (chmod socket-path #o666)

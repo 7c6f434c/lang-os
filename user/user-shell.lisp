@@ -251,12 +251,15 @@
   (reset-firefox-launcher :nix-path (list ($ :home) "/home/repos")
                           :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
                                                     ($ :home))
+                          :out-link (~ ".nix-personal/firefox-launcher")
                           :profile-contents
                           (format nil "~a/src/nix/lang-os/user/firefox-profile-skel/"
                                   ($ :home)))
   (reset-bus-helpers
     :nix-path (list ($ :home) "/home/repos" (cl-ppcre:split ":" ($ :nix_path)))
-    :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")))
+    :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")
+    :out-link (~ ".nix-personal/bus-wrapper")
+    ))
 
 (unless lisp-os-helpers/subuser-x:*firefox-launcher* (update-firefox-launcher))
 

@@ -106,17 +106,22 @@
 		    (t o))))))
         :verbose verbose-errors))))
 
-(defun reset-firefox-launcher (&key profile-contents nix-path nix-wrapper-file)
+(defun reset-firefox-launcher (&key profile-contents nix-path nix-wrapper-file
+                                    out-link)
   (setf *firefox-profile-contents* profile-contents)
   (let
     ((firefox-scripts 
-       (nix-build
-	 (format
-	   nil
-	   "with import ~s { profileContent = \"\" + ~a; }; firefoxScripts"
-	   nix-wrapper-file 
-	   (cl-ppcre:regex-replace "/$" (namestring (truename profile-contents)) ""))
-	 :nix-path nix-path)))
+       (namestring
+         (truename
+           (nix-build
+             (format
+               nil
+               "with import ~s { profileContent = \"\" + ~a; }; firefoxScripts"
+               nix-wrapper-file 
+               (cl-ppcre:regex-replace
+                 "/$" (namestring (truename profile-contents)) ""))
+             :nix-path nix-path
+             :out-link out-link)))))
     (setf *firefox-profile-combiner* 
           (format nil "~a/bin/~a" firefox-scripts "combine-firefox-profile"))
     (setf *firefox-launcher*
@@ -124,18 +129,26 @@
 
 (defun reset-bus-helpers
   (&key
-    (nix-path (cl-ppcre:split ":" (uiop:getenv "NIX_PATH"))) nix-file)
+    (nix-path (cl-ppcre:split ":" (uiop:getenv "NIX_PATH"))) nix-file out-link)
   (setf
     *dbus-helper* 
     (format nil 
             "~a/bin/with-dbus"
-            (nix-build "withDBus" :nix-file nix-file
-                       :nix-path nix-path))
+            (namestring
+              (truename
+                (nix-build
+                  "withDBus" :nix-file nix-file
+                  :nix-path nix-path
+                  :out-link (when out-link (format nil "~a-dbus" out-link))))))
     *pulseaudio-helper*
     (format nil 
             "~a/bin/with-pulseaudio"
-            (nix-build "withPulseaudio" :nix-file nix-file
-                       :nix-path nix-path))
+            (namestring
+              (truename
+                (nix-build
+                  "withPulseaudio" :nix-file nix-file
+                  :nix-path nix-path
+                  :out-link (when out-link (format nil "~a-pa" out-link))))))
     ))
 
 (defun firefox-pref-value-js (value)
