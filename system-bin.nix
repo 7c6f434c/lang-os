@@ -1,7 +1,7 @@
 { 
   pkgs ? import <nixpkgs> {}, nixos ? import <nixpkgs/nixos>
   , nixosTools ? (import <nixpkgs/nixos/modules/installer/tools/tools.nix> 
-                      {inherit pkgs; config={}; modulesPath = null;}).config.system.build
+                      {inherit pkgs; inherit(pkgs) lib; config={}; modulesPath = null;}).config.system.build
   , systemName ? "layered-system"
   , grub_efi ? pkgs.grub2_efi
   , setupScript ? ""
@@ -95,9 +95,7 @@ pkgs.runCommand "system-bin" {} ''
   script use-nixos-prepare-root 'target="$1"; shift' \
     'echo "$basedir $targetSystem" >&2' \
     'pipe="$(mktemp -d "''${TMPDIR:-/tmp}/nix-export-pipe.XXXXXXXX")/system.closure"; mkfifo "$pipe"' \
-    'nix-store -qR "$targetSystem" | xargs nix-store --export > "$pipe" &' \
-    '"${nixosTools.nixos-prepare-root}/bin/nixos-prepare-root" "$target" "" "$targetSystem" "$pipe" "$@"' \
-    'rm -rf "$(dirname "$pipe")"' \
+    'nix copy "$targetSystem" "$@" --to "$target" --no-check-sigs' \
     'chroot "$target" "$targetSystem/bin/switch"'
 
   script push-closures-into-prepared-chroot \

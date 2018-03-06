@@ -682,12 +682,14 @@
   (when re-wifi (sudo::rewifi)))
 
 (defun boot-login-init ()
+  (ask-with-auth () `(list (storage-modules) (usb-hid-modules)))
   (sudo::hostname "localhost")
   (&& (sudo::rewifi))
   (! queryfs-session-run detach)
   (sudo::set-brightness 50)
   (sudo::set-cpu-frequency 2690)
-  (grab-default-devices))
+  (grab-default-devices)
+  (restart-lisp-shell-server))
 
 (defun true-executable (f)
   (namestring (truename (which f))))
@@ -743,3 +745,12 @@
     (stumpwm-eval `(wait-set-tags-by-pid
                      ,pid ',tags :keep ,keep :forever ,forever)
                   :to-string t)))
+
+(defun add-cffi-libs-from-nix (package &key (suffix "lib") 
+                                  (nix-path (uiop:getenv "NIX_PATH"))
+                                  (nix-file "<nixpkgs>"))
+  (let* ((nix-path (if (stringp nix-path) (cl-ppcre:split ":" nix-path) nix-path))
+         (package-path (nix-build package :nix-file nix-file
+                                  :nix-path nix-path :nix-realise-error-output t))
+         (library-path (format nil "~a/~a" package-path suffix)))
+    (push (truename library-path) cffi:*foreign-library-directories*)))

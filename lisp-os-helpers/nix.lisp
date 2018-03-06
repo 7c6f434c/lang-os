@@ -33,11 +33,13 @@
                 (format
                   nil
                   "let
-                      imported_~a = import ~s; 
+                      imported_~a = import ~a; 
                       true_~a = if (builtins.isFunction imported_~a) then 
                                    imported_~a ~a else imported_~a; 
                    in with true_~a; "
-                   marker (namestring (truename nix-file))
+                   marker (if (probe-file nix-file)
+                            (format nil "~s" (namestring (truename nix-file)))
+                            nix-file)
                    marker     marker
                    marker import-arguments marker
                    marker)))
