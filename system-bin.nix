@@ -51,7 +51,7 @@ pkgs.runCommand "system-bin" {} ''
   script poweroff '/bin/sh "/run/current-system/bin/start-shutdown" "${pkgs.writeScript "poweroff-f" "poweroff -f"}"'
   script reboot '/bin/sh "/run/current-system/bin/start-shutdown" "${pkgs.writeScript "reboot-f" "reboot -f"}"'
 
-  script setup '
+  script presetup '
     export PATH="$PATH:$targetSystem/sw/bin:${pkgs.coreutils}/bin"
     export PATH="$targetSystem/sw/bin:${pkgs.coreutils}/bin"
 
@@ -63,6 +63,9 @@ pkgs.runCommand "system-bin" {} ''
     "${customSetup}" "$targetSystem"
 
     ln -sfT /var/current-system/ /run/current-system
+  '
+  script setup '
+    source "$targetSystem/bin/presetup"
     ln -sfT "$targetSystem" /var/current-system-new
     mv -fT /var/current-system-new /var/current-system
   '

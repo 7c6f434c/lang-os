@@ -736,7 +736,8 @@
     'enter-home
     :brightness brightness
     :extra-ips extra-ips
-    args))
+    args)
+  (! x-options))
 
 (defun launch-process-and-tag-windows (command tags &key keep forever launch-parameters)
   (let*
