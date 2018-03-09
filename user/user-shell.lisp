@@ -332,6 +332,7 @@
                         marionette-requests-wait-content
                         stumpwm-tags
                         hostname-hidden-suffix
+                        grab-sound grab-camera grab-devices
                         &allow-other-keys)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
@@ -375,6 +376,12 @@
              )
            :marionette-socket marionette-socket
            :name name
+           :grab-devices
+           `(
+             ,@ (when grab-sound (list "/dev/snd*"))
+             ,@ (when grab-camera (list "/dev/video*"))
+             ,@ grab-devices
+             )
            :allow-other-keys t)
          (when no-netns-p `(:netns nil))
          args)))
@@ -520,11 +527,13 @@
     `(hostname ,hostname)))
 
 (defun-export
-  sudo::rewifi (&key (interface "wlan0") restart (dhcp t) dhcp-resolv-conf)
+  sudo::rewifi (&key (interface "wlan0") restart (dhcp t) dhcp-resolv-conf
+                     reload-module)
   (ask-with-auth
     (:presence "Reconnect to WiFi")
     `(ensure-wifi ,interface ,(when restart "restart") ,(unless dhcp "no-dhcp")
-                  ,(when dhcp-resolv-conf "use-dhcp-resolv-conf"))
+                  ,(when dhcp-resolv-conf "use-dhcp-resolv-conf")
+                  ,(when reload-module "reload-module"))
     `(restart-bind))
   (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home))))
 

@@ -316,6 +316,8 @@
 (defun socket-command-server-commands::ensure-wifi
   (context interface &rest options)
   (require-presence context)
+  (when (find "reload-module" options :test 'equalp)
+    (module-remove "iwldvm"))
   (unless
     (find-if (lambda (x)
                (alexandria:starts-with-subseq
@@ -449,8 +451,14 @@
                       :error-output :output)
                     t)
                   ))
-              (ignore-errors (uiop:run-program (list "umount" full-path)))
-              (ignore-errors (uiop:run-program (list "umount" media-path)))
+              (ignore-errors
+                (uiop:run-program (list "umount" full-path)
+                                  :output (format nil "/tmp/backup-umount-~a.log" device)
+                                  :error-output :output))
+              (ignore-errors
+                (uiop:run-program (list "umount" media-path)
+                                  :output (format nil "/tmp/backup-umount2-~a.log" device)
+                                  :error-output :output))
               )) "backup-failed")
       (t "ok"))))
 
