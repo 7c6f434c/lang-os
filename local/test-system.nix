@@ -277,5 +277,5 @@ pkgs.lib.makeExtensible (self: with self; {
   };
 
   nixosTools = (import <nixpkgs/nixos/modules/installer/tools/tools.nix> 
-    {inherit pkgs; config={}; modulesPath = null;}).config.system.build;
+    {inherit pkgs; inherit (pkgs) lib; config={}; modulesPath = null;}).config.system.build;
 })
