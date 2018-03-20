@@ -474,6 +474,7 @@
     (modprobe "rndis-host")
     (sleep 0.3)
     (grant-acl user "/dev/bus/usb/" :recursive t)
+    (ignore-errors (grant-acl user "/sys/bus/usb/devices/" :recursive t))
     (loop
       for subcommand in '(30 31 33) do
       (unless (find "usb0" (parsed-ip-address-show)
