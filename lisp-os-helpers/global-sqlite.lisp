@@ -44,13 +44,18 @@
 
 (defun ensure-table (name fields)
   (unless
-    (ignore-errors
-      (clsql:select
-        (clsql:sql-expression :attribute :id)
-        :from
-        (clsql:sql-expression :table name)
-        :limit 0)
-      t)
+    (multiple-value-bind (result error)
+      (ignore-errors
+        (clsql:select
+          (clsql:sql-expression :attribute :id)
+          :from
+          (clsql:sql-expression :table name)
+          :limit 0)
+        t)
+      (unless result
+        (format *error-output* "Table ~a apparently doesn't exist:~%~a~%"
+                name error))
+      result)
     (clsql:create-table
       name
       (cons
