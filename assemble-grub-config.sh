@@ -4,7 +4,7 @@
       mkdir -p "$boot_dir"/kernels
       grubHeader="$("$grub_print_header" "$boot_dir")"
       cp -f "$boot_dir"/grub/grub.cfg{,.old}
-      sync
+      sync -f "$boot_dir/grub/grub.cfg.old"
 
       mkdir -p "$boot_dir"/grub/fragments.new
       for i in /nix/var/nix/profiles/*/ /run/booted-system/ /var/current-system/; do
@@ -14,10 +14,10 @@
             mv "$boot_dir/grub/fragments/$(basename "$i")" "$boot_dir/grub/fragments.new/$(basename "$i")"
         }
       done
-      sync
+      sync -f "$boot_dir/grub"
       rm -rf "$boot_dir"/grub/fragments
       mv "$boot_dir"/grub/fragments.new "$boot_dir"/grub/fragments
-      sync
+      sync -f "$boot_dir/grub"
       for i in "$boot_dir"/kernels/*.efi; do
         grep "${i#$boot_dir}" "$boot_dir"/grub/fragments/*/grub.part.cfg -m1 > /dev/null || rm "$i"
       done
@@ -37,15 +37,15 @@
           }
         }
       done
-      sync
+      sync -f "$boot_dir/kernels"
       for i in "$boot_dir"/grub/fragments/*; do
         sed -re "s@^menuentry[^\"]*\"@&$(basename "$i") @"  "$i/grub.part.cfg" > "$i/grub.part.labeled.cfg"
         ( echo "$grubHeader"; cat "$i/grub.part.labeled.cfg" ) > "$i/grub.one.cfg"
       done
       cp "$boot_dir"/grub/grub.fragmented.cfg{,.old}
-      sync
+      sync -f "$boot_dir/grub"
       ( echo "$grubHeader"; cat "$boot_dir"/grub/fragment-index/* |
           sed -e 's@$@/grub.part.labeled.cfg@' | xargs cat ) > "$boot_dir"/grub/grub.fragmented.cfg
       cp -f "$boot_dir"/grub/grub{.fragmented,}.cfg
-      sync
+      sync -f "$boot_dir/grub"
 

@@ -58,7 +58,7 @@ pkgs.runCommand "system-bin" {} ''
     echo "targetSystem: $targetSystem" >&2
     echo "PATH: $PATH" >&2
 
-    /bin/sh "${./setup-pre-custom.sh}" "$targetSystem"
+    sh "${./setup-pre-custom.sh}" "$targetSystem"
 
     "${customSetup}" "$targetSystem"
 
