@@ -14,6 +14,7 @@
       blacklist nouveau
       blacklist iwlwifi
       blacklist rtlwifi
+      blacklist rtl8821ae
       
       ${builtins.readFile ./modprobe.conf}
     '';
@@ -43,6 +44,8 @@
 
           build-max-jobs = 8
           build-cores = 8
+          max-jobs = 8
+          cores = 8
     '';
   };
 
@@ -53,4 +56,6 @@
       })
     ];
   });
+
+  systemLispSettings = ./system-lisp-settings-brix.lisp;
 })

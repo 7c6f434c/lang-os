@@ -29,12 +29,15 @@ pkgs.lib.makeExtensible (self: with self; {
     ];
   };
 
+  systemLispSettings = "/dev/null";
+
   systemLisp = import ../system-lisp.nix { 
           deps = with pkgs.lispPackages; [
             lispOsHelpers
           ];
           code = ''(defvar *lisp-os-helpers-package* "${lispOsHelpers}")
                    (load "${./user-info.lisp}")
+                   (load "${systemLispSettings}")
                    (load "${./system-lisp.lisp}")'';
         };
 

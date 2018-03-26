@@ -8,7 +8,6 @@ mount /new-root/nix/store /new-root/nix/store -o bind,ro
 mount /new-root/nix/store -o remount,bind,ro
 
 mount /dev/mapper/BrixVG-Home /new-root/home
-mount /dev/mapper/BrixVG-Root /new-root/root
 mount /dev/mapper/BrixVG-Var /new-root/var
 
 yes y | mkfs.ext4 /dev/mapper/BrixVG-Tmp

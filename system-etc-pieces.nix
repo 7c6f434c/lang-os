@@ -24,6 +24,7 @@ rec {
     mkdir -p "$out"
     ln -s /var/etc/resolv.conf "$out"
     ln -s /var/etc/resolv.conf.dhclient "$out"
+    ln -s /var/etc/resolv.conf.dhclient-new "$out"
   '';
 
   udevConf = {packages ? [], extraRules ? ""}: {

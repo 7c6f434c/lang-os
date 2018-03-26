@@ -149,6 +149,9 @@
 (defun run-link-dhclient (interface)
   (run-program-return-success
     (uiop:run-program
+      (list "pkill" "-f" (format nil "dhclient -1 ~a" interface))))
+  (run-program-return-success
+    (uiop:run-program
       (list "dhclient" "-1" interface))))
 
 (defun port-open-p (port &key (host "127.0.0.1"))

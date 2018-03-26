@@ -302,7 +302,8 @@
 
 (defun socket-command-server-commands::wifi-modules (context)
   context
-  (modprobe "iwlwifi"))
+  (modprobe "iwlwifi")
+  (modprobe "rtl8821ae"))
 
 (defun socket-command-server-commands::reload-video-modules (context)
   (require-or
@@ -561,6 +562,44 @@
       (ignore-errors (parse-integer frequency))
       (ignore-errors (intern (string-upcase frequency) :keyword))
       frequency)))
+
+(defvar *auto-wifi* nil)
+(defvar *auto-interfaces* nil)
+(defvar *auto-ip-addresses* nil)
+(defvar *auto-modules* nil)
+(defvar *auto-acls* nil)
+
+(mapcar 'modprobe *auto-modules*)
+
+(loop for iface in *auto-wifi*
+      do (ensure-wpa-supplicant iface "/root/src/rc/wpa_supplicant.conf")
+      do (bordeaux-threads:make-thread
+	   (let ((iface iface)) 
+	     (lambda ()
+	       (wpa-supplicant-wait-connection iface)
+	       (run-link-dhclient iface)
+	       (loop for x in
+		     (remove-if-not 
+		       (lambda (x) (equal (first x) iface))
+		       *auto-ip-addresses*)
+		     do (ignore-errors (apply 'add-ip-address x)))))))
+(mapcar 'run-link-dhclient *auto-interfaces*)
+(loop for iface in *auto-interfaces* do
+      (let ((iface iface))
+	(bordeaux-threads:make-thread
+	  (lambda ()
+	    (run-link-dhclient iface)
+	    (loop for x in
+		  (remove-if-not 
+		    (lambda (x) (equal (first x) iface))
+		    *auto-ip-addresses*)
+		  do (ignore-errors (apply 'add-ip-address x)))))))
+(loop for x in *auto-ip-addresses* do
+      (ignore-errors (apply 'add-ip-address x)))
+(loop for x in *auto-acls* do
+      (run-program-return-success
+	(uiop:run-program
+	  (list "setfacl" "-m" (second x) (first x)))))
 
 (unless
   *socket-main-thread-preexisting*
