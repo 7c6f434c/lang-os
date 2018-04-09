@@ -127,6 +127,8 @@
 
 (defun socket-command-server-commands::select-subuser (context name)
   (select-subuser (context-uid context) :name name))
+(defun socket-command-server-commands::select-subuser-by-uid (context uid)
+  (second (multiple-value-list (select-subuser (context-uid context) :uid uid))))
 (defun socket-command-server-commands::subuser-uid (context name)
   (subuser-uid (context-uid context) :name name :passwd-entry nil))
 
