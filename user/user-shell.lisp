@@ -723,7 +723,8 @@
   (sudo::start-x display "x-options; x-daemons; stumpwm"))
 
 (defun enter-home (&key ii (mcabber t) (brightness 25) (freq 2690)
-                        (interface "wlan0") (extra-ips `("192.168.0.203")))
+                        (interface "wlan0") (extra-ips `("192.168.0.203"))
+                        (watchperiod "0.3"))
   (ask-with-auth
     (:presence t)
     `(ensure-wifi ,interface)
@@ -732,11 +733,16 @@
     `(list
        ,@(loop for ip in extra-ips collect
                `(add-ip-address ,interface ,ip))))
+  (! web-stream-updater-starter detach)
   (enter-master-password)
   (email-fetchers-fast)
   (im-online-here
     :skip-ii (not ii)
     :skip-mcabber (not mcabber))
+  (alexandria:write-string-into-file
+    (format nil "~a" watchperiod)
+    (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
+    :if-exists :supersede)
   )
 
 (defun enter-labri (&rest args &key (brightness 400) (extra-ips `()))
@@ -790,3 +796,16 @@
                      (sudo::run-as-subuser name `("kill" ,@pids) ()
                                            "wait")))))
              ht)))
+
+(defun disconnect ()
+  (alexandria:write-string-into-file
+    "10" (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
+    :if-exists :supersede)
+  (! web-stream-updater-starter quit)
+  (ask-with-auth 
+    (:presence t)
+    `(list 
+       (set-cpu-frequency "min")
+       (set-brightness 1)))
+  (! x-options)
+  )
