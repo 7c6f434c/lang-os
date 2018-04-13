@@ -7,7 +7,6 @@
 }:
 rec {
   socatCmd = (pkgs.lib.getBin pkgs.socat) + "/bin/socat";
-  unshareCmd = (pkgs.lib.getBin pkgs.utillinux) + "/bin/unshare";
   firefoxCmd = (pkgs.lib.getBin pkgs.firefox) + "/bin/" + firefoxName;
   unionfsCmd = (pkgs.lib.getBin pkgs.unionfs-fuse) + "/bin/unionfs";
   xdummyCmd = (pkgs.lib.getBin pkgs.xdummy) + "/bin/xdummy";

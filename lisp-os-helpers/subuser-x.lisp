@@ -223,7 +223,7 @@
             (with-uid-auth
               `(grab-devices
                  ,(loop
-                    for d in (append (list "/dev/dri/card*")
+                    for d in (append (list "/dev/dri/card*" "/dev/dri/render*")
                                      (when with-pulseaudio (list "/dev/snd/*"))
                                      grab-devices)
                     for dl := (directory d)
@@ -246,6 +246,10 @@
             :display display :name name
             :environment
             `(
+              ,@(when grab-dri
+                  `(
+                    ("LD_LIBRARY_PATH" "/run/opengl-driver/lib")
+                    ))
               ,@ environment
               ,@(when http-proxy
                   `(

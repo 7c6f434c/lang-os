@@ -627,12 +627,16 @@
   (ask-with-auth (:presence "Load sound configuration")
                  `(load-sound ,choice)))
 
+(defun grab-dri (&optional name)
+  (sudo::grab-devices `("/dev/dri/card*" "/dev/dri/render*") name))
+
 (defun grab-default-devices ()
   (sudo::load-sound "usb")
   (grab-kvm)
   (grab-fuse)
   (sleep 1)
-  (grab-sound))
+  (grab-sound)
+  (grab-dri))
 
 (defmacro define-scoped-command
   (name arguments (before after) &rest code)
@@ -691,13 +695,16 @@
   (when re-wifi (sudo::rewifi)))
 
 (defun boot-login-init ()
-  (ask-with-auth () `(list (storage-modules) (usb-hid-modules)))
-  (sudo::hostname "localhost")
-  (&& (sudo::rewifi))
+  (ask-with-auth (:presence t)
+                 `(list
+                    (ensure-wifi "wlan0")
+                    (load-sound "usb")
+                    (storage-modules) (usb-hid-modules)
+                    (hostname "localhost")
+                    (set-brightness 50) (set-cpu-frequency 2690)
+                    ))
   (! queryfs-session-run detach)
-  (sudo::set-brightness 50)
-  (sudo::set-cpu-frequency 2690)
-  (grab-default-devices)
+  (grab-kvm) (grab-fuse) (sleep 1) (grab-sound)
   (restart-lisp-shell-server))
 
 (defun true-executable (f)

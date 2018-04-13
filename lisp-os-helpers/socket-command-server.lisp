@@ -238,8 +238,6 @@
 	  do 
 	  (let* ((accepted-socket accepted-socket)
 		 (peer peer))
-	    (format t "Accepted system socket connection ~s~%"
-		    accepted-socket)
 	    (bordeaux-threads:make-thread
 	      (lambda ()
 		(unwind-protect
