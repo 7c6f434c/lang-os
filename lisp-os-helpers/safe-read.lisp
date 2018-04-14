@@ -1,5 +1,5 @@
 (defpackage :lisp-os-helpers/safe-read
-  (:use :common-lisp)
+  (:use :common-lisp :lisp-os-helpers/util)
   (:export
     #:safe-read
     #:check-safety))
@@ -46,7 +46,7 @@
     (let*
       ((*read-eval* nil)
        (packages (remove nil (mapcar 'find-package packages)))
-       (*package* (if packages (first packages) (make-package (format nil "~36r" (random (expt 36 40))))))
+       (*package* (if packages (first packages) (make-package (format nil "~36r" (random-number (expt 36 40))))))
        (form (progn (unless (or packages forbid-nil)
 		      (import (list nil) *package*))
 		    (check-safety (read source) packages))))

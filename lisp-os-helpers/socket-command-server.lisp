@@ -1,7 +1,8 @@
 (defpackage :lisp-os-helpers/socket-command-server
   (:use :common-lisp
 	:lisp-os-helpers/references :lisp-os-helpers/safe-read
-	:lisp-os-helpers/auth-data :lisp-os-helpers/fbterm-requests)
+	:lisp-os-helpers/auth-data :lisp-os-helpers/fbterm-requests 
+         :lisp-os-helpers/util)
   (:export
     #:eval-socket-runner
     #:require-presence
@@ -292,7 +293,7 @@
   (or
     (funcall context :fd-socket-name)
     (let*
-      ((key (format nil "~36r" (random (expt 36 20))))
+      ((key (format nil "~36r" (random-number (expt 36 20))))
        (socket-address (concatenate 'string (string #\Null) key)))
       (format *error-output* "FD socket key: ~s~%" key)
       (funcall

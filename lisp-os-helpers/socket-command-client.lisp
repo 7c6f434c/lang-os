@@ -1,7 +1,7 @@
 (defpackage :lisp-os-helpers/socket-command-client
   (:use :common-lisp
         :lisp-os-helpers/safe-read :lisp-os-helpers/socket-command-server
-        :lisp-os-helpers/shell
+        :lisp-os-helpers/shell :lisp-os-helpers/util
         )
   (:export
     #:ask-server
@@ -42,7 +42,7 @@
 
 (defun skip-server-messages (stream)
   (let*
-    ((marker (format nil "~36r" (random (expt 36 40)))))
+    ((marker (format nil "~36r" (random-number (expt 36 40)))))
     (send-to-server stream `(ping ,marker))
     (loop
       for reply := (read-from-server stream)

@@ -1,5 +1,5 @@
 (defpackage :lisp-os-helpers/auth-data
-  (:use :common-lisp)
+  (:use :common-lisp :lisp-os-helpers/util)
   (:export
     #:check-password
     #:set-password
@@ -75,7 +75,7 @@
   (uiop:with-temporary-file
     (:pathname path :stream f :keep t :directory auth-challenge-directory)
     (uiop:run-program (list "chmod" "0" (namestring path)))
-    (format f "~36r~%" (random (expt 36 20)))
+    (format f "~36r~%" (random-number (expt 36 20)))
     (force-output f)
     (loop
       for user in users

@@ -1,5 +1,5 @@
 (defpackage :lisp-os-helpers/nix
-  (:use :common-lisp :lisp-os-helpers/shell)
+  (:use :common-lisp :lisp-os-helpers/shell :lisp-os-helpers/util)
   (:export
     #:nix-expression
     #:nix-instantiate
@@ -29,7 +29,7 @@
 				     import-arguments))
          (and nix-file
               (let*
-                ((marker (random (expt 36 20))))
+                ((marker (random-number (expt 36 20))))
                 (format
                   nil
                   "let

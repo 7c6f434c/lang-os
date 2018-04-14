@@ -1,7 +1,7 @@
 (defpackage :lisp-os-helpers/marionette
   (:use
     :common-lisp
-    :lisp-os-helpers/subuser-x
+    :lisp-os-helpers/subuser-x :lisp-os-helpers/util
     )
   (:export
     #:subuser-firefox
@@ -47,7 +47,7 @@
 
 (defun skip-marionette-messages (&key (socket *ambient-marionette-socket*))
   (let*
-    ((key (format nil "~36r" (random (expt 36 20)))))
+    ((key (format nil "~36r" (random-number (expt 36 20)))))
     (format socket "'~a'~%" key)
     (finish-output socket)
     (loop
