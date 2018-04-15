@@ -66,6 +66,7 @@ rec {
         {
           "resolv.conf" = "/var/etc/resolv.conf";
           "resolv.conf.dhclient" = "/var/etc/resolv.conf.dhclient";
+          "resolv.conf.dhclient-new" = "/var/etc/resolv.conf.dhclient-new";
         };
   mountEtc = deeplinkAttrset "etc-mount" {
         fstab = "/dev/null";
