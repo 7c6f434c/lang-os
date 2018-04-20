@@ -220,6 +220,8 @@
     (require-root context)
     (assert (gethash (list (context-uid context) :owner) *user-info*)))
   (require-presence context)
+  (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient"))
+  (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient-new"))
   (run-link-dhclient interface)
   (when copy-resolv (dhcp-resolv-conf)))
 

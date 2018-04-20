@@ -219,6 +219,10 @@
 
 (defun dhcp-resolv-conf ()
   (alexandria:write-string-into-file
-    (alexandria:read-file-into-string
-      "/etc/resolv.conf.dhclient")
+    (concatenate
+      'string
+      (alexandria:read-file-into-string
+        "/etc/resolv.conf.dhclient")
+      (alexandria:read-file-into-string
+        "/etc/resolv.conf.dhclient-new"))
     "/etc/resolv.conf"))
