@@ -241,9 +241,10 @@
 		 (peer peer))
 	    (bordeaux-threads:make-thread
 	      (lambda ()
-		(unwind-protect
-		  (eval-socket-connection-handler accepted-socket peer)
-		  (ignore-errors (close accepted-socket))))
+                (ignore-errors
+                  (unwind-protect
+                    (eval-socket-connection-handler accepted-socket peer)
+                    (ignore-errors (close accepted-socket)))))
 	      :name (format nil "Connection handler for ~a" peer)))))
       (close socket))))
 
