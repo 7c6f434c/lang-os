@@ -3,6 +3,7 @@ swapon /dev/mapper/ThinkPadMain-Swap
 
 mount -t ext4 /dev/mapper/ThinkPadMain-SystemRoot /new-root
 mount -t btrfs /dev/mapper/ThinkPadMain-Nix /new-root/nix
+chmod a-r /nix/store
 mount /new-root/nix/store /new-root/nix/store -o bind,ro
 mount /new-root/nix/store -o remount,bind,ro
 mount /dev/mapper/ThinkPadMain-Home /new-root/home
