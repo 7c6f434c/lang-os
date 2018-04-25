@@ -128,6 +128,7 @@ pkgs.lib.makeExtensible (self: with self; {
   systemParts = {
     bin = import ../system-bin.nix {
       initScript = ''
+        ls -ld /nix/store
         ${loopStarter "/run/current-system/services/language-daemon/system-lisp"} &
         ${loopStarter "/run/current-system/services/language-daemon/system-gerbil"} &
         ${loopStarter "/run/current-system/services/language-daemon/system-guile"} &

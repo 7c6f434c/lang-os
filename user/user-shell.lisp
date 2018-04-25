@@ -64,7 +64,8 @@
     (when command
       (uiop:run-program
 	(add-command-env
-	  command `((:display ,(format nil ":~a" display))))))))
+	  command `((:display ,(format nil ":~a" display))
+                    (:ld_library_path "/run/opengl-driver/lib")))))))
 
 (defun-export
   sudo::run-as-subuser (name command environment &rest options)

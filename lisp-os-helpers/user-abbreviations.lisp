@@ -236,55 +236,57 @@
 (defun create-eval-socket ()
   (let*
     ((socket-name (format nil "/run/user/~a/user-lisp-evaluator/socket"
-			  (iolib/syscalls:getuid))))
+                          (iolib/syscalls:getuid))))
     (ensure-directories-exist socket-name)
     (iolib/syscalls:chmod (directory-namestring socket-name) #o0700)
     (unless
       (ignore-errors
-	(let*
-	  ((s (iolib:make-socket :connect :active
-				 :address-family :local
-				 :type :stream
-				 :remote-filename socket-name)))
-	  (unwind-protect
-	    (progn
-	      (format s "1~%")
-	      (finish-output s)
-	      (equal (read-line s nil nil) "1"))
-	    (close s))))
+        (let*
+          ((s (iolib:make-socket :connect :active
+                                 :address-family :local
+                                 :type :stream
+                                 :remote-filename socket-name)))
+          (unwind-protect
+            (progn
+              (format s "1~%")
+              (finish-output s)
+              (equal (read-line s nil nil) "1"))
+            (close s))))
       (bordeaux-threads:make-thread
-	(lambda ()
-	  (let*
-	    ((socket
-	       (iolib:make-socket
-		 :connect :passive
-		 :address-family :local
-		 :type :stream
-		 :local-filename socket-name
-		 :external-format :utf-8)))
-	    (loop
-	      for client-socket :=
-	      (iolib:accept-connection socket :wait t)
-	      do
-	      (ignore-errors
-		(bordeaux-threads:make-thread
-		  (lambda ()
-                    (unwind-protect
-                      (loop
-                        for form := (read client-socket nil nil)
-                        while form
-                        do (format client-socket "~s~%"
-                                   (eval
-                                     `(let
-                                        ((client-socket ,client-socket))
-                                        client-socket
-                                        ,form)))
-                        do (finish-output client-socket)
-                        do (sleep 0.05))
-                      (ignore-errors (close client-socket))))
-		  :name "User socket evaluator connection handler")))
-	    ))
-	:name "User socket evaluator"))))
+        (lambda ()
+          (ignore-errors
+            (let*
+              ((socket
+                 (iolib:make-socket
+                   :connect :passive
+                   :address-family :local
+                   :type :stream
+                   :local-filename socket-name
+                   :external-format :utf-8)))
+              (loop
+                for client-socket :=
+                (ignore-errors (iolib:accept-connection socket :wait t))
+                do
+                (ignore-errors
+                  (bordeaux-threads:make-thread
+                    (lambda ()
+                      (ignore-errors
+                        (unwind-protect
+                          (loop
+                            for form := (read client-socket nil nil)
+                            while form
+                            do (format client-socket "~s~%"
+                                       (eval
+                                         `(let
+                                            ((client-socket ,client-socket))
+                                            client-socket
+                                            ,form)))
+                            do (finish-output client-socket)
+                            do (sleep 0.05))
+                          (ignore-errors (close client-socket)))))
+                    :name "User socket evaluator connection handler")))
+              )))
+        :name "User socket evaluator"))))
 
 (defun >file (string)
   (uiop:with-temporary-file

@@ -71,6 +71,7 @@ pkgs.lib.makeExtensible (self: with self; {
 
     export PATH="/init-tools/bin"
 
+    {
     mkdir -p /new-root /proc /sys /dev /run /tmp /etc
 
     mount proc -t proc /proc
@@ -96,13 +97,13 @@ pkgs.lib.makeExtensible (self: with self; {
 
     modprobe dm-mod
 
-    udevd &
+    udevd  &> /dev/null &
     udevadm trigger --action=add
     udevadm settle
 
     vgchange -ay
    
-    udevd &
+    udevd &> /dev/null &
     udevadm trigger --action=add
     udevadm settle
 
@@ -111,18 +112,25 @@ pkgs.lib.makeExtensible (self: with self; {
     mount efivars -t pstore /sys/firmware/efi/efivars/
 
     mkdir /new-root
+    } 2>&1 | tee  /boot-log
+
+    echo "$targetSystem ## $targetInit" >> /boot-log
 
     test -z "$targetSystem" && export targetSystem="$(cat /proc/cmdline | tr ' ' '\n' | grep '^targetSystem=' | sed -e 's/^targetSystem=//')"
     test -z "$targetInit" && export targetInit="$(cat /proc/cmdline | tr ' ' '\n' | grep '^init=' | sed -e 's/^init=//')"
     test -z "$targetInit" && targetInit="$targetSystem/bin/init"
 
+    echo "$targetSystem ## $targetInit" >> /boot-log
+    
     cat /proc/cmdline | tr ' ' '\n' | grep 'debug_premount=1' && sh -i
 
-    ${mountScript}
+    { 
+      ${mountScript} 
+    } 2>&1 | tee -a /boot-log
 
     cat /proc/cmdline | tr ' ' '\n' | grep 'debug_postmount=1' && sh -i
 
-    cd /new-root/
+    cd /new-root
 
     export PATH="$PATH:$targetSystem/sw/bin"
     chroot . test -e "$targetInit" || chroot . test -L "$targetInit" || {
@@ -130,9 +138,8 @@ pkgs.lib.makeExtensible (self: with self; {
       sh -i
     }
 
+    {
     udevadm control -e
-
-    lsmod
 
     mkdir -p ./{proc,sys,dev,run}
     mount --move /proc ./proc
@@ -140,8 +147,15 @@ pkgs.lib.makeExtensible (self: with self; {
     mount --move /dev ./dev
     mount --move /run ./run
 
+    ls -ld /new-root/nix/store
     mount -o bind,ro ./nix/store ./nix/store
+    ls -ld /new-root/nix/store
     mount -o bind,remount,ro ./nix/store ./nix/store
+    ls -ld /new-root/nix/store
+    } 2>&1 | tee -a /boot-log
+
+    mkdir -p ./var/log/boot/early
+    cp /boot-log ./var/log/boot/early/$(date +%Y%m%d-%H%M%S).log
 
     echo "Ready for switch_root"
 

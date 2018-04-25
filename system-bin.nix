@@ -84,7 +84,9 @@ pkgs.runCommand "system-bin" {} ''
 
     while true; do bash -i || /bin/sh -i; done
   '
-  script startup '"${customInit}" "$(dirname "$basedir")"'
+  script startup 'mkdir -p /var/log/boot/late
+       "${customInit}" "$(dirname "$basedir")" 2>&1 |
+             tee /var/log/boot/late/$(date +%Y%m%d-%H%M%S)'
 
   script system-passwd '${pkgs.shadow}/bin/passwd -R /var/auth "$@"'
   script system-groupadd '${pkgs.shadow}/bin/groupadd -R /var/auth "$@"'
