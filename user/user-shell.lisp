@@ -730,9 +730,13 @@
 (defun start-stumpwm (display)
   (sudo::start-x display "x-options; x-daemons; stumpwm"))
 
-(defun enter-home (&key ii (mcabber t) (brightness 25) (freq 2690)
-                        (interface "wlan0") (extra-ips `("192.168.0.203"))
-                        (watchperiod "0.3"))
+(defun enter-location (&key ii (mcabber t) (brightness 25) (freq 2690)
+                        (interface "wlan0") (extra-ips `())
+                        (watchperiod "0.3") (location "somewhere"))
+  (alexandria:write-string-into-file
+    location
+    (format nil "~a/.location" (uiop:getenv "HOME"))
+    :if-exists :supersede)
   (ask-with-auth
     (:presence t)
     `(ensure-wifi ,interface)
@@ -752,6 +756,13 @@
     (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
     :if-exists :supersede)
   )
+
+(defun enter-home (&rest args &key (extra-ips `("192.168.0.203"))
+                         (location "home"))
+  (apply
+    'enter-location
+    :location location :extra-ips extra-ips
+    args))
 
 (defun enter-labri (&rest args &key (brightness 400) (extra-ips `()))
   (! x-options)

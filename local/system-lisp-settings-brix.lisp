@@ -3,4 +3,4 @@
 (defparameter *auto-ip-addresses* '(("wlan0" "192.168.0.202")))
 (defparameter *auto-modules* '("rtl8821ae"))
 
-(defparameter *auto-acls* `(("/dev/kvm" "u:ofborg:rwx")))
+(defparameter *auto-acls* `(("/dev/kvm" "u:ofborg:rwx") ("/dev/kvm" "g:nixbld:rwx")))
