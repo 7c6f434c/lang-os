@@ -767,7 +767,7 @@
 (defun enter-labri (&rest args &key (brightness 400) (extra-ips `()))
   (! x-options)
   (apply
-    'enter-home
+    'enter-location
     :brightness brightness
     :extra-ips extra-ips
     args)

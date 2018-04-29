@@ -200,7 +200,10 @@
            ()
            (ask-server
              (with-uid-auth
-               `(subuser-uid ,name)))))))
+               `(subuser-uid ,name))))))
+     (socks-proxy (if (and socks-proxy (not (integerp socks-proxy))) 1080 socks-proxy))
+     (http-proxy (if (and socks-proxy (not (integerp socks-proxy))) 3128 http-proxy))
+     )
     (with-system-socket
       (system-socket)
       (when pass-stdout
@@ -253,21 +256,21 @@
               ,@ environment
               ,@(when http-proxy
                   `(
-                    ("proxy"         "http://127.0.0.1:3128")
-                    ("http_proxy"    "http://127.0.0.1:3128")
-                    ("https_proxy"   "http://127.0.0.1:3128")
-                    ("ftp_proxy"     "http://127.0.0.1:3128")
+                    ("proxy"         ,(format nil "http://127.0.0.1:~a" http-proxy))
+                    ("http_proxy"    ,(format nil "http://127.0.0.1:~a" http-proxy))
+                    ("https_proxy"   ,(format nil "http://127.0.0.1:~a" http-proxy))
+                    ("ftp_proxy"     ,(format nil "http://127.0.0.1:~a" http-proxy))
                     ))
               ,@(when socks-proxy
                   `(
-                    ("proxy"         "socks5://127.0.0.1:1080")
-                    ("http_proxy"    "socks5://127.0.0.1:1080")
-                    ("https_proxy"   "socks5://127.0.0.1:1080")
-                    ("ftp_proxy"     "socks5://127.0.0.1:1080")
-                    ("proxy"         "socks5://127.0.0.1:1080")
-                    ("socks_proxy"   "socks5://127.0.0.1:1080")
+                    ("proxy"         ,(format nil "socks5://127.0.0.1:~a" socks-proxy))
+                    ("http_proxy"    ,(format nil "socks5://127.0.0.1:~a" socks-proxy))
+                    ("https_proxy"   ,(format nil "socks5://127.0.0.1:~a" socks-proxy))
+                    ("ftp_proxy"     ,(format nil "socks5://127.0.0.1:~a" socks-proxy))
+                    ("proxy"         ,(format nil "socks5://127.0.0.1:~a" socks-proxy))
+                    ("socks_proxy"   ,(format nil "socks5://127.0.0.1:~a" socks-proxy))
                     ("SOCKS_SERVER"  "127.0.0.1")
-                    ("SOCKS_PORT"    "1080")
+                    ("SOCKS_PORT"    ,(format nil "~a" socks-proxy))
                     ("SOCKS_VERSION" "5")
                     ))
               ,@(when home `(("HOME" ,home)))
@@ -309,8 +312,8 @@
                   `(("netns"
                      (
                       ,@(when dns `( ((53 :udp)) ((53 :tcp))  ))
-                      ,@(when http-proxy `(((3128 tcp))))
-                      ,@(when socks-proxy `(((1080 tcp))))
+                      ,@(when http-proxy `(((,http-proxy tcp))))
+                      ,@(when socks-proxy `(((,socks-proxy tcp))))
                       ,@network-ports))))
               ,@(when pass-stdout `(("stdout-fd" "stdout")))
               ,@(when pass-stderr `(("stderr-fd" "stderr")))
