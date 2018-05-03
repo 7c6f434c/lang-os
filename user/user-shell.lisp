@@ -757,14 +757,14 @@
     :if-exists :supersede)
   )
 
-(defun enter-home (&rest args &key (extra-ips `("192.168.0.203"))
+(defun enter-home (&rest args &key &allow-other-keys (extra-ips `("192.168.0.203"))
                          (location "home"))
   (apply
     'enter-location
     :location location :extra-ips extra-ips
     args))
 
-(defun enter-labri (&rest args &key (brightness 400) (extra-ips `()))
+(defun enter-labri (&rest args &key &allow-other-keys (brightness 400) (extra-ips `()))
   (! x-options)
   (apply
     'enter-location
