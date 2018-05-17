@@ -220,19 +220,18 @@
             (take-reply-value (ask-server `(fd-socket))))
           2)
         (ask-server `(receive-fd stderr)))
-      (when grab-dri
-        (take-reply-value
-          (ask-server 
-            (with-uid-auth
-              `(grab-devices
-                 ,(loop
-                    for d in (append (list "/dev/dri/card*" "/dev/dri/render*")
-                                     (when with-pulseaudio (list "/dev/snd/*"))
-                                     grab-devices)
-                    for dl := (directory d)
-                    for dn := (mapcar 'namestring dl)
-                    append dn)
-                 ,name)))))
+      (take-reply-value
+        (ask-server 
+          (with-uid-auth
+            `(grab-devices
+               ,(loop
+                  for d in (append (when grab-dri (list "/dev/dri/card*" "/dev/dri/render*"))
+                                   (when with-pulseaudio (list "/dev/snd/*"))
+                                   grab-devices)
+                  for dl := (directory d)
+                  for dn := (mapcar 'namestring dl)
+                  append dn)
+               ,name))))
       (loop
         for g in grant
         do
