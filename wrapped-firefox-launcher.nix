@@ -101,7 +101,7 @@ rec {
       echo "Virtual local DISPLAY=$DISPLAY" >&2
     fi
   '';
-  firefoxLauncher = pkgs.writeScriptBin name ''
+  firefoxLauncher = pkgs.writeScriptBin name ''#! /bin/sh
     ${homeScript}
     ${marionetteScript}
     ${displayScript}

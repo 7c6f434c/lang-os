@@ -605,6 +605,7 @@
 
 (unless
   *socket-main-thread-preexisting*
+  (ignore-errors (uiop:run-program (list "/var/current-system/sw/bin/vtlock" "0")))
   (format
     t "Finished Common Lisp daemon initialisation at ~a.~%Socket thread: ~s~%"
     (local-time:now) *socket-main-thread*)

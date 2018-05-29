@@ -107,7 +107,7 @@
         :verbose verbose-errors))))
 
 (defun reset-firefox-launcher (&key profile-contents nix-path nix-wrapper-file
-                                    out-link)
+                                    out-link verbose)
   (setf *firefox-profile-contents* profile-contents)
   (let
     ((firefox-scripts 
@@ -121,7 +121,8 @@
                (cl-ppcre:regex-replace
                  "/$" (namestring (truename profile-contents)) ""))
              :nix-path nix-path
-             :out-link out-link)))))
+             :out-link out-link
+             :verbose verbose)))))
     (setf *firefox-profile-combiner* 
           (format nil "~a/bin/~a" firefox-scripts "combine-firefox-profile"))
     (setf *firefox-launcher*

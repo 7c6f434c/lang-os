@@ -106,11 +106,14 @@
 		      :error-output error-output)))
 
 (defun nix-build (name &rest args &key out-link nix-realise-error-output
+                       verbose
 		       &allow-other-keys)
   out-link
   (let*
     ((derivations
        (apply 'nix-instantiate name :allow-other-keys t args)))
+    (when verbose
+      (format *error-output* "Derivations: ~s~%" derivations))
     (apply 'nix-realise derivations :allow-other-keys t
 	   :error-output nix-realise-error-output args)))
 

@@ -255,7 +255,8 @@
                           :out-link (~ ".nix-personal/firefox-launcher")
                           :profile-contents
                           (format nil "~a/src/nix/lang-os/user/firefox-profile-skel/"
-                                  ($ :home)))
+                                  ($ :home))
+                          :verbose t)
   (reset-bus-helpers
     :nix-path (list ($ :home) "/home/repos" (cl-ppcre:split ":" ($ :nix_path)))
     :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")

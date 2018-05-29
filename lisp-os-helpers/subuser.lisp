@@ -243,7 +243,8 @@
      ,@ command))
 
 (defun add-command-netns (command &key ports-out uid gid (directory "/")
-				  (path "/var/current-system/sw/bin"))
+				  (path "/var/current-system/sw/bin")
+                                  hostname)
   (ensure-directories-exist "/tmp/subuser-homes/")
   (let* 
     ((*print-right-margin* (expt 10 9))
@@ -284,10 +285,14 @@
 	 finally (return (list connect-commands listen-commands))))
      (connect-commands (first socat-commands))
      (listen-commands (second socat-commands))
-     (inner-unshare `("nsjail"
+     (inner-unshare `(,(which "nsjail")
                       "-e" "-Q" "-B" "/"
                       "-u" ,(format nil "~a:0" uid)
+                      "-g" ,(format nil "~a:0" gid)
                       "-D" ,directory
+                      ,@(when hostname `("-H" ,hostname))
+                      "--keep_caps"
+                      "--proc_rw"
                       "--disable_clone_newnet"
                       "--disable_clone_newuts"
                       "--rlimit_as"     "max"
@@ -299,16 +304,33 @@
                       "--rlimit_stack"  "max"
                       "--"
                       ,@ command))
-     (lo-up-command `("ip" "link" "set" "lo" "up"))
      (inner-setup
        (list
 	 "/bin/sh" "-c"
 	 (format
-	   nil "~a ; ~{ ~a & ~} sleep 0.3; mkdir -p \"$HOME\"; cd; ~a; exit_value=$?; pkill -INT -P $$; exit $exit_value"
-	   (collapse-command lo-up-command)
+	   nil "~{ ~a & ~} sleep 0.3; mkdir -p \"$HOME\"; cd; ~a; exit_value=$?; pkill -INT -P $$; exit $exit_value"
 	   (mapcar 'collapse-command listen-commands)
 	   (collapse-command inner-unshare))))
-     (outer-unshare `("unshare" "-U" "-r" "-n" ,@ inner-setup))
+     ;(outer-unshare `("unshare" "-U" "-r" "-n" ,@ inner-setup))
+     (outer-unshare `(
+                      ,(which "nsjail")
+                      "-e" "-Q" "-B" "/"
+                      "-u" ,(format nil "0:~a" uid)
+                      "-g" ,(format nil "0:~a" gid)
+                      "-D" ,directory
+                      "--keep_caps"
+                      "--disable_clone_newuts"
+                      "--proc_rw"
+                      "--rlimit_as"     "max"
+                      "--rlimit_core"   "max"
+                      "--rlimit_cpu"    "max"
+                      "--rlimit_fsize"  "max"
+                      "--rlimit_nofile" "max"
+                      "--rlimit_nproc"  "max"
+                      "--rlimit_stack"  "max"
+                      "--"
+                      ,@ inner-setup
+                      ))
      (result
        (list
 	 "/bin/sh" "-c"
