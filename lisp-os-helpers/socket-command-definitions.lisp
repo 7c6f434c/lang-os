@@ -149,11 +149,29 @@
 	      (if subuser (subuser-uid user :name subuser) user ))
       device)))
 
+(defun do-ungrab-device (user subuser device)
+  (unless
+    (grab-device-allowed-p user subuser device)
+    (error "User ~a is not allowed to grab device ~s for subuser ~s" user device subuser))
+  (uiop:run-program
+    (list
+      "setfacl" "-x"
+      (format nil "u:~a"
+	      (if subuser (subuser-uid user :name subuser) user ))
+      device)))
+
 (defun socket-command-server-commands::grab-devices (context devices &optional subuser)
   (loop
     with user := (context-uid context)
     for d in devices
     do (do-grab-device user subuser d))
+  "OK")
+
+(defun socket-command-server-commands::ungrab-devices (context devices &optional subuser)
+  (loop
+    with user := (context-uid context)
+    for d in devices
+    do (do-ungrab-device user subuser d))
   "OK")
 
 (defun socket-command-server-commands::set-password (context &optional password)

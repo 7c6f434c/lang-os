@@ -231,6 +231,22 @@
            ,subuser)))))
 
 (defun-export
+  sudo::ungrab-devices (devices &optional subuser)
+  (with-system-socket
+    ()
+    (ask-server
+      (with-uid-auth
+        `(ungrab-devices
+           ,(mapcar
+              'namestring
+              (reduce
+                'append
+                (mapcar
+                  'directory
+                  devices)))
+           ,subuser)))))
+
+(defun-export
   sudo::set-brightness (brightness)
   (with-system-socket
     ()
@@ -833,3 +849,67 @@
        (set-brightness 1)))
   (! x-options)
   )
+
+(defun alive-users ()
+  (loop
+    with ht := (make-hash-table :test 'equal)
+    with res := nil
+    for x in (ps)
+    do (setf (gethash (getf x :uid) ht) t)
+    finally (progn
+              (maphash (lambda (k v) v (push k res)) ht)
+              (return res))))
+
+(defun acl-users (filename)
+  (loop for line in ($ () getfacl (identity filename))
+        for components := (cl-ppcre:split ":" line)
+        for kind := (first components)
+        for id := (second components)
+        when (equal kind "user")
+        when (> (length id) 0)
+        collect id))
+
+(defun subuser-suffixes (uids)
+  (loop 
+    for name in 
+    (first
+      (take-reply-value
+        (ask-with-auth 
+          ()
+          `(list 
+             ,@(loop for u in uids
+                     collect `(ignore-errors
+                                (select-subuser-by-uid
+                                  ,(parse-integer (format nil "~a" u)))))))))
+    for suffix :=
+    (and name
+         (> (length name) (length (get-current-user-name)))
+         (equal (format nil "~a." (get-current-user-name))
+                (subseq name 0 (1+ (length (get-current-user-name)))))
+         (subseq name (1+ (length (get-current-user-name)))))
+    when suffix
+    collect suffix))
+
+(defun atmost (l n)
+  (subseq l 0 (min (length l) n)))
+
+(defun ungrab-for-stale (devices n)
+  (let*
+    ((devices (mapcar 'namestring (reduce 'append (mapcar 'directory devices))))
+     (users (loop with res := nil
+                  for d in devices
+                  do (setf res (union res (acl-users d) :test 'equal))
+                  finally (return res)))
+     (to-ungrab (atmost users n))
+     (suffixes (subuser-suffixes to-ungrab)))
+    (loop for s in suffixes do
+          (sudo::ungrab-devices devices s)
+          collect s)))
+
+(defun ungrab-for-stale-chunked (devices n)
+  (loop while (ignore-errors (ungrab-for-stale devices n))))
+
+(defun kill-background-process-leaks ()
+  (! pkill "Xorg")
+  (! pkill -f "/user-lisp-evaluator/socket")
+  (restart-lisp-shell-server))

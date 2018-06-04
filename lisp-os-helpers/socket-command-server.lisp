@@ -72,6 +72,9 @@
   (loop
     for e in entries
     collect (take-reply-value (eval-command-form e context))))
+(defun socket-command-server-commands::ignore-errors
+  (context e)
+  (ignore-errors (take-reply-value (eval-command-form e context))))
 (defun socket-command-server-commands::progn
   (context &rest entries)
   (loop
