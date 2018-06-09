@@ -554,6 +554,7 @@
 
 (defun socket-command-server-commands::set-cpu-frequency (context frequency)
   (require-or
+    "Owner user presence not confirmed"
     (require-root context)
     (progn
       (assert (gethash (list (context-uid context) :owner) *user-info*))
@@ -564,6 +565,18 @@
       (ignore-errors (parse-integer frequency))
       (ignore-errors (intern (string-upcase frequency) :keyword))
       frequency)))
+
+(defun socket-command-server-commands::selfcheck-restart (context)
+  (require-or
+    "Owner user not confirmed"
+    (require-root context)
+    (assert (gethash (list (context-uid context) :owner) *user-info*)))
+  (unless
+    (ignore-errors
+      (with-open-file (f "/dev/null"))
+      (lisp-os-helpers/subuser:subuser-uid "root")
+      t)
+    (quit)))
 
 (defvar *auto-wifi* nil)
 (defvar *auto-interfaces* nil)
