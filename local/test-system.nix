@@ -137,6 +137,7 @@ pkgs.lib.makeExtensible (self: with self; {
       setupScript = ''
         targetSystem="$1"
         mkdir -p /var/lib/cups /var/lib/ssh /var/lib/bind /var/empty
+        ln -sf "/etc/ssh-config/sshd_config" /var/lib/ssh/
       '';
     };
     global = import ../system-global.nix {inherit systemEtc;};
@@ -272,6 +273,9 @@ pkgs.lib.makeExtensible (self: with self; {
         {"cups" = "/var/lib/cups";})
       (etcPieces.deeplinkAttrset "etc-openssh"
         {"ssh" = "/var/lib/ssh";})
+      (etcPieces.deeplinkAttrset "etc-openssh-config"
+        (fromNixOS.etcSelectRenamed "ssh-config/sshd_config" "ssh/sshd_config"
+          {services.openssh.enable = true;}))
       (etcPieces.deeplinkAttrset "etc-bind"
         {"bind" = "/var/lib/bind";})
       (etcPieces.deeplinkAttrset "etc-xorg"
