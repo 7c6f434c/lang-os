@@ -900,6 +900,7 @@
                   for d in devices
                   do (setf res (union res (acl-users d) :test 'equal))
                   finally (return res)))
+     (users (set-difference users (alive-users) :test 'equal))
      (to-ungrab (atmost users n))
      (suffixes (subuser-suffixes to-ungrab)))
     (loop for s in suffixes do
