@@ -861,7 +861,7 @@
               (return res))))
 
 (defun acl-users (filename)
-  (loop for line in ($ () getfacl (identity filename))
+  (loop for line in ($ () getfacl -n (identity filename))
         for components := (cl-ppcre:split ":" line)
         for kind := (first components)
         for id := (second components)
@@ -896,13 +896,16 @@
 (defun ungrab-for-stale (devices n)
   (let*
     ((devices (mapcar 'namestring (reduce 'append (mapcar 'directory devices))))
-     (users (loop with res := nil
-                  for d in devices
-                  do (setf res (union res (acl-users d) :test 'equal))
-                  finally (return res)))
-     (users (set-difference users (alive-users) :test 'equal))
+     (acl-users (loop with res := nil
+                      for d in devices
+                      do (setf res (union res (acl-users d) :test 'equal))
+                      finally (return res)))
+     (alive-users (alive-users))
+     (users (set-difference acl-users alive-users :test 'equal))
      (to-ungrab (atmost users n))
      (suffixes (subuser-suffixes to-ungrab)))
+    (format t "~a stale user(s) out of ~a listed given ~a alive~%"
+            (length users) (length acl-users) (length alive-users))
     (loop for s in suffixes do
           (sudo::ungrab-devices devices s)
           collect s)))
