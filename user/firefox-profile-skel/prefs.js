@@ -176,3 +176,4 @@ user_pref("browser.startup.homepage_override.mstone", "ignore");
 user_pref("layout.css.devPixelsPerPx", "1.0");
 user_pref("accessibility.blockautorefresh", true);
 user_pref("browser.meta_refresh_when_inactive.disabled", true);
+user_pref("browser.tabs.closeWindowWithLastTab", true);
