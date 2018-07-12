@@ -150,6 +150,7 @@
   (run-program-return-success
     (uiop:run-program
       (list "pkill" "-f" (format nil "dhclient -1 ~a" interface))))
+  (alexandria:write-string-into-file "" "/etc/resolv.conf.dhclient-new")
   (run-program-return-success
     (uiop:run-program
       (list "dhclient" "-1" interface))))
