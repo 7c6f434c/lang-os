@@ -194,7 +194,9 @@ pkgs.lib.makeExtensible (self: with self; {
       "from-nixos/xorg" = pkgs.writeScript "xorg-start" ''
 	    ln -Tfs "${NixOSWithX.config.hardware.opengl.package or "/"}" /run/opengl-driver
 	    ln -Tfs "${NixOSWithX.config.hardware.opengl.package32 or "/"}" /run/opengl-driver-32
-	    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib"
+	    ln -Tfs "${pkgs.libglvnd}" /run/libglvnd
+	    ln -Tfs "${pkgs.pkgsi686Linux.libglvnd}" /run/libglvnd-32
+	    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib:/run/libglvnd/lib:/run/libglvnd-32/lib"
 
 	    ${pkgs.xorg.xorgserver}/bin/Xorg vt"$((7+''${1:-0}))" :"''${1:-0}" -logfile "/var/log/X.''${1:-0}.log" -config /etc/X11/xorg.conf
       '';
