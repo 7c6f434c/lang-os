@@ -785,7 +785,17 @@
 (defun enter-labri (&rest args &key (brightness 400) (extra-ips `())
                           (location "LaBRI.fr")
                           &allow-other-keys)
-  (! x-options)
+  (apply
+    'enter-location
+    :brightness brightness
+    :extra-ips extra-ips
+    :location location
+    args)
+  (! x-options))
+
+(defun enter-ratmino (&rest args &key (brightness 20) (extra-ips `())
+                          (location "ratmino")
+                          &allow-other-keys)
   (apply
     'enter-location
     :brightness brightness
