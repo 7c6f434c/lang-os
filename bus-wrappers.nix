@@ -36,7 +36,7 @@ pkgs.lib.makeExtensible (self: with self; {
       grep -Ev 'load-module module-(console-kit|systemd-.*|esound-protocol-unix)' |
       sed -e 's/module-udev-detect/module-detect/' > "$padir/default.pa"
 
-    mkdir -p ~/.config
+    mkdir -p ~/.config/pulse/
 
     "${pkgs.pulseaudioLight}"/bin/pulseaudio --exit-idle-time=999999 -F "$padir"/default.pa &
     export LD_LIBRARY_PATH="''${LD_LIBRARY_PATH}''${LD_LIBRARY_PATH:+:}${pkgs.pulseaudioLight}/lib"
