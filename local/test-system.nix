@@ -116,7 +116,7 @@ pkgs.lib.makeExtensible (self: with self; {
 	postgresql-package
         nsjail unionfs-fuse
         lispPackages.stumpwm alsaTools
-        xdummy pv mercurial fossil lvm2 rsync
+        xdummy pv mercurial fossil lvm2 rsync gawk
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
         (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
         (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])
