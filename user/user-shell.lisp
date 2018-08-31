@@ -927,8 +927,24 @@
      (suffixes (subuser-suffixes to-ungrab)))
     (format t "~a stale user(s) out of ~a listed given ~a alive~%"
             (length users) (length acl-users) (length alive-users))
-    (loop for s in suffixes do
-          (sudo::ungrab-devices devices s)
+    (loop for s in suffixes
+          for uid in to-ungrab
+          do
+          (progn 
+            (loop for d in 
+                  (mapcar 'namestring
+                          (reduce 
+                            'append 
+                            (mapcar 'directory devices)))
+                  for command :=
+                  `("setfacl" "-x"
+                        ,(format nil "u:~a" uid)
+                        ,d)
+                  do
+                  (ignore-errors
+                    (uiop:run-program
+                      command)))
+            (sudo::ungrab-devices devices s))
           collect s)))
 
 (defun ungrab-for-stale-chunked (devices n)

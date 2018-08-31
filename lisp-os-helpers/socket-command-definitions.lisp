@@ -158,7 +158,8 @@
       "setfacl" "-x"
       (format nil "u:~a"
 	      (if subuser (subuser-uid user :name subuser) user ))
-      device)))
+      device)
+    :ignore-error-status t))
 
 (defun socket-command-server-commands::grab-devices (context devices &optional subuser)
   (loop
