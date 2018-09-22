@@ -466,6 +466,9 @@
                        (namestring (truename file))))))
            arglist)))
 
+(defun true-executable (f)
+  (namestring (truename (which f))))
+
 (defun-export
   sudo::root-urxvt
   (&key (display 0)
@@ -725,9 +728,6 @@
   (grab-kvm) (grab-fuse) (sleep 1) (grab-sound)
   (restart-lisp-shell-server))
 
-(defun true-executable (f)
-  (namestring (truename (which f))))
-
 (defun gvim-plus-zathura (file &key compiler)
   (with-open-file (f file :if-does-not-exist :create))
   (let*
@@ -954,3 +954,44 @@
   (! pkill "Xorg")
   (! pkill -f "/user-lisp-evaluator/socket")
   (restart-lisp-shell-server))
+
+(defun im-browsers ()
+  (firefox (list "https://web.telegram.org/")
+           :pass-stderr nil :pass-stdout nil :wait nil
+           :no-close t :stumpwm-tags "cat/e-im im telegram no-auto-tags"
+           :javascript t
+           :socks-proxy 1080)
+  (firefox (list "https://web.skype.com/")
+           :pass-stderr nil :pass-stdout nil :wait nil
+           :no-close t :stumpwm-tags "cat/e-im im skype no-auto-tags"
+           :javascript t
+           :socks-proxy 1080)
+  )
+
+(defun email-browsers ()
+  (firefox (list "https://email.mccme.ru/")
+           :pass-stderr nil :pass-stdout nil :wait nil
+           :no-close t :stumpwm-tags "cat/em-email email mail mccme no-auto-tags"
+           :data "/home/raskin/fallout/"
+           :javascript t
+           :socks-proxy 1080)
+  (firefox (list "https://github.com/notifications/")
+           :pass-stderr nil :pass-stdout nil :wait nil
+           :no-close t :stumpwm-tags "cat/em-email email mail github no-auto-tags"
+           :javascript t
+           :socks-proxy 1080)
+  )
+
+(defun matrix-term ()
+  (& urxvt 
+     -name "weechat:matrix:dev" -title "Weechat: Matrix: dev.mccme.ru"
+     -e sh -c "https_proxy= weechat -d ~/.weechat-dev"))
+
+(defun vps-term ()
+  (& sh -c "ssh-window \"$(cat ~/.vps-ssh)\""))
+
+(defun communication-windows ()
+  (vps-term)
+  (matrix-term)
+  (im-browsers)
+  (email-browsers))
