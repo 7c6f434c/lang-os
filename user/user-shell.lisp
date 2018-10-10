@@ -995,3 +995,8 @@
   (matrix-term)
   (im-browsers)
   (email-browsers))
+
+(defun-export sudo::local-resolv-conf ()
+              (ask-with-auth
+                (:presence t)
+                `(local-resolv-conf)))

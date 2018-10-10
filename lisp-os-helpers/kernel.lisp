@@ -96,8 +96,8 @@
     (:mem (overwrite-file "mem" "/sys/power/state"))
     (:disk
       (overwrite-file "shutdown" "/sys/power/disk")
-      (overwrite-file "mem" "/sys/power/state"))
+      (overwrite-file "disk" "/sys/power/state"))
     (:both
       (overwrite-file "suspend" "/sys/power/disk")
-      (overwrite-file "mem" "/sys/power/state"))))
+      (overwrite-file "disk" "/sys/power/state"))))
 
