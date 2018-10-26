@@ -58,7 +58,8 @@ pkgs.runCommand "firefox-initialised-profile" environment ''
    if test -n "${builtins.toString initialContent}"; then
      cp -rf "${builtins.toString initialContent}"/* "$out"
    fi
-   cp -f prefs.js "$out/prefs.js"
+   chmod u+rw -R "$out"
+   cp -fT prefs.js "$out/prefs.js"
 
    "${pkgs.lib.getBin _firefox}/bin/firefox" --profile "$out" --new-instance "file:///$PWD/close.html"
    echo "Firefox empty-run finished"

@@ -375,8 +375,9 @@
            :pass-stdout pass-stdout
            :certificate-overrides certificate-overrides
            :prefs `(
-                    ,@(when javascript 
-                        `(("javascript.enabled" t)))
+                    ,(if javascript 
+                        `("javascript.enabled" t)
+                        `("javascript.enabled" nil))
                     ,@(when autorefresh
                         `(("accessibility.blockautorefresh" nil)))
                     ,@prefs )
