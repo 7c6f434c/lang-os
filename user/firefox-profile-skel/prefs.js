@@ -212,3 +212,5 @@ user_pref("dom.ipc.plugins.flash.subprocess.crashreporter.enabled",false);
 user_pref("dom.ipc.plugins.reportCrashURL",false);
 user_pref("browser.contentblocking.introCount", 30);
 user_pref("browser.contentblocking.enabled", true);
+user_pref("javascript.enabled",false);
+user_pref("accessibility.blockautorefresh", true);
