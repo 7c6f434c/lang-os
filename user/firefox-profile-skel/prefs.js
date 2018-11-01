@@ -214,3 +214,4 @@ user_pref("browser.contentblocking.introCount", 30);
 user_pref("browser.contentblocking.enabled", true);
 user_pref("javascript.enabled",false);
 user_pref("accessibility.blockautorefresh", true);
+user_pref("browser.ctrlTab.recentlyUsedOrder", false);
