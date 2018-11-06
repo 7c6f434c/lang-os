@@ -90,6 +90,16 @@ pkgs.lib.makeExtensible (self: with self; {
                      MatchIsPointer "on"
                      Driver "evdev"
                    ''
+                   ''
+                     Identifier "Touchscreen catchall evdev"
+                     MatchIsTouchscreen "on"
+                     Driver "evdev"
+                   ''
+                   ''
+                     Identifier "Tablet catchall evdev"
+                     MatchIsTablet "on"
+                     Driver "evdev"
+                   ''
                ];
          
                layout = "us";			
