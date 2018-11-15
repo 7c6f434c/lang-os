@@ -227,4 +227,5 @@
         "/etc/resolv.conf.dhclient")
       (alexandria:read-file-into-string
         "/etc/resolv.conf.dhclient-new"))
-    "/etc/resolv.conf"))
+    "/etc/resolv.conf"
+    :if-exists :supersede))
