@@ -816,6 +816,17 @@
     args)
   (! x-options))
 
+(defun enter-tum (&rest args &key (brightness 400) (extra-ips `())
+                          (location "in.tum.de")
+                          &allow-other-keys)
+  (apply
+    'enter-location
+    :brightness brightness
+    :extra-ips extra-ips
+    :location location
+    args)
+  (! x-options))
+
 (defun launch-process-and-tag-windows (command tags &key keep forever launch-parameters)
   (let*
     ((process (apply 'uiop:launch-program command launch-parameters))
