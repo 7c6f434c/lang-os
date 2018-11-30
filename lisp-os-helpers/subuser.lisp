@@ -170,6 +170,7 @@
 
 (defun add-command-nsjail
   (command uid &key
+           verbose
 	   (gid 65534) (network nil) hostname
 	   mounts skip-default-mounts
 	   (proc-rw t)
@@ -182,7 +183,8 @@
 	   (rlimit-nproc "max") (rlimit-stack "max")
 	   )
   `(,*nsjail-helper*
-     "-q" "-u" , (format nil "~a:~a" internal-uid uid)
+     ,@(unless verbose `("-q"))
+     "-u" , (format nil "~a:~a" internal-uid uid)
      "--rlimit_as"     ,rlimit-as
      "--rlimit_core"   ,rlimit-core
      "--rlimit_cpu"    ,rlimit-cpu
@@ -244,7 +246,7 @@
 
 (defun add-command-netns (command &key ports-out uid gid (directory "/")
 				  (path "/var/current-system/sw/bin")
-                                  hostname)
+                                  hostname verbose)
   (ensure-directories-exist "/tmp/subuser-homes/")
   (let* 
     ((*print-right-margin* (expt 10 9))
@@ -286,7 +288,8 @@
      (connect-commands (first socat-commands))
      (listen-commands (second socat-commands))
      (inner-unshare `(,(which "nsjail")
-                      "-e" "-Q" "-B" "/"
+                       ,@(unless verbose `("-Q"))
+                      "-e" "-c" "/"
                       "-u" ,(format nil "~a:0" uid)
                       "-g" ,(format nil "~a:0" gid)
                       "-D" ,directory
@@ -314,7 +317,8 @@
      ;(outer-unshare `("unshare" "-U" "-r" "-n" ,@ inner-setup))
      (outer-unshare `(
                       ,(which "nsjail")
-                      "-e" "-Q" "-B" "/"
+                      ,@(unless verbose `("-Q"))
+                      "-e" "-c" "/"
                       "-u" ,(format nil "0:~a" uid)
                       "-g" ,(format nil "0:~a" gid)
                       "-D" ,directory
@@ -347,7 +351,7 @@
 			    stdin-fd stdout-fd stderr-fd
 			    pty wait slurp-stdout slurp-stderr
 			    feed-stdin slay
-			    netns netns-ports-out
+			    netns netns-ports-out netns-verbose
 			    nsjail nsjail-settings)
   (let*
     ((uid
@@ -364,7 +368,7 @@
        (if netns
 	 (add-command-netns 
 	   command-to-wrap :ports-out netns-ports-out
-	   :uid uid :gid gid)
+	   :uid uid :gid gid :verbose netns-verbose)
 	 command-to-wrap))
      (command-to-wrap
        (cond

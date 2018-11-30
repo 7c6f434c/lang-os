@@ -4,6 +4,7 @@
       modprobe atkbd
       modprobe usbhid
       modprobe hid-generic
+      modprobe hid-cherry
       modprobe mac-hid
       modprobe xhci-hcd
       modprobe ehci-hcd

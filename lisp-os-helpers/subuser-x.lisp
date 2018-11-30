@@ -186,12 +186,13 @@
   (command
     &key display
     environment home name locale locale-archive
-    (slay t) (wait t) (netns t) network-ports grant
+    (slay t) (wait t) (netns t) verbose-netns network-ports grant
     pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
     mounts system-socket setup
     hostname hostname-suffix hostname-hidden-suffix
     grab-devices fake-passwd
-    (path "/var/current-system/sw/bin") verbose-errors mount-sys
+    (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
+    mount-sys
     dns http-proxy socks-proxy with-dbus with-pulseaudio)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
@@ -307,14 +308,18 @@
                 (
                  ,@(when grab-dri `(("-B" "/dev/dri")))
                  ,@(when (or mount-sys grab-dri) `(("-B" "/sys")))
-                 ,@ mounts)))
+                 ,@ mounts))
+               ,@(when verbose-nsjail `("verbose"))
+               )
               ,@(when netns
                   `(("netns"
                      (
                       ,@(when dns `( ((53 :udp)) ((53 :tcp))  ))
                       ,@(when http-proxy `(((,http-proxy tcp))))
                       ,@(when socks-proxy `(((,socks-proxy tcp))))
-                      ,@network-ports))))
+                      ,@network-ports)
+                     (
+                      ,@(when verbose-netns `("verbose"))))))
               ,@(when pass-stdout `(("stdout-fd" "stdout")))
               ,@(when pass-stderr `(("stderr-fd" "stderr")))
               )

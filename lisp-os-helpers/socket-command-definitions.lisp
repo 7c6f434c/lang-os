@@ -64,39 +64,41 @@
   (let
     ((value
        (apply 
-	 'run-as-subuser (context-uid context) command
-	 :name (when (> (length name) 0) name)
-	 :environment environment
-	 (loop
-	   for o in options
-	   if (equalp o "pty") append (list :pty t)
-	   if (equalp o "wait") append (list :wait t)
-	   if (equalp o "slay") append (list :slay t)
-	   if (equalp o "slurp") append (list :slurp-stdout t)
-	   if (equalp o "slurp-output") append (list :slurp-stdout t)
-	   if (equalp o "slurp-stdout") append (list :slurp-stdout t)
-	   if (equalp o "slurp-stderr") append (list :slurp-stderr t)
-	   if (and (listp o) (equalp (first o) "feed-stdin"))
-	   append (list :feed-stdin (second o))
-	   if (and (listp o) (equalp (first o) "nsjail"))
-	   append (list
-		    :nsjail t :nsjail-settings
-		    (loop
-		      for oo in (rest o)
-		      if (equalp oo "network") append (list :network t)
-		      if (equalp oo "no-network") append (list :network nil)
-		      if (equalp oo "skip-default-mounts") append (list :skip-default-mounts t)
-		      if (equalp oo "proc-rw") append (list :proc-rw t)
-		      if (equalp oo "proc-ro") append (list :proc-rw nil)
-		      if (equalp oo "full-dev") append (list :full-dev t)
-		      if (equalp oo "fake-passwd") append (list :fake-passwd t)
-		      if (and (listp oo) (equalp (first oo) "mounts"))
-		      append (list :mounts (second oo))
-		      if (and (listp oo) (equalp (first oo) "hostname"))
-		      append (list :hostname (second oo))
-		      ))
-	   if (and (listp o) (equalp (first o) "netns"))
-	   append (list :netns t :netns-ports-out (second o))
+         'run-as-subuser (context-uid context) command
+         :name (when (> (length name) 0) name)
+         :environment environment
+         (loop
+           for o in options
+           if (equalp o "pty") append (list :pty t)
+           if (equalp o "wait") append (list :wait t)
+           if (equalp o "slay") append (list :slay t)
+           if (equalp o "slurp") append (list :slurp-stdout t)
+           if (equalp o "slurp-output") append (list :slurp-stdout t)
+           if (equalp o "slurp-stdout") append (list :slurp-stdout t)
+           if (equalp o "slurp-stderr") append (list :slurp-stderr t)
+           if (and (listp o) (equalp (first o) "feed-stdin"))
+           append (list :feed-stdin (second o))
+           if (and (listp o) (equalp (first o) "nsjail"))
+           append (list
+                    :nsjail t :nsjail-settings
+                    (loop
+                      for oo in (rest o)
+                      if (equalp oo "network") append (list :network t)
+                      if (equalp oo "no-network") append (list :network nil)
+                      if (equalp oo "skip-default-mounts") append (list :skip-default-mounts t)
+                      if (equalp oo "proc-rw") append (list :proc-rw t)
+                      if (equalp oo "proc-ro") append (list :proc-rw nil)
+                      if (equalp oo "full-dev") append (list :full-dev t)
+                      if (equalp oo "fake-passwd") append (list :fake-passwd t)
+                      if (equalp oo "verbose") append (list :verbose t)
+                      if (and (listp oo) (equalp (first oo) "mounts"))
+                      append (list :mounts (second oo))
+                      if (and (listp oo) (equalp (first oo) "hostname"))
+                      append (list :hostname (second oo))
+                      ))
+           if (and (listp o) (equalp (first o) "netns"))
+           append (list :netns t :netns-ports-out (second o)
+                        :netns-verbose (find "verbose" (third o) :test 'equal))
            if (and (listp o) (equalp (first o) "stdin-fd"))
            append (list :stdin-fd
                         (getf
@@ -112,7 +114,7 @@
                         (getf
                           (funcall context :fd-socket-fd-plist )
                           (intern (string-upcase (second o)) :keyword)))
-	   ))))
+           ))))
     (if (typep value 'iolib/os:process)
       (iolib/os:process-pid value) value)))
 

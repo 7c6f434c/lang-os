@@ -176,7 +176,9 @@
       (with-uid-auth
 	(with-presence-auth
 	  "Activate network"
-	  `(dhclient ,interface ,copy-resolv))))))
+	  `(progn
+             (dhclient ,interface ,copy-resolv)
+             ,@(unless copy-resolv `(local-resolv-conf))))))))
 
 (defun-export
   sudo::passwd (&optional password)
@@ -825,7 +827,8 @@
     :extra-ips extra-ips
     :location location
     args)
-  (! x-options))
+  (! x-options)
+  (sudo::dhclient "eth0" t))
 
 (defun launch-process-and-tag-windows (command tags &key keep forever launch-parameters)
   (let*
