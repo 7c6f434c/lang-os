@@ -5,6 +5,7 @@
     #:parsed-ip-address-show
     #:add-ip-address
     #:remove-ip-address
+    #:flush-ip-addresses
     #:enable-ip-link
     #:disable-ip-link
     #:run-link-dhclient
@@ -137,6 +138,10 @@
             address
             (getf (ip-address-info interface address) :netmask-length))
           "dev" interface)))
+
+(defun flush-ip-addresses (interface)
+  (uiop:run-program
+    (list "ip" "address" "flush" "dev" interface)))
 
 (defun enable-ip-link (interface)
   (uiop:run-program

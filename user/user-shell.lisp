@@ -283,6 +283,9 @@
 
 (unless lisp-os-helpers/subuser-x:*firefox-launcher* (update-firefox-launcher))
 
+(defun ethernet-attached (interface)
+  (getf (first (lisp-os-helpers/network::parsed-ip-address-show interface)) :lower-up))
+
 (defun marionette-remove-hotkey-request (key modifier)
   `(
     (progn
@@ -555,6 +558,8 @@
                      reload-module)
   (ask-with-auth
     (:presence "Reconnect to WiFi")
+    (if (ethernet-attached "eth0") `(progn) `(flush-interface "eth0"))
+    (if dhcp-resolv-conf `(progn) `(local-resolv-conf))
     `(ensure-wifi ,interface ,(when restart "restart") ,(unless dhcp "no-dhcp")
                   ,(when dhcp-resolv-conf "use-dhcp-resolv-conf")
                   ,(when reload-module "reload-module"))
@@ -828,7 +833,13 @@
     :location location
     args)
   (! x-options)
-  (sudo::dhclient "eth0" t))
+  (when
+    (ethernet-attached "eth0")
+    (ask-with-auth
+      (:presence t)
+      `(progn
+         (kill-wifi "wlan0")
+         (dhclient "eth0" t)))))
 
 (defun launch-process-and-tag-windows (command tags &key keep forever launch-parameters)
   (let*

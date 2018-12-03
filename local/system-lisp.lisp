@@ -343,7 +343,18 @@
 (defun socket-command-server-commands::kill-wifi
   (context interface)
   (require-presence context)
-  (stop-wpa-supplicant interface))
+  (stop-wpa-supplicant interface)
+  (disable-ip-link interface))
+
+(defun socket-command-server-commands::kill-interface
+  (context interface)
+  (require-presence context)
+  (disable-ip-link interface))
+
+(defun socket-command-server-commands::flush-interface
+  (context interface)
+  (require-presence context)
+  (flush-ip-addresses interface))
 
 (defun socket-command-server-commands::local-resolv-conf (context)
   (require-or
