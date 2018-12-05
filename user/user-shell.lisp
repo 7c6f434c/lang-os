@@ -729,6 +729,7 @@
                     (ensure-wifi "wlan0")
                     (load-sound "usb")
                     (storage-modules) (usb-hid-modules)
+                    (usb-eth-modules)
                     (hostname "localhost")
                     (set-brightness 50) (set-cpu-frequency 2690)
                     ))
@@ -757,7 +758,8 @@
 
 (defun enter-location (&key ii (mcabber t) (brightness 25) (freq 2690)
                         (interface "wlan0") (extra-ips `())
-                        (watchperiod "0.3") (location "somewhere"))
+                        (watchperiod "0.3") (location "somewhere")
+                        (extra-requests ()))
   (alexandria:write-string-into-file
     location
     (format nil "~a/.location" (uiop:getenv "HOME"))
@@ -769,7 +771,8 @@
     `(set-cpu-frequency ,freq)
     `(list
        ,@(loop for ip in extra-ips collect
-               `(add-ip-address ,interface ,ip))))
+               `(add-ip-address ,interface ,ip)))
+    `(progn ,@ extra-requests))
   (! web-stream-updater-starter detach)
   (enter-master-password)
   (email-fetchers-fast)
@@ -824,22 +827,30 @@
   (! x-options))
 
 (defun enter-tum (&rest args &key (brightness 400) (extra-ips `())
-                          (location "in.tum.de")
-                          &allow-other-keys)
+                        (location "in.tum.de")
+                        &allow-other-keys)
   (apply
     'enter-location
     :brightness brightness
     :extra-ips extra-ips
     :location location
+    :extra-requests `((activate-interface "eth0")
+                      (activate-interface "eth1")
+                      (dhcp-resolv-conf))
     args)
   (! x-options)
   (when
-    (ethernet-attached "eth0")
+    (or
+      (ethernet-attached "eth0")
+      (ethernet-attached "eth1")
+      )
     (ask-with-auth
       (:presence t)
       `(progn
          (kill-wifi "wlan0")
-         (dhclient "eth0" t)))))
+         ,(if (ethernet-attached "eth0") `(dhclient "eth0" t) `(progn))
+         ,(if (ethernet-attached "eth1") `(dhclient "eth1" t) `(progn))
+         ))))
 
 (defun launch-process-and-tag-windows (command tags &key keep forever launch-parameters)
   (let*

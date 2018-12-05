@@ -351,6 +351,11 @@
   (require-presence context)
   (disable-ip-link interface))
 
+(defun socket-command-server-commands::activate-interface
+  (context interface)
+  (require-presence context)
+  (enable-ip-link interface))
+
 (defun socket-command-server-commands::flush-interface
   (context interface)
   (require-presence context)
@@ -561,7 +566,8 @@
 (defun socket-command-server-commands::usb-hid-modules (context)
   (declare (ignorable context))
   (modprobe "usbhid")
-  (modprobe "hid_generic"))
+  (modprobe "hid_generic")
+  (modprobe "hid_cherry"))
 
 (defun socket-command-server-commands::set-cpu-frequency (context frequency)
   (require-or
