@@ -850,6 +850,7 @@
          (kill-wifi "wlan0")
          ,(if (ethernet-attached "eth0") `(dhclient "eth0" t) `(progn))
          ,(if (ethernet-attached "eth1") `(dhclient "eth1" t) `(progn))
+         (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home)))
          ))))
 
 (defun launch-process-and-tag-windows (command tags &key keep forever launch-parameters)
