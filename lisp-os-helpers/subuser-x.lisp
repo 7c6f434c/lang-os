@@ -333,7 +333,8 @@
     &key prefs raw-prefs (grab-dri t) write-marionette-socket
     environment marionette-socket profile-storage name
     (firefox-launcher *firefox-launcher*) (slay t) (wait t)
-    mounts (hostname-suffix "") hostname-hidden-suffix certificate-overrides socks-proxy)
+    mounts (hostname-suffix "") hostname-hidden-suffix certificate-overrides socks-proxy
+    network-ports)
   (declare (ignorable options))
   (let*
     (

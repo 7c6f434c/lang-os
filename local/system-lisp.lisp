@@ -382,6 +382,13 @@
     (require-presence context))
   (uiop:run-program (list "nix-collect-garbage" "-d")))
 
+(defun socket-command-server-commands::nix-cleanup-tests (context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
+  (uiop:run-program (list "/root/sudo-scripts/nix-cleanup-tests")))
+
 (defun socket-command-server-commands::hostname
   (context hostname)
   (require-or
