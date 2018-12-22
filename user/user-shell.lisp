@@ -829,6 +829,7 @@
 (defun enter-tum (&rest args &key (brightness 400) (extra-ips `())
                         (location "in.tum.de")
                         &allow-other-keys)
+  (! x-options)
   (apply
     'enter-location
     :brightness brightness
@@ -851,7 +852,14 @@
          ,(if (ethernet-attached "eth0") `(dhclient "eth0" t) `(progn))
          ,(if (ethernet-attached "eth1") `(dhclient "eth1" t) `(progn))
          ))
-    (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home)))))
+    (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home))))
+  (! x-options))
+
+(defun enter-home-poing (&rest args)
+  (apply 'enter-home
+         (append args
+                 (list :location "home@Poing"
+                       :extra-requests `((local-resolv-conf))))))
 
 (defun launch-process-and-tag-windows (command tags &key keep forever launch-parameters)
   (let*
