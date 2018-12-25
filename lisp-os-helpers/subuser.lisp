@@ -229,12 +229,14 @@
 	 for internal-target := (or (third m) target)
 	 for target-reference := (if (equalp type "T") target
 				   (format nil "~a:~a" target internal-target))
+	 for type-known := (find type '("B" "R" "T") :test 'equal)
 	 unless (or
 		  skip-mount-check 
 		  (nsjail-mount-allowed-p target internal-target type))
 	 do (error "Forbidden mount for nsjail: ~s on ~s with type ~s"
 		   target internal-target type)
-	 when (find type '("B" "R" "T") :test 'equal)
+         unless type-known
+         do (error "Unknown mount type: ~a" type)
 	 collect (concatenate 'string "-" type)
 	 collect target-reference)
      ,@(when proc-rw `("--proc_rw"))
