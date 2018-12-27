@@ -33,7 +33,9 @@ rec {
       packages = [pkgs.fuse pkgs.libinput pkgs.lvm2 pkgs.android-udev-rules
         (pkgs.runCommand "eudev-lib-rules" {} ''
           mkdir -p "$out/etc"
-          ln -s "${pkgs.eudev}/lib/udev" "$out/etc/udev"
+          cp -r "${pkgs.eudev}/var/lib/udev" "$out/etc/udev"
+          chmod -R u+rw "$out/etc/udev"
+          sed -e 's@''${exec_prefix}@${pkgs.udev}@' -i "$out"/etc/udev/rules.d/*.rules
         '')
         (pkgs.runCommand "touchpad-rules" {} ''
           mkdir -p "$out/etc/udev/rules.d"
