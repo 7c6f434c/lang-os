@@ -32,8 +32,9 @@ rec {
     services.udev = {
       packages = [pkgs.fuse pkgs.libinput pkgs.lvm2 pkgs.android-udev-rules
         (pkgs.runCommand "eudev-lib-rules" {} ''
-          mkdir -p "$out/etc"
-          cp -r "${pkgs.eudev}/var/lib/udev" "$out/etc/udev"
+          mkdir -p "$out/etc/udev/rules.d/"
+          cp -r "${pkgs.eudev}/var/lib/udev/rules.d"/{50-udev-default.rules,60-persistent-storage.rules} "$out/etc/udev/rules.d/"
+          cp -r "${pkgs.eudev}/var/lib/udev/hwdb.d" "$out/etc/udev/"
           chmod -R u+rw "$out/etc/udev"
           sed -e 's@''${exec_prefix}@${pkgs.udev}@' -i "$out"/etc/udev/rules.d/*.rules
         '')

@@ -127,7 +127,7 @@ pkgs.lib.makeExtensible (self: with self; {
         nsjail unionfs-fuse
         lispPackages.stumpwm alsaTools
         xdummy pv mercurial fossil lvm2 rsync gawk
-        androidenv.platformTools
+        /* androidenv.androidPkgs_9_0.platform-tools adb-sync */
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
         (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
         (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])
