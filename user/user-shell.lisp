@@ -356,6 +356,7 @@
                         stumpwm-tags
                         hostname-hidden-suffix
                         grab-sound grab-camera grab-devices
+                        extra-urls
                         &allow-other-keys)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
@@ -372,6 +373,13 @@
              (marionette-remove-hotkey-request "Q" "accel")
              (marionette-remove-hotkey-request "W" "accel")
              ))
+         (when extra-urls
+           (loop for u in (cl-ppcre:split "[|]" extra-urls)
+                 collect
+                 `((ps:chain
+                     g-browser
+                     (add-tab ,u (ps:create
+                                   'triggering-principal "Marionette"))))))
          marionette-requests))
      (arglist 
        (append
