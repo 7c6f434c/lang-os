@@ -181,6 +181,7 @@
 	   (rlimit-as "max") (rlimit-core "0") (rlimit-cpu "max")
 	   (rlimit-fsize "max") (rlimit-nofile "max")
 	   (rlimit-nproc "max") (rlimit-stack "max")
+           keep-namespaces
 	   )
   `(,*nsjail-helper*
      ,@(unless verbose `("-q"))
@@ -192,6 +193,10 @@
      "--rlimit_nofile" ,rlimit-nofile
      "--rlimit_nproc"  ,rlimit-nproc
      "--rlimit_stack"  ,rlimit-stack
+     ,@(loop for ns in keep-namespaces
+             do (assert (cl-ppcre:scan "^[a-z_]+$" ns))
+             collect
+             (format nil "--disable_clone_new~a" ns))
      ,@(when gid `("-g" ,(format nil "~a:~a" internal-gid gid)))
      ,@(unless skip-default-mounts
 	 `(
@@ -289,7 +294,7 @@
 	 finally (return (list connect-commands listen-commands))))
      (connect-commands (first socat-commands))
      (listen-commands (second socat-commands))
-     (inner-unshare `(,(which "nsjail")
+     (inner-unshare `(, *nsjail-helper*
                        ,@(unless verbose `("-Q"))
                       "-e" "-c" "/"
                       "-u" ,(format nil "~a:0" uid)
@@ -299,6 +304,7 @@
                       "--keep_caps"
                       "--proc_rw"
                       "--disable_clone_newnet"
+                      "--disable_clone_newipc"
                       "--disable_clone_newuts"
                       "--rlimit_as"     "max"
                       "--rlimit_core"   "max"
@@ -318,7 +324,7 @@
 	   (collapse-command inner-unshare))))
      ;(outer-unshare `("unshare" "-U" "-r" "-n" ,@ inner-setup))
      (outer-unshare `(
-                      ,(which "nsjail")
+                      , *nsjail-helper*
                       ,@(unless verbose `("-Q"))
                       "-e" "-c" "/"
                       "-u" ,(format nil "0:~a" uid)
@@ -326,6 +332,7 @@
                       "-D" ,directory
                       "--keep_caps"
                       "--disable_clone_newuts"
+                      "--disable_clone_newipc"
                       "--proc_rw"
                       "--rlimit_as"     "max"
                       "--rlimit_core"   "max"

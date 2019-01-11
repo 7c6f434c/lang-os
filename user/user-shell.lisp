@@ -356,7 +356,7 @@
                         stumpwm-tags
                         hostname-hidden-suffix
                         grab-sound grab-camera grab-devices
-                        extra-urls
+                        extra-urls keep-namespaces
                         &allow-other-keys)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
@@ -414,6 +414,7 @@
              ,@ (when grab-camera (list "/dev/video*"))
              ,@ grab-devices
              )
+           :keep-namespaces keep-namespaces
            :allow-other-keys t)
          (when no-netns-p `(:netns nil))
          args)))

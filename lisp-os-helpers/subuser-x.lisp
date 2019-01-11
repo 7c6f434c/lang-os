@@ -192,7 +192,7 @@
     hostname hostname-suffix hostname-hidden-suffix
     grab-devices fake-passwd
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
-    mount-sys
+    mount-sys keep-namespaces
     dns http-proxy socks-proxy with-dbus with-pulseaudio)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
@@ -310,6 +310,8 @@
                  ,@(when (or mount-sys grab-dri) `(("-B" "/sys")))
                  ,@ mounts))
                ,@(when verbose-nsjail `("verbose"))
+               ,@(when keep-namespaces
+                   `(("keep-namespaces" ,keep-namespaces)))
                )
               ,@(when netns
                   `(("netns"
@@ -334,7 +336,7 @@
     environment marionette-socket profile-storage name
     (firefox-launcher *firefox-launcher*) (slay t) (wait t)
     mounts (hostname-suffix "") hostname-hidden-suffix certificate-overrides socks-proxy
-    network-ports)
+    network-ports keep-namespaces)
   (declare (ignorable options))
   (let*
     (
@@ -412,6 +414,7 @@
         :name name :grab-dri grab-dri
         :slay slay :wait wait
         :hostname-suffix hostname-suffix
+        :keep-namespaces (append (list "ipc") keep-namespaces)
         :environment
         `(
           ,@ environment

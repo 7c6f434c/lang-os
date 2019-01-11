@@ -175,7 +175,7 @@ pkgs.lib.makeExtensible (self: with self; {
           services.postgresql.package = postgresql-package;
           services.postgresql.extraConfig = ''
             max_locks_per_transaction = 64
-            shared_buffers= 134217728
+            shared_buffers = 131072
           '';
           };
       "from-nixos/cups" = fromNixOS.serviceScript "cups" {

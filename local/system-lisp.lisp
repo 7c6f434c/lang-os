@@ -193,7 +193,7 @@
     (progn
       (assert (gethash (list (context-uid context) :owner) *user-info*))
       (require-presence context)))
-  (if (ignore-errors (kill-by-log "daemon/postgresql"))
+  (if (ignore-errors (kill-by-uid "postgres"))
     (progn
       (daemon-with-logging 
 	"daemon/postgresql" 

@@ -9,6 +9,7 @@
     #:kill-by-log
     #:kill-by-executable
     #:kill-by-files
+    #:kill-by-uid
     ))
 (in-package :lisp-os-helpers/daemon)
 
@@ -147,3 +148,16 @@
 
 (defun kill-by-executable (exe &rest signals)
   (kill-by-files (list (which exe)) signals))
+
+(defun kill-by-uid (uid &rest signals)
+  (loop for s in (or signals (list :term)) do
+        (loop for rs in (list :cont s :cont) do
+              (run-program-return-success
+                (uiop:run-program
+                  `("pkill" "-U" ,uid
+                    (format nil "-~a" (string-upcase (string rs))))))
+              do (sleep 0.2)))
+  (not
+    (run-program-return-success
+      (uiop:run-program
+        `("pgrep" "-U" ,uid)))))
