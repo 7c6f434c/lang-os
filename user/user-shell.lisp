@@ -1055,3 +1055,8 @@
               (ask-with-auth
                 (:presence t)
                 `(local-resolv-conf)))
+
+(defun-export sudo::kill-wifi (&optional (interface "wlan0"))
+              (ask-with-auth
+                (:presence t)
+                `(kill-wifi ,interface)))
