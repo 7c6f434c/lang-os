@@ -126,7 +126,7 @@ pkgs.lib.makeExtensible (self: with self; {
 	postgresql-package
         nsjail unionfs-fuse
         lispPackages.stumpwm alsaTools
-        xdummy pv mercurial fossil lvm2 rsync gawk ntp
+        xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host
         /* androidenv.androidPkgs_9_0.platform-tools adb-sync */
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
         (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
