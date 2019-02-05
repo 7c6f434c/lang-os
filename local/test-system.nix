@@ -125,9 +125,9 @@ pkgs.lib.makeExtensible (self: with self; {
         gerbil guile
 	postgresql-package
         nsjail unionfs-fuse
-        lispPackages.stumpwm alsaTools
+        lispPackages.stumpwm
         xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host
-        androidenv.androidPkgs_9_0.platform-tools adb-sync
+        iotop
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
         (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
         (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])

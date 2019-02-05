@@ -21,6 +21,9 @@
 
   swPackages = super.swPackages ++ (with self.pkgs; [
     zsh python xterm mlterm expect firmwareLinuxNonfree
+    alsaUtils alsaTools mplayer
+    androidenv.androidPkgs_9_0.platform-tools adb-sync
+    powertop
   ]);
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;

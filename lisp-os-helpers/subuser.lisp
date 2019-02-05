@@ -175,7 +175,7 @@
 	   mounts skip-default-mounts
 	   (proc-rw t)
 	   (internal-uid uid) (internal-gid gid)
-           fake-passwd
+           fake-passwd fake-groups
            skip-mount-check
 	   full-dev (home (format nil "/tmp/home.~a" uid) homep)
 	   (rlimit-as "max") (rlimit-core "0") (rlimit-cpu "max")
@@ -227,6 +227,21 @@
 	   (format f ".~a:x:~a:~a::/:/bin/sh~%" 65534 65534 65534)
 	   )
 	 (list "-R" (format nil "/tmp/system-lisp/subuser-passwd/~a:/etc/passwd" uid)))
+     ,@(when fake-groups
+	 (ensure-directories-exist "/tmp/system-lisp/subuser-passwd/")
+	 (with-open-file 
+	   (f (format nil 
+		      "/tmp/system-lisp/subuser-passwd/~a.group" uid)
+	      :direction :output :if-exists :supersede)
+	   (format f "root:x:0:~%")
+	   (format f ".~a:x:~a:~%" internal-uid gid)
+	   (format f "~{~{~a:x:~a:~}~%~}" (if (listp fake-groups) 
+                                    (loop for g in fake-groups
+                                          if (listp g) collect g
+                                          else collect (list g 65534))
+                                    (list)))
+	   )
+	 (list "-R" (format nil "/tmp/system-lisp/subuser-passwd/~a.group:/etc/group" uid)))
      ,@(loop
 	 for m in mounts
 	 for type := (subseq (reverse (string-upcase (first m))) 0 1)

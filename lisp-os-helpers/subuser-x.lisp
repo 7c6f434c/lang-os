@@ -190,7 +190,7 @@
     pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
     mounts system-socket setup
     hostname hostname-suffix hostname-hidden-suffix
-    grab-devices fake-passwd
+    grab-devices fake-passwd fake-groups
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
     mount-sys keep-namespaces
     dns http-proxy socks-proxy with-dbus with-pulseaudio)
@@ -290,6 +290,7 @@
               ("nsjail" "network"
                ,@(when (or with-pulseaudio full-dev) `("full-dev"))
                ,@(when (or with-pulseaudio fake-passwd) `("fake-passwd"))
+               ,@(when fake-groups `(("fake-groups" ,fake-groups)))
                ("hostname"
                 ,(or
                    hostname 
