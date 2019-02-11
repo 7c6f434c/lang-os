@@ -114,13 +114,14 @@ pkgs.lib.makeExtensible (self: with self; {
                deviceSection = ''
                  Option "DRI" "3"
                '';
+               videoDrivers = pkgs.lib.mkForce ["modesetting"];
 	     };
 	};
   NixOSWithX = nixos {configuration = NixOSXConfig;};
 
   swPackages = swPieces.corePackages ++ (with pkgs; [
         glibcLocales
-        vim monotone screen rxvt_unicode xorg.xprop
+        vim monotone screen xterm xorg.xprop
         sbcl lispPackages.clwrapper lispPackages.uiop asdf
         gerbil guile
 	postgresql-package
@@ -214,7 +215,7 @@ pkgs.lib.makeExtensible (self: with self; {
 	    ln -Tfs "${pkgs.pkgsi686Linux.libglvnd}" /run/libglvnd-32
 	    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib:/run/libglvnd/lib:/run/libglvnd-32/lib"
 
-	    ${pkgs.xorg.xorgserver}/bin/Xorg vt"$((7+''${1:-0}))" :"''${1:-0}" -logfile "/var/log/X.''${1:-0}.log" -config /etc/X11/xorg.conf
+	    ${pkgs.xorg.xorgserver}/bin/Xorg vt"$((7+''${1:-0}))" :"''${1:-0}" -logfile "/var/log/X.''${1:-0}.log" -config "${(fromNixOS.etcSelectComponent "X11/xorg.conf" NixOSXConfig)."X11/xorg.conf"}"
       '';
       "udevd" = pkgs.writeScript "udevd" ''
           ${pkgs.eudev}/bin/udevd &

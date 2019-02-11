@@ -1,4 +1,6 @@
 #!/bin/sh
+      set -e
+
         boot_dir="${1:-/boot}"
 
       mkdir -p "$boot_dir"/kernels
@@ -22,19 +24,22 @@
         grep "${i#$boot_dir}" "$boot_dir"/grub/fragments/*/grub.part.cfg -m1 > /dev/null || rm "$i"
       done
       n=0
-      rm "$boot_dir"/grub/fragment-index/*
+      rm -rf "$boot_dir"/grub/fragment-index/*
       mkdir -p "$boot_dir"/grub/fragment-index/
       for i in /var/current-system/ /run/booted-system/ /nix/var/nix/profiles/*-link/ ; do
         test -e "$i/boot/for-bootloader/grub.part.cfg" && {
           n=$((n+1))
           echo "$boot_dir/grub/fragments/$(basename "$i")" > "$boot_dir"/grub/fragment-index/$(printf "%06d" $n)
-          cp -fL "$i/boot/for-bootloader/"/grub.part.cfg "$boot_dir/grub/fragments/$(basename "$i")"/ 2>/dev/null
-          rm "$boot_dir/grub/fragments/$(basename "$i")" 2> /dev/null
-          test -d "$boot_dir/grub/fragments/$(basename "$i")" || {
-            mkdir "$boot_dir/grub/fragments/$(basename "$i")"
-            cp -fL "$i/boot/for-bootloader/"/grub.part.cfg "$boot_dir/grub/fragments/$(basename "$i")"/ 2>/dev/null
-            cp -L "$i/boot/for-bootloader/"/*.efi "$boot_dir"/kernels/
-          }
+          if test -f "$boot_dir/grub/fragments/$(basename "$i")"; then
+                  rm "$boot_dir/grub/fragments/$(basename "$i")"
+          fi
+          if test -d "$boot_dir/grub/fragments/$(basename "$i")"; then
+                  cp -fL "$i/boot/for-bootloader/"/grub.part.cfg "$boot_dir/grub/fragments/$(basename "$i")"/ 
+          else
+                  mkdir "$boot_dir/grub/fragments/$(basename "$i")"
+                  cp -fL "$i/boot/for-bootloader/"/grub.part.cfg "$boot_dir/grub/fragments/$(basename "$i")"/ 2>/dev/null
+                  cp -L "$i/boot/for-bootloader/"/*.efi "$boot_dir"/kernels/
+          fi
         }
       done
       sync -f "$boot_dir/kernels"
@@ -48,4 +53,5 @@
           sed -e 's@$@/grub.part.labeled.cfg@' | xargs cat ) > "$boot_dir"/grub/grub.fragmented.cfg
       cp -f "$boot_dir"/grub/grub{.fragmented,}.cfg
       sync -f "$boot_dir/grub"
+      echo GRUB config updated
 

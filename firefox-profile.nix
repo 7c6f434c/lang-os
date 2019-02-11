@@ -50,7 +50,7 @@ pkgs.runCommand "firefox-initialised-profile" environment ''
    echo "$DISPLAY"
    
    "${pkgs.lib.getBin pkgs.icewm}/bin/icewm" &
-   "${pkgs.lib.getBin pkgs.rxvt_unicode}/bin/urxvt" &
+   "${pkgs.lib.getBin pkgs.xterm}/bin/xterm" &
    "${pkgs.lib.getBin _firefox}/bin/firefox" -CreateProfile only
    cp -rf ~/.mozilla/firefox/*/* "$out"
    ls "$out"

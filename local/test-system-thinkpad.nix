@@ -1,6 +1,6 @@
 (import ./test-system.nix {}).extend ( self: super: {
   stage1 = super.stage1.extend (s1self: s1super: {
-    kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux_4_19;
+    kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux_latest;
 
     mountScript = ''
       modprobe atkbd
@@ -22,8 +22,8 @@
   });
 
   swPackages = super.swPackages ++ (with self.pkgs; [
-    zsh python xterm mlterm expect firmwareLinuxNonfree
-    alsaUtils alsaTools mplayer
+    zsh python expect firmwareLinuxNonfree
+    alsaUtils alsaTools mplayer rxvt_unicode mlterm
     androidenv.androidPkgs_9_0.platform-tools adb-sync
     powertop
   ]);
@@ -55,4 +55,12 @@
       })
     ];
   });
+
+  systemParts = super.systemParts // {
+    services = self.etcPieces.deeplinkAttrset "systemServices"
+    (super.systemParts.services.entries // {
+      "from-nixos/gpm" = self.fromNixOS.serviceScript "gpm"
+          { services.gpm.enable = true; services.gpm.protocol = "imps2"; };
+    });
+  };
 })

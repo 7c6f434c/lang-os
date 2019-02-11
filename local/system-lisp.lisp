@@ -214,6 +214,17 @@
       "OK")
     (error "Stopping nix-daemon failed")))
 
+(defun socket-command-server-commands::restart-gpm (context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
+  (if (ignore-errors (kill-by-log "daemon/gpm"))
+    (progn
+      (system-service "" "from-nixos/gpm")
+      "OK")
+    (error "Stopping gpm failed")))
+
 (defun socket-command-server-commands::dhclient (context interface &optional copy-resolv)
   (require-or
     "Owner access not confirmed"

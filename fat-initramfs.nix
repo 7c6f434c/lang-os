@@ -170,7 +170,7 @@ pkgs.lib.makeExtensible (self: with self; {
 
   init = pkgs.writeScript "init" ("#!/bin/sh\n" + initScript);
 
-  initrd = pkgs.makeInitrd {
+  initrd = (pkgs.makeInitrd {
     contents = [
       { object = init; symlink = "/init";}
       { object = kernelModules + "/lib/modules"; symlink = "/lib/modules"; }
@@ -182,7 +182,7 @@ pkgs.lib.makeExtensible (self: with self; {
       { object = modprobeConf; symlink = "/etc/modprobe.d/modprobe.conf"; }
       { object = udevRules + "/etc/udev"; symlink = "/etc/udev"; }
     ];
-  };
+  }).overrideAttrs (x: { name = "${x.name}-${kernel.name}"; });
 
   qemuScript = pkgs.writeScript "qemu-script" ''#! /bin/sh
     ${maybeCall qemu pkgs}/bin/qemu-system-$(echo "${builtins.currentSystem}" | sed -e "s/-.*//") \
