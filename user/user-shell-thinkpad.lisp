@@ -49,6 +49,7 @@
   (vps-term)
   (matrix-term)
   (im-browsers)
+  (subuser-signal)
   (email-browsers))
 
 (defun enter-labri (&rest args &key (brightness 400) (extra-ips `())
@@ -142,3 +143,34 @@
   (! pkill -kill compton)
   (sleep 0.5)
   (& compton --dbe))
+
+(defun subuser-signal ()
+  (let* ((home (format nil "~a/.local/share/signal-home"
+                       (uiop:getenv "HOME"))))
+    (loop with stack := (list home)
+          for next := (pop stack)
+          while next
+          do (ignore-errors
+               (ask-with-auth 
+                 ()
+                 `(chown-subuser ,next "")))
+          do (setf stack
+                   (append
+                     (mapcar 'namestring
+                             (directory
+                               (format nil "~a/*.*" next)))
+                     stack)))
+    (subuser-nsjail-x-application
+      (list (true-executable "signal-desktop"))
+      :environment `(("HOME" "/signal-home")
+                     ("HTTPS_PROXY" "socks://127.0.0.1:1080")
+                     ("HTTP_PROXY" "socks://127.0.0.1:1080")
+                     ("https_proxy" "socks://127.0.0.1:1080")
+                     ("http_proxy" "socks://127.0.0.1:1080")
+                     )
+      :name "signal-sandbox"
+      :netns nil
+      :mounts `(("-B" ,home "/signal-home"))
+      :grant (list home)
+      :hostname "signal-nsjail"
+      :wait nil)))

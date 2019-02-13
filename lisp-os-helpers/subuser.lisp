@@ -135,7 +135,7 @@
 (defun chown-subuser(user file &key uid name)
   (let*
     ((self (not (or uid name)))
-     (subuser-uid (select-subuser user :uid uid :name name))
+     (subuser-uid (unless self (select-subuser user :uid uid :name name)))
      (passwd-line (multiple-value-list (iolib/syscalls:getpwnam user)))
      (home (sixth passwd-line))
      (in-home-p (and home
