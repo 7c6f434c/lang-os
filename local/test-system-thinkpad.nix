@@ -63,4 +63,6 @@
           { services.gpm.enable = true; services.gpm.protocol = "imps2"; };
     });
   };
+  
+  openglPackages = with self.pkgs; [ beignet vaapiIntel libvdpau-va-gl vaapiVdpau ];
 })

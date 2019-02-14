@@ -67,9 +67,11 @@ pkgs.lib.makeExtensible (self: with self; {
 
   NixOSXConfig = {
              fonts.fonts = [];
-             hardware.opengl.driSupport = true;
-             hardware.opengl.driSupport32Bit = true;
-             hardware.opengl.enable = true;
+             hardware.opengl = {
+               enable = true;
+               driSupport = true;
+               driSupport32Bit = true;
+             };
              services.xserver = {
                enableTCP = true;
                enable = true;
@@ -118,6 +120,19 @@ pkgs.lib.makeExtensible (self: with self; {
 	     };
 	};
   NixOSWithX = nixos {configuration = NixOSXConfig;};
+
+  openglPackages = [];
+  openglPackages32 = [];
+  openglDriver = pkgs.buildEnv {
+    name = "opengl-driver";
+    paths = [ NixOSWithX.config.hardware.opengl.package ] ++
+      openglPackages;
+  };
+  openglDriver32 = pkgs.buildEnv {
+    name = "opengl-driver-32";
+    paths = [ NixOSWithX.config.hardware.opengl.package32 ] ++
+      openglPackages32;
+  };
 
   swPackages = swPieces.corePackages ++ (with pkgs; [
         glibcLocales
@@ -209,8 +224,8 @@ pkgs.lib.makeExtensible (self: with self; {
 	};
       };
       "from-nixos/xorg" = pkgs.writeScript "xorg-start" ''
-	    ln -Tfs "${NixOSWithX.config.hardware.opengl.package or "/"}" /run/opengl-driver
-	    ln -Tfs "${NixOSWithX.config.hardware.opengl.package32 or "/"}" /run/opengl-driver-32
+	    ln -Tfs "${openglDriver}" /run/opengl-driver
+	    ln -Tfs "${openglDriver32}" /run/opengl-driver-32
 	    ln -Tfs "${pkgs.libglvnd}" /run/libglvnd
 	    ln -Tfs "${pkgs.pkgsi686Linux.libglvnd}" /run/libglvnd-32
 	    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib:/run/libglvnd/lib:/run/libglvnd-32/lib"
