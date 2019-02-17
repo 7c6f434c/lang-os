@@ -101,8 +101,8 @@
   (! x-options)
   (when
     (or
-      (ethernet-attached "eth0")
-      (ethernet-attached "eth1")
+      (ignore-errors (ethernet-attached "eth0"))
+      (ignore-errors (ethernet-attached "eth1"))
       )
     (ask-with-auth
       (:presence t)
