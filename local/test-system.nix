@@ -135,7 +135,7 @@ pkgs.lib.makeExtensible (self: with self; {
   };
 
   swPackages = swPieces.corePackages ++ (with pkgs; [
-        glibcLocales
+        (hiPrio glibcLocales)
         vim monotone screen xterm xorg.xprop
         sbcl lispPackages.clwrapper lispPackages.uiop asdf
         gerbil guile
