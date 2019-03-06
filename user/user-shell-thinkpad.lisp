@@ -16,11 +16,6 @@
            :no-close t :stumpwm-tags "cat/e-im im telegram no-auto-tags"
            :javascript t
            :socks-proxy 1080)
-  (firefox (list "https://web.skype.com/")
-           :pass-stderr nil :pass-stdout nil :wait nil
-           :no-close t :stumpwm-tags "cat/e-im im skype no-auto-tags"
-           :javascript t
-           :socks-proxy 1080)
   )
 
 (defun email-browsers ()
