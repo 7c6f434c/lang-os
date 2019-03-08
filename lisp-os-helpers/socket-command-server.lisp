@@ -90,6 +90,12 @@
     for e in (rest entries)
     do (setf result (take-reply-value (eval-command-form e context)))
     finally (return result)))
+(defun socket-command-server-commands::background-thread
+  (context e &optional (name "socket command thread"))
+  (bordeaux-threads:make-thread
+    (lambda () (ignore-errors (eval-command-form e context)))
+    :name name)
+  "Background thread")
 
 (defun socket-command-server-commands::request-uid-auth (context user)
   (flet ((context (&rest args) (apply context args)))

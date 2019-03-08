@@ -735,7 +735,7 @@
 (defun boot-login-init ()
   (ask-with-auth (:presence t)
                  `(list
-                    (ensure-wifi "wlan0")
+                    (background-thread (ensure-wifi "wlan0"))
                     (load-sound "usb")
                     (storage-modules) (usb-hid-modules)
                     (usb-eth-modules)
@@ -743,7 +743,7 @@
                     (set-brightness 50) (set-cpu-frequency 2690)
                     ))
   (! queryfs-session-run detach)
-  (grab-kvm) (grab-fuse) (sleep 1) (grab-sound)
+  (grab-kvm) (grab-fuse)
   (restart-lisp-shell-server))
 
 (defun gvim-plus-zathura (file &key compiler)
