@@ -788,6 +788,7 @@
   (im-online-here
     :skip-ii (not ii)
     :skip-mcabber (not mcabber))
+  (& x-daemons)
   (alexandria:write-string-into-file
     (format nil "~a" watchperiod)
     (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
