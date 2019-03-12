@@ -13,7 +13,9 @@
 
 (defvar *fbterm-settings*
   `((:font-name ,"DejaVu Sans Mono")
-    (:font-size ,33)))
+    (:font-size ,33)
+    (:color-foreground 0)
+    (:color-background 7)))
 
 (defun run-fbterm (vtdev command
                     &key
