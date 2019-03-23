@@ -146,7 +146,7 @@
                  (list :location "home@Poing"
                        :extra-requests `((local-resolv-conf))))))
 
-(defun disconnect ()
+(defun disconnect (&key kill-ssh kill-wifi (brightness 1) (cpu-frequency "min"))
   (alexandria:write-string-into-file
     "10" (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
     :if-exists :supersede)
@@ -154,8 +154,10 @@
   (ask-with-auth 
     (:presence t)
     `(list 
-       (set-cpu-frequency "min")
-       (set-brightness 1)))
+       (set-cpu-frequency ,cpu-frequency)
+       (set-brightness ,brightness)
+       ,@(when kill-wifi `(kill-wifi))))
+  (when kill-ssh (stumpwm-eval `(close-ssh-windows)))
   (! x-options)
   )
 
