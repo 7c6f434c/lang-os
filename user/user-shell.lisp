@@ -518,7 +518,7 @@
          (,@(if presence `(with-presence-auth ,presence) `(identity))
            (,@(if password `(with-password-auth ,password) `(identity))
              (,@(if root `(with-password-auth ,root) `(identity))
-               (list 'list ,@code)
+               (list 'list ,@(remove nil code))
                ,@(if root `(:user "root")))))))))
 
 (defun restart-lisp-shell-server (&key rebuild)
@@ -768,14 +768,14 @@
 (defun enter-location (&key ii (mcabber t) (brightness 25) (freq 2690)
                         (interface "wlan0") (extra-ips `())
                         (watchperiod "0.3") (location "somewhere")
-                        (extra-requests ()))
+                        (extra-requests ()) (skip-wifi nil))
   (alexandria:write-string-into-file
     location
     (format nil "~a/.location" (uiop:getenv "HOME"))
     :if-exists :supersede)
   (ask-with-auth
     (:presence t)
-    `(ensure-wifi ,interface)
+    (unless skip-wifi `(ensure-wifi ,interface))
     `(set-brightness ,brightness)
     `(set-cpu-frequency ,freq)
     `(list

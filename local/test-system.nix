@@ -141,7 +141,10 @@ pkgs.lib.makeExtensible (self: with self; {
         gerbil guile
 	postgresql-package
         nsjail unionfs-fuse
-        lispPackages.stumpwm
+        (lib.overrideDerivation lispPackages.stumpwm (x: {
+          linkedSystems = x.linkedSystems ++ ["clx-truetype" "xkeyboard" "xembed"];
+          buildInputs = x.buildInputs ++ (with lispPackages; [clx-truetype xkeyboard xembed]);
+        }))
         xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host
         iotop
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])

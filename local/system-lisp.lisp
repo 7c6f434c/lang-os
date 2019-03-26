@@ -85,6 +85,27 @@
             "nix-store" "--check-validity" "/run/current-system/")))
   (system-service "" "nix-daemon"))
 
+(defun socket-command-server-commands::restart-postgresql (context)
+  (when context
+    (require-or
+      "Owner user presence not confirmed"
+      (require-root context)
+      (progn
+        (assert (gethash (list (context-uid context) :owner) *user-info*))
+        (require-presence context))))
+  (if (ignore-errors (kill-by-uid "postgres"))
+    (progn
+      (ensure-directories-exist "/run/postgresql/")
+      (grant-to-user "postgres" "/run/postgresql/")
+      (daemon-with-logging 
+	"daemon/postgresql" 
+	(list
+	  "su" "postgres" "-s" "/bin/sh" "-c"
+	  "env -i /run/current-system/services/from-nixos/postgresql"))
+      "OK")
+    (error "Stopping postgresql failed")))
+(import 'socket-command-server-commands::restart-postgresql)
+
 (format
   t "Daemon operations: ~s~%"
   (multiple-value-list
@@ -118,10 +139,8 @@
 
       (unless
         (port-open-p 5432)
-        (daemon-with-logging 
-          "daemon/postgresql"
-          (list "su" "postgres" "-s" "/bin/sh" "-c"
-                "env -i /run/current-system/services/from-nixos/postgresql")))
+        (ignore-errors
+          (restart-postgresql nil)))
       t)))
 
 (defun socket-command-server-commands::run (context &rest command)
@@ -185,23 +204,6 @@
       (system-service "" "from-nixos/bind")
       "OK")
     (error "Stopping bind failed")))
-
-(defun socket-command-server-commands::restart-postgresql (context)
-  (require-or
-    "Owner user presence not confirmed"
-    (require-root context)
-    (progn
-      (assert (gethash (list (context-uid context) :owner) *user-info*))
-      (require-presence context)))
-  (if (ignore-errors (kill-by-uid "postgres"))
-    (progn
-      (daemon-with-logging 
-	"daemon/postgresql" 
-	(list
-	  "su" "postgres" "-s" "/bin/sh" "-c"
-	  "env -i /run/current-system/services/from-nixos/postgresql"))
-      "OK")
-    (error "Stopping postgresql failed")))
 
 (defun socket-command-server-commands::restart-nix-daemon (context)
   (require-or

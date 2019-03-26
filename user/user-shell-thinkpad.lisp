@@ -6,9 +6,13 @@
   *compile-file-pathname*
   *load-pathname*))
 
-(load (format nil
-              "~a/src/nix/lang-os/user/user-shell.lisp"
-              (uiop:getenv "HOME")))
+(defvar *common-rc*
+  (format nil
+          "~a/src/nix/lang-os/user/user-shell.lisp"
+          (uiop:getenv "HOME")))
+
+(load *common-rc*)
+(defun edrc-common () (ed *common-rc*))
 
 (defun im-browsers ()
   (firefox (list "https://web.telegram.org/")
@@ -120,6 +124,10 @@
     :brightness brightness
     :extra-ips extra-ips
     :location location
+    :skip-wifi
+    (or
+      (ignore-errors (ethernet-attached "eth0"))
+      (ignore-errors (ethernet-attached "eth1")))
     :extra-requests `((activate-interface "eth0")
                       (activate-interface "eth1")
                       (dhcp-resolv-conf))
@@ -146,7 +154,7 @@
                  (list :location "home@Poing"
                        :extra-requests `((local-resolv-conf))))))
 
-(defun disconnect (&key kill-ssh kill-wifi (brightness 1) (cpu-frequency "min"))
+(defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min"))
   (alexandria:write-string-into-file
     "10" (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
     :if-exists :supersede)
@@ -156,8 +164,9 @@
     `(list 
        (set-cpu-frequency ,cpu-frequency)
        (set-brightness ,brightness)
-       ,@(when kill-wifi `(kill-wifi))))
+       ,@(when kill-wifi `((kill-wifi "wlan0")))))
   (when kill-ssh (stumpwm-eval `(close-ssh-windows)))
+  (when kill-bg (kill-background-process-leaks))
   (! x-options)
   )
 

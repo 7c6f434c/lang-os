@@ -155,7 +155,7 @@
               (run-program-return-success
                 (uiop:run-program
                   `("pkill" "-U" ,uid
-                    (format nil "-~a" (string-upcase (string rs))))))
+                    ,(format nil "-~a" (string-upcase (string rs))))))
               do (sleep 0.2)))
   (not
     (run-program-return-success
