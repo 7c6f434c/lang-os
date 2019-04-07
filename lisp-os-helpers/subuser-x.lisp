@@ -188,9 +188,9 @@
     environment home name locale locale-archive
     (slay t) (wait t) (netns t) verbose-netns network-ports grant
     pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
-    mounts system-socket setup
+    mounts system-socket setup directory
     hostname hostname-suffix hostname-hidden-suffix
-    grab-devices fake-passwd fake-groups
+    grab-devices fake-passwd fake-groups grab-sound grab-camera
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
     mount-sys keep-namespaces
     dns http-proxy socks-proxy with-dbus with-pulseaudio)
@@ -228,6 +228,8 @@
             `(grab-devices
                ,(loop
                   for d in (append (when grab-dri (list "/dev/dri/card*" "/dev/dri/render*"))
+                                   (when grab-sound (list "/dev/snd/*"))
+                                   (when grab-camera (list "/dev/video*"))
                                    (when with-pulseaudio (list "/dev/snd/*"))
                                    grab-devices)
                   for dl := (directory d)
@@ -308,12 +310,14 @@
                ("mounts"
                 (
                  ,@(when grab-dri `(("-B" "/dev/dri")))
+                 ,@(when grab-sound `(("-B" "/dev/snd")))
                  ,@(when (or mount-sys grab-dri) `(("-B" "/sys")))
                  ,@ mounts))
                ,@(when verbose-nsjail `("verbose"))
                ,@(when keep-namespaces
                    `(("keep-namespaces" ,keep-namespaces)))
                )
+              ,@(when directory `(("directory" ,directory)))
               ,@(when netns
                   `(("netns"
                      (

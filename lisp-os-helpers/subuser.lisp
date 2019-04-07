@@ -182,6 +182,7 @@
 	   (rlimit-fsize "max") (rlimit-nofile "max")
 	   (rlimit-nproc "max") (rlimit-stack "max")
            keep-namespaces
+           (directory "/")
 	   )
   `(,*nsjail-helper*
      ,@(unless verbose `("-q"))
@@ -193,6 +194,7 @@
      "--rlimit_nofile" ,rlimit-nofile
      "--rlimit_nproc"  ,rlimit-nproc
      "--rlimit_stack"  ,rlimit-stack
+     "-D" ,directory
      ,@(loop for ns in keep-namespaces
              do (assert (cl-ppcre:scan "^[a-z_]+$" ns))
              collect
@@ -250,6 +252,7 @@
 	 for target-reference := (if (equalp type "T") target
 				   (format nil "~a:~a" target internal-target))
 	 for type-known := (find type '("B" "R" "T") :test 'equal)
+         do (uiop:run-program (add-command-numeric-su (list "stat" target) uid))
 	 unless (or
 		  skip-mount-check 
 		  (nsjail-mount-allowed-p target internal-target type))
@@ -375,6 +378,7 @@
 			    stdin-fd stdout-fd stderr-fd
 			    pty wait slurp-stdout slurp-stderr
 			    feed-stdin slay
+                            (directory "/")
 			    netns netns-ports-out netns-verbose
 			    nsjail nsjail-settings)
   (let*
@@ -392,7 +396,8 @@
        (if netns
 	 (add-command-netns 
 	   command-to-wrap :ports-out netns-ports-out
-	   :uid uid :gid gid :verbose netns-verbose)
+	   :uid uid :gid gid :verbose netns-verbose
+           :directory directory)
 	 command-to-wrap))
      (command-to-wrap
        (cond
@@ -400,6 +405,7 @@
 	   (apply
 	     'add-command-nsjail
 	     command-to-wrap uid :gid gid
+             :directory directory
 	     nsjail-settings))
 	 (t (add-command-numeric-su command-to-wrap uid :gid gid))))
      (wrapped-command command-to-wrap)
@@ -409,7 +415,8 @@
 	 :stdin (or stdin-fd (when feed-stdin :pipe) :null)
 	 :stdout (or stdout-fd (when slurp-stdout :pipe) :null)
 	 :stderr (or stderr-fd (when slurp-stderr :pipe) :null)
-	 :pty pty :current-directory "/" :new-session pty))
+	 :pty pty :current-directory (or directory "/")
+         :new-session pty))
      (stdin-feeder
        (bordeaux-threads:make-thread
 	 (lambda ()

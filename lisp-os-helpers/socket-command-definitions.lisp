@@ -78,6 +78,8 @@
            if (equalp o "slurp-stderr") append (list :slurp-stderr t)
            if (and (listp o) (equalp (first o) "feed-stdin"))
            append (list :feed-stdin (second o))
+           if (and (listp o) (equalp (first o) "directory"))
+           append (list :directory (second o))
            if (and (listp o) (equalp (first o) "nsjail"))
            append (list
                     :nsjail t :nsjail-settings

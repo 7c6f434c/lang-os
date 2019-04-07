@@ -16,12 +16,13 @@
   (let*
     ((db-var (gensym)))
     `(progn
-       (ensure-directories-exist ,global-sqlite-location)
-       (clsql:with-database
-         (,db-var `(,,global-sqlite-location) :pool t :database-type :sqlite3)
-         (clsql:with-default-database
-           (,db-var)
-           ,@body)))))
+       (let* ((*global-sqlite-location* ,global-sqlite-location))
+         (ensure-directories-exist *global-sqlite-location*)
+         (clsql:with-database
+           (,db-var (list *global-sqlite-location*) :pool t :database-type :sqlite3)
+           (clsql:with-default-database
+             (,db-var)
+             ,@body))))))
 
 (defun ensure-field (table field field-metadata)
   (unless
