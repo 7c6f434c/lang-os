@@ -589,6 +589,10 @@
   (modprobe "hid_generic")
   (modprobe "hid_cherry"))
 
+(defun socket-command-server-commands::laptop-power-modules (context)
+  (declare (ignorable context))
+  (modprobe "battery"))
+
 (defun socket-command-server-commands::set-cpu-frequency (context frequency)
   (require-or
     "Owner user presence not confirmed"

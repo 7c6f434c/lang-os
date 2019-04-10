@@ -738,7 +738,7 @@
                     (background-thread (ensure-wifi "wlan0"))
                     (load-sound "usb")
                     (storage-modules) (usb-hid-modules)
-                    (usb-eth-modules)
+                    (usb-eth-modules) (laptop-power-modules)
                     (hostname "localhost")
                     (set-brightness 50) (set-cpu-frequency 2690)
                     ))
