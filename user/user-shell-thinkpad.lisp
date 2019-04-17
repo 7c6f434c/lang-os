@@ -181,3 +181,7 @@
   (sleep 0.5)
   (& compton --dbe))
 
+(defun unlock-phone ()
+  (sudo:tether-android)
+  (sudo:tether-android)
+  (! unlock-phone))
