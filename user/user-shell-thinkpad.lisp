@@ -19,6 +19,7 @@
            :pass-stderr nil :pass-stdout nil :wait nil
            :no-close t :stumpwm-tags "cat/e-im im telegram no-auto-tags"
            :javascript t
+           :home t
            :socks-proxy 1080)
   )
 
@@ -28,6 +29,7 @@
            :no-close t :stumpwm-tags "cat/em-email email mail mccme no-auto-tags"
            :data "/home/raskin/fallout/"
            :javascript t
+           :home t
            :socks-proxy 1080)
   (firefox (list "https://github.com/notifications/")
            :pass-stderr nil :pass-stdout nil :wait nil

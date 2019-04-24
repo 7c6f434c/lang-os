@@ -19,6 +19,7 @@
     #:wpa-supplicant-running-p
     #:local-resolv-conf
     #:dhcp-resolv-conf
+    #:local-port-open-p
     ))
 (in-package :lisp-os-helpers/network)
 
@@ -234,3 +235,10 @@
         "/etc/resolv.conf.dhclient-new"))
     "/etc/resolv.conf"
     :if-exists :supersede))
+
+(defun local-port-open-p (port &optional (protocol :tcp) (interface "*"))
+  (uiop:run-program
+    (list "ss" "-l" "-n" "-H"
+          (format nil "--~a" (string-downcase protocol))
+          "src" (format nil "~a:~a" interface port))
+    :output :lines))

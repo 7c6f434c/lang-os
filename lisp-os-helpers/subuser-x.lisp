@@ -205,6 +205,36 @@
                `(subuser-uid ,name))))))
      (socks-proxy (if (and socks-proxy (not (integerp socks-proxy))) 1080 socks-proxy))
      (http-proxy (if (and socks-proxy (not (integerp socks-proxy))) 3128 http-proxy))
+     (hostname-suffix (or hostname-suffix
+                          (when (or (eq home t)) "")))
+     (hostname (or
+                 hostname 
+                 (when (or hostname-suffix hostname-hidden-suffix)
+                   (cond
+                     ((or
+                        (eq hostname-suffix t)
+                        (equal hostname-suffix ""))
+                      (masked-username
+                        name hostname-hidden-suffix))
+                     (t (format nil "~a.~a"
+                                (masked-username 
+                                  name hostname-hidden-suffix)
+                                (or hostname-suffix "")))))))
+     (home (if (eq home t)
+             (let* ((containing-directory
+                      (format nil "/tmp/subuser-homes-~a/"
+                              (get-current-user-name)))
+                    (home
+                      (progn
+                        (ensure-directories-exist containing-directory)
+                        (uiop:run-program
+                          (list "mktemp" "-d" "-p" containing-directory
+                                (concatenate 'string hostname "-XXXXXXXX"))
+                          :output (list :string :stripped t)))))
+               (uiop:run-program
+                 (list "setfacl" "-m" (format nil "u:~a:rwx" uid) home))
+               home)
+             home))
      )
     (with-system-socket
       (system-socket)
@@ -293,25 +323,13 @@
                ,@(when (or with-pulseaudio full-dev) `("full-dev"))
                ,@(when (or with-pulseaudio fake-passwd) `("fake-passwd"))
                ,@(when fake-groups `(("fake-groups" ,fake-groups)))
-               ("hostname"
-                ,(or
-                   hostname 
-                   (when (or hostname-suffix hostname-hidden-suffix)
-                     (cond
-                       ((or
-                          (eq hostname-suffix t)
-                          (equal hostname-suffix ""))
-                        (masked-username
-                          name hostname-hidden-suffix))
-                       (t (format nil "~a.~a"
-                                  (masked-username 
-                                    name hostname-hidden-suffix)
-                                  (or hostname-suffix "")))))))
+               ("hostname" ,hostname)
                ("mounts"
                 (
                  ,@(when grab-dri `(("-B" "/dev/dri")))
                  ,@(when grab-sound `(("-B" "/dev/snd")))
                  ,@(when (or mount-sys grab-dri) `(("-B" "/sys")))
+                 ,@(when home `(("-B" ,home)))
                  ,@ mounts))
                ,@(when verbose-nsjail `("verbose"))
                ,@(when keep-namespaces
