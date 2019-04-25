@@ -23,6 +23,7 @@
 (use-package :lisp-os-helpers/subuser-x)
 (use-package :lisp-os-helpers/timestamp)
 (use-package :lisp-os-helpers/marionette)
+(use-package :lisp-os-helpers/network)
 
 (setf *random-state* (make-random-state t))
 

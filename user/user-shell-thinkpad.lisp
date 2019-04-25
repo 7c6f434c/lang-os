@@ -46,6 +46,10 @@
 (defun vps-term ()
   (& sh -c "ssh-window \"$(cat ~/.vps-ssh)\""))
 
+(defun ensure-vps-socks ()
+  (unless (local-port-open-p 1080)
+    (vps-term)))
+
 (defun subuser-signal ()
   (let* ((home (format nil "~a/.local/share/signal-home"
                        (uiop:getenv "HOME"))))
@@ -78,7 +82,7 @@
       :wait nil)))
 
 (defun communication-windows ()
-  (vps-term)
+  (ensure-vps-socks)
   (matrix-term)
   (im-browsers)
   (subuser-signal)
@@ -148,13 +152,15 @@
          ,(if (ethernet-attached "eth1") `(dhclient "eth1" t) `(progn))
          ))
     (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home))))
+  (ensure-vps-socks)
   (! x-options))
 
 (defun enter-home-poing (&rest args)
   (apply 'enter-home
          (append args
                  (list :location "home@Poing"
-                       :extra-requests `((local-resolv-conf))))))
+                       :extra-requests `((local-resolv-conf)))))
+  (ensure-vps-socks))
 
 (defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min"))
   (alexandria:write-string-into-file
