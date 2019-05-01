@@ -140,9 +140,11 @@
             (getf (ip-address-info interface address) :netmask-length))
           "dev" interface)))
 
-(defun flush-ip-addresses (interface)
+(defun flush-ip-addresses (interface &key family)
   (uiop:run-program
-    (list "ip" "address" "flush" "dev" interface)))
+    `("ip"
+      ,@(when family (list (format nil "-~a" family)))
+      "address" "flush" "dev" ,interface)))
 
 (defun enable-ip-link (interface)
   (uiop:run-program

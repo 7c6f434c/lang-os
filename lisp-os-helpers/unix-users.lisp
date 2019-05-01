@@ -13,6 +13,8 @@
     #:ensure-daemon-group
     #:grant-to-user
     #:grant-to-group
+    #:file-owner-uid
+    #:file-owner-name
     ))
 (in-package :lisp-os-helpers/unix-users)
 
@@ -40,3 +42,14 @@
 
 (defun grant-to-group (name path)
   (uiop:run-program (list "chgrp" name path)))
+
+(defun file-owner-uid (path)
+  (parse-integer
+    (uiop:run-program
+      (list "stat" "-c" "%u" path)
+      :output :string)))
+(defun file-owner-name (path)
+  (parse-integer
+    (uiop:run-program
+      (list "stat" "-c" "%U" path)
+      :output :string)))

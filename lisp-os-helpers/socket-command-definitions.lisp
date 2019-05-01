@@ -9,6 +9,7 @@
 	:lisp-os-helpers/auth-data
 	:lisp-os-helpers/fbterm-requests
 	:lisp-os-helpers/kernel
+	:lisp-os-helpers/unix-users
 	)
   (:export
     #:start-x-allowed-p
@@ -226,3 +227,23 @@
   (unless (ignore-errors (require-root context) t)
     (require-presence context))
   (set-brightness n))
+
+(defun socket-command-server-commands::fuser (context filename)
+  (let* ((user (context-uid context))
+         (owner (file-owner-uid filename))
+         (owner-name (iolib/syscalls:getpwuid owner)))
+    (assert (or (equal (format nil "~a" user)
+                       (format nil "~a" owner))
+                (equal user owner-name))
+            nil
+            "File owned by ~a / ~a instead of ~a"
+            owner owner-name user)
+    (remove
+      ""
+      (cl-ppcre:split
+        " "
+        (uiop:run-program
+          (list "fuser" filename)
+          :output (list :string :stripped t)
+          :ignore-error-status t))
+      :test 'equal)))

@@ -29,7 +29,7 @@
    (:file "socket-command-client" :depends-on ("safe-read" "socket-command-server" "util"))
    (:file "read-eval-print-once")
    (:file "user-abbreviations" :depends-on ("shell" "socket-command-client"))
-   (:file "socket-command-definitions" :depends-on ("socket-command-server" "subuser" "daemon" "shell" "vt" "util" "kernel"))
+   (:file "socket-command-definitions" :depends-on ("socket-command-server" "subuser" "daemon" "shell" "vt" "util" "kernel" "unix-users"))
    (:file "subuser-x" :depends-on ("shell" "nix" "timestamp" "socket-command-client"))
    (:file "marionette" :depends-on ("subuser-x" "util"))
    (:file "plain-web" :depends-on ())

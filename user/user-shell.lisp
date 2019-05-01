@@ -942,3 +942,36 @@
               (ask-with-auth
                 (:presence t)
                 `(kill-wifi ,interface)))
+
+(defun-export sudo::nix-collect-garbage ()
+              (ask-with-auth (:presence t)
+                             `(nix-collect-garbage)))
+
+(defun-export sudo::fuser (file)
+  (first
+    (second
+      (ask-with-auth
+        ()
+        `(fuser ,(namestring (truename file)))))))
+
+(defun-export sudo::reclaim-file (file)
+              (ask-with-auth () `(chown-subuser ,file "")))
+
+(defun firefox-profile-alive (path)
+  (ignore-errors
+    (sudo::fuser
+      (format nil "~a/cert9.db" (namestring path)))))
+
+(defun firefox-profile-p (path)
+  (ignore-errors
+    (and (loop for x in '("cert9.db" "key4.db" "search.json")
+               unless (probe-file (format nil "~a/~a" (namestring path) x))
+               return nil
+               finally (return t)))))
+
+(defun cleanup-firefox-profile (path)
+  (when (firefox-profile-p path)
+    (unless (firefox-profile-alive path)
+      (ignore-errors (sudo::reclaim-file path))
+      (uiop:run-program (list "rm" "-r" "-f" (namestring path)))
+      path)))

@@ -132,15 +132,19 @@
       (uiop:run-program
 	`("/run/current-system/bin/system-userdel" ,name)))))
 
+(defun-weak extra-owned-locations (user))
+
 (defun chown-subuser(user file &key uid name)
   (let*
     ((self (not (or uid name)))
      (subuser-uid (unless self (select-subuser user :uid uid :name name)))
      (passwd-line (multiple-value-list (iolib/syscalls:getpwnam user)))
      (home (sixth passwd-line))
-     (in-home-p (and home
-		     (alexandria:starts-with-subseq
-		       (format nil "~a/" home) file)))
+     (in-home-p
+       (find-if
+         (lambda (d) (alexandria:starts-with-subseq
+                       (cl-ppcre:regex-replace "/*$" d "/") file))
+         (cons home (extra-owned-locations user))))
      (gid (fourth passwd-line))
      (user-uid (third passwd-line)))
     (unless in-home-p (error "File ~s is not in home of user ~s" file user))

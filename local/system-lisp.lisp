@@ -315,6 +315,14 @@
         ))
     ))
 
+(defun lisp-os-helpers/subuser::extra-owned-locations (user)
+  (loop for x in
+        '(
+          "/tmp/ff.~a/"
+          "/tmp/subuser-homes-~a/"
+          )
+        collect (format x user)))
+
 (defun socket-command-server-commands::wifi-modules (context)
   context
   (modprobe "iwlwifi")
@@ -370,9 +378,10 @@
   (enable-ip-link interface))
 
 (defun socket-command-server-commands::flush-interface
-  (context interface)
+  (context interface &optional family)
   (require-presence context)
-  (flush-ip-addresses interface))
+  (assert (or (null family) (integerp family) (parse-integer family)))
+  (flush-ip-addresses interface :family family))
 
 (defun socket-command-server-commands::local-resolv-conf (context)
   (require-or
@@ -381,6 +390,18 @@
     (require-presence context))
   (local-resolv-conf)
   "OK")
+
+(defun socket-command-server-commands::configure-unscoped-ptrace
+  (context &optional allowed)
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
+  (with-open-file (f "/proc/sys/kernel/yama/ptrace_scope"
+                     :direction :output :if-exists :overwrite)
+    (print (if allowed 0 1) f)))
 
 (setf
   lisp-os-helpers/fbterm-requests:*fbterm-settings*
