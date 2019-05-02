@@ -215,3 +215,4 @@ user_pref("browser.contentblocking.enabled", true);
 user_pref("javascript.enabled",false);
 user_pref("accessibility.blockautorefresh", true);
 user_pref("browser.ctrlTab.recentlyUsedOrder", false);
+user_pref("browser.send_pings", false);
