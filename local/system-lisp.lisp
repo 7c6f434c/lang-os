@@ -321,7 +321,7 @@
           "/tmp/ff.~a/"
           "/tmp/subuser-homes-~a/"
           )
-        collect (format x user)))
+        collect (format nil x user)))
 
 (defun socket-command-server-commands::wifi-modules (context)
   context

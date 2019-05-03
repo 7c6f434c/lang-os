@@ -142,9 +142,11 @@
 (defun socket-command-server-commands::subuser-uid (context name)
   (subuser-uid (context-uid context) :name name :passwd-entry nil))
 
-(defun socket-command-server-commands::chown-subuser (context path name)
+(defun socket-command-server-commands::chown-subuser (context path name
+                                                              &optional recursive)
   (chown-subuser (context-uid context) path
-		 :name (when (> (length name) 0) name)))
+                 :name (when (> (length name) 0) name)
+                 :recursive (> (length recursive) 0)))
 
 (defun-weak grab-device-allowed-p (user subuser device) nil)
 

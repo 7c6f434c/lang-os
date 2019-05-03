@@ -954,8 +954,8 @@
         ()
         `(fuser ,(namestring (truename file)))))))
 
-(defun-export sudo::reclaim-file (file)
-              (ask-with-auth () `(chown-subuser ,file "")))
+(defun-export sudo::reclaim-file (file &key recursive)
+              (ask-with-auth () `(chown-subuser ,file "" ,(or recursive ""))))
 
 (defun firefox-profile-alive (path)
   (ignore-errors
@@ -969,9 +969,10 @@
                return nil
                finally (return t)))))
 
-(defun cleanup-firefox-profile (path)
-  (when (firefox-profile-p path)
+(defun cleanup-firefox-profile (path &key force)
+  (when (or force (firefox-profile-p path))
     (unless (firefox-profile-alive path)
-      (ignore-errors (sudo::reclaim-file path))
+      (ignore-errors (sudo::reclaim-file path :recursive t))
+      (uiop:run-program (list "chmod" "u+rwX" "-R" (namestring path)))
       (uiop:run-program (list "rm" "-r" "-f" (namestring path)))
       path)))

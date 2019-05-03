@@ -134,7 +134,7 @@
 
 (defun-weak extra-owned-locations (user))
 
-(defun chown-subuser(user file &key uid name)
+(defun chown-subuser(user file &key uid name recursive)
   (let*
     ((self (not (or uid name)))
      (subuser-uid (unless self (select-subuser user :uid uid :name name)))
@@ -150,8 +150,11 @@
     (unless in-home-p (error "File ~s is not in home of user ~s" file user))
     (unless (or self subuser-uid)
       (error "Could not select subuser by uid ~s and name ~s for user ~s"
-	     uid name user))
-    (iolib/syscalls:lchown file (or subuser-uid user-uid) gid)))
+             uid name user))
+    (uiop:run-program
+      `("chown" ,@(when recursive `("-R"))
+        ,(format nil "~a:~a" (if self user-uid subuser-uid) gid)
+        ,file))))
 
 (defun add-command-numeric-su (command uid &key (gid 65534))
   `(,*numeric-su-helper*
