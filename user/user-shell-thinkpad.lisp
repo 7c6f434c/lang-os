@@ -147,7 +147,6 @@
     (ask-with-auth
       (:presence t)
       `(progn
-         (kill-wifi "wlan0")
          ,(if (ethernet-attached "eth0") `(dhclient "eth0" t) `(progn))
          ,(if (ethernet-attached "eth1") `(dhclient "eth1" t) `(progn))
          ))
