@@ -180,6 +180,7 @@ user_pref("experiments.manifest.uri", "");
 user_pref("browser.onboarding.seen-tourset-version", 9999);
 user_pref("devtools.onboarding.telemetry.logged", false);
 user_pref("app.normandy.first_run", false);
+user_pref("app.normandy.enabled", false);
 user_pref("browser.onboarding.tour-type", "new");
 user_pref("browser.tabs.closeWindowWithLastTab", true);
 user_pref("network.trr.mode", 0);
