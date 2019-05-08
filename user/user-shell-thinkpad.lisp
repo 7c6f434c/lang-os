@@ -14,14 +14,7 @@
 (load *common-rc*)
 (defun edrc-common () (ed *common-rc*))
 
-(defun im-browsers ()
-  (firefox (list "https://web.telegram.org/")
-           :pass-stderr nil :pass-stdout nil :wait nil
-           :no-close t :stumpwm-tags "cat/e-im im telegram no-auto-tags"
-           :javascript t
-           :home t
-           :socks-proxy 1080)
-  )
+(defun im-browsers ())
 
 (defun email-browsers ()
   (firefox (list "https://email.mccme.ru/")
@@ -81,10 +74,41 @@
       :hostname "signal-nsjail"
       :wait nil)))
 
+(defun subuser-telegram-firefox ()
+  (let* ((home (format nil "~a/.local/share/telegram-home"
+                       (uiop:getenv "HOME"))))
+    (loop with stack := (list home)
+          for next := (pop stack)
+          while next
+          do (ignore-errors
+               (ask-with-auth 
+                 ()
+                 `(chown-subuser ,next "")))
+          do (setf stack
+                   (append
+                     (mapcar 'namestring
+                             (directory
+                               (format nil "~a/*.*" next)))
+                     stack)))
+    (firefox
+      (list "https://web.telegram.org/")
+      :pass-stderr nil
+      :pass-stdout nil
+      :wait nil
+      :no-close t 
+      :stumpwm-tags "cat/e-im im telegram no-auto-tags"
+      :javascript t
+      :socks-proxy 1080
+      :name "telegram-sandbox"
+      :home home
+      :profile-storage (format nil "~a/firefox-profile" home)
+      :grant (list home))))
+
 (defun communication-windows ()
   (ensure-vps-socks)
   (matrix-term)
   (im-browsers)
+  (subuser-telegram-firefox)
   (subuser-signal)
   (email-browsers))
 
