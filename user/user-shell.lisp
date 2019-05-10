@@ -745,6 +745,7 @@
                     ))
   (! queryfs-session-run detach)
   (grab-kvm) (grab-fuse)
+  (sudo::grab-devices `("/dev/fb*"))
   (restart-lisp-shell-server))
 
 (defun gvim-plus-zathura (file &key compiler)
