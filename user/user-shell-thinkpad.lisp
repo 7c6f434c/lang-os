@@ -104,12 +104,16 @@
       :profile-storage (format nil "~a/firefox-profile" home)
       :grant (list home))))
 
-(defun communication-windows ()
-  (ensure-vps-socks)
-  (matrix-term)
+(defun im-windows ()
   (im-browsers)
   (subuser-telegram-firefox)
   (subuser-signal)
+  )
+
+(defun communication-windows ()
+  (ensure-vps-socks)
+  (matrix-term)
+  (im-windows)
   (email-browsers))
 
 (defun enter-labri (&rest args &key (brightness 400) (extra-ips `())
@@ -190,6 +194,7 @@
     "10" (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
     :if-exists :supersede)
   (! web-stream-updater-starter quit)
+  (uiop:run-program "rm ~/.update-web-streams-*" :ignore-error-status t)
   (ask-with-auth 
     (:presence t)
     `(list 
