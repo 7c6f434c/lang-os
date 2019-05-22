@@ -152,7 +152,7 @@
       (error "Could not select subuser by uid ~s and name ~s for user ~s"
              uid name user))
     (uiop:run-program
-      `("chown" ,@(when recursive `("-R"))
+      `("chown" "-h" ,@(when recursive `("-R"))
         ,(format nil "~a:~a" (if self user-uid subuser-uid) gid)
         ,file))))
 
