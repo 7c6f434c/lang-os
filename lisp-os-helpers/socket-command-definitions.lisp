@@ -28,7 +28,7 @@
   (require-presence context)
   (chvt vtn))
 
-(defun-weak start-x-allowed-p (context display) nil)
+(defun-weak start-x-allowed-p (context display) (declare (ignorable context display)) nil)
 
 (defun socket-command-server-commands::start-x (context &optional (display 0))
   (unless
@@ -148,7 +148,7 @@
                  :name (when (> (length name) 0) name)
                  :recursive (> (length recursive) 0)))
 
-(defun-weak grab-device-allowed-p (user subuser device) nil)
+(defun-weak grab-device-allowed-p (user subuser device) (declare (ignorable user subuser device)) nil)
 
 (defun do-grab-device (user subuser device)
   (unless

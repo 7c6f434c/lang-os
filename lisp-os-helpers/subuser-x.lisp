@@ -360,7 +360,7 @@
     (firefox-launcher *firefox-launcher*) (slay t) (wait t)
     mounts (hostname-suffix "") hostname-hidden-suffix certificate-overrides socks-proxy
     network-ports keep-namespaces)
-  (declare (ignorable options))
+  (declare (ignorable options network-ports))
   (let*
     (
      (combined-profile

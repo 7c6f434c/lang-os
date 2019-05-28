@@ -12,10 +12,12 @@
 
 (defvar *global-sqlite-location* "/run/global-sqlite/global.sqlite")
 
+(defvar *global-sqlite-lock* (bordeaux-threads:make-lock "global.sqlite"))
+
 (defmacro with-global-sqlite ((&key (global-sqlite-location *global-sqlite-location*)) &body body)
   (let*
     ((db-var (gensym)))
-    `(progn
+    `(bordeaux-threads:with-lock-held (*global-sqlite-lock*)
        (let* ((*global-sqlite-location* ,global-sqlite-location))
          (ensure-directories-exist *global-sqlite-location*)
          (clsql:with-database

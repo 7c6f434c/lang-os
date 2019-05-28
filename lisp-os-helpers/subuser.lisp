@@ -73,41 +73,43 @@
 	uid name passwd-line name-suffix owner))))
 
 (defun subuser-uid (user &key name home gid group passwd-entry)
-  (with-global-sqlite
-    ()
-    (let*
-      ((name-suffix (or name (timestamp-usec-recent-base36)))
-       (name (format nil "~a.~a" user name-suffix))
-       (home (or home "/var/empty"))
-       (gid (or
-	      gid 
-	      (and
-		group
-		(third (multiple-value-list (iolib/syscalls:getgrnam group))))
-	      *nogroup*))
-       (uid
-	 (or
-	   (select-subuser user :name name)
-	   (if passwd-entry
-	     (progn
-	       (uiop:run-program
-		 `("/run/current-system/bin/system-useradd"
-		   "-d" ,home
-		   "-g" ,(format nil "~a" gid) ,name)))
-	     (progn
-	       (complex-global-value 
-		 :subusers name
-		 `(:owner :home :uid :gid)
-		 `(:varchar :varchar :integer :integer)
-		 (list user home nil gid) t)
-	       (+ *subuser-uid-shift*
-		  (first (complex-global-value :subusers name `(:id) nil)))
-	       ))))
-       )
+  (let*
+    ((name-suffix (or name (timestamp-usec-recent-base36)))
+     (name (format nil "~a.~a" user name-suffix))
+     (home (or home "/var/empty"))
+     (gid (or
+            gid 
+            (and
+              group
+              (third (multiple-value-list (iolib/syscalls:getgrnam group))))
+            *nogroup*))
+     (uid
+       (or
+         (select-subuser user :name name)
+         (if passwd-entry
+           (progn
+             (uiop:run-program
+               `("/run/current-system/bin/system-useradd"
+                 "-d" ,home
+                 "-g" ,(format nil "~a" gid) ,name))
+             (select-subuser user :name name-suffix))
+           (with-global-sqlite
+             ()
+             (complex-global-value 
+               :subusers name
+               `(:owner :home :uid :gid)
+               `(:varchar :varchar :integer :integer)
+               (list user home nil gid) t)
+             (+ *subuser-uid-shift*
+                (first (complex-global-value :subusers name `(:id) nil)))
+             ))))
+     )
+    (with-global-sqlite
+      ()
       (complex-global-value 
-	:subusers name
-	`(:owner :home :uid :gid) `(:varchar :varchar :integer :integer)
-	(list user home uid gid))
+        :subusers name
+        `(:owner :home :uid :gid) `(:varchar :varchar :integer :integer)
+        (list user home uid gid))
       (values uid name-suffix))))
 
 (defun slay-subuser (user &key uid name)
@@ -132,7 +134,7 @@
       (uiop:run-program
 	`("/run/current-system/bin/system-userdel" ,name)))))
 
-(defun-weak extra-owned-locations (user))
+(defun-weak extra-owned-locations (user) (declare (ignorable user)) nil)
 
 (defun chown-subuser(user file &key uid name recursive)
   (let*
@@ -164,14 +166,15 @@
 
 (defun-weak
   nsjail-mount-allowed-p (from to type)
+  (declare (ignorable type))
   (and
     (or
-      (alexandria:starts-with-subseq "/home/" target)
-      (alexandria:starts-with-subseq "/tmp/" target)
+      (alexandria:starts-with-subseq "/home/" from)
+      (alexandria:starts-with-subseq "/tmp/" from)
       )
     (or
-      (alexandria:starts-with-subseq "/home/" internal-target)
-      (alexandria:starts-with-subseq "/tmp/" internal-target)
+      (alexandria:starts-with-subseq "/home/" to)
+      (alexandria:starts-with-subseq "/tmp/" to)
       )
     ))
 
