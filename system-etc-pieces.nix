@@ -81,7 +81,11 @@ rec {
   namesEtc = hostname: deeplinkAttrset "names-etc" (
      (fromNixOS.etcSelectComponents
              ["hostname" "hosts" "nsswitch.conf"]
-             {networking.hostName="localhost";})
+             {
+               networking.hostName="localhost";
+               networking.hosts."127.0.0.1" = ["localhost4" "localhost"];
+               networking.hosts."::1" = ["localhost6"];
+             })
      // resolvEtc.entries // ianaEtc.entries //
      { "machine-id" = "/var/etc/machine-id"; }
      );
