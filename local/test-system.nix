@@ -220,7 +220,12 @@ pkgs.lib.makeExtensible (self: with self; {
 	    "localhost"
 	    "192.168.0.0/16"
 	  ];
-	  zones = [];
+	  zones = [
+            {
+                    name = "root-servers.net";
+                    file = "" + ./root-servers;
+            }
+          ];
 	  extraConfig = ''
 	    logging { category default { default_stderr; }; };
 	  '';
