@@ -733,10 +733,14 @@
   (when randr (& := (:display (or ($ :display) ":0")) x-randr-options))
   (when re-wifi (sudo::rewifi)))
 
-(defun boot-login-init ()
+(defun boot-login-init (&key (wifi "wlan0"))
   (ask-with-auth (:presence t)
                  `(list
-                    (background-thread (ensure-wifi "wlan0"))
+                    ,(if wifi
+                       `(background-thread
+                          (ensure-wifi
+                            (if (stringp wifi) wifi "wlan0")))
+                       `(list))
                     (load-sound "usb")
                     (storage-modules) (usb-hid-modules)
                     (usb-eth-modules) (laptop-power-modules)
