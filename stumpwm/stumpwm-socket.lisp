@@ -43,8 +43,8 @@
                                            (format nil "Error:~%~a" error)))
                          do (format *error-output* "Evaluated form to:~%~S~%"
                                     result)
-                         do (format stream "~s~%" result)
-                         do (finish-output stream)))
+                         do (ignore-errors (format stream "~s~%" result)
+                                           (finish-output stream))))
                      (ignore-errors (close stream)))))
                  :name "StumpWM socket connection handler")))
       :name "StumpWM socket evaluator")))
