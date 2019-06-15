@@ -104,9 +104,40 @@
       :profile-storage (format nil "~a/firefox-profile" home)
       :grant (list home))))
 
+(defun subuser-riot-firefox ()
+  (let* ((home (format nil "~a/.local/share/riot-home"
+                       (uiop:getenv "HOME"))))
+    (loop with stack := (list home)
+          for next := (pop stack)
+          while next
+          do (ignore-errors
+               (ask-with-auth 
+                 ()
+                 `(chown-subuser ,next "")))
+          do (setf stack
+                   (append
+                     (mapcar 'namestring
+                             (directory
+                               (format nil "~a/*.*" next)))
+                     stack)))
+    (firefox
+      (list "https://riot.dev.mccme.ru/riot-im/")
+      :pass-stderr nil
+      :pass-stdout nil
+      :wait nil
+      :no-close t 
+      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags"
+      :javascript t
+      :socks-proxy 1080
+      :name "riot-sandbox"
+      :home home
+      :profile-storage (format nil "~a/firefox-profile" home)
+      :grant (list home))))
+
 (defun im-windows ()
   (im-browsers)
   (subuser-telegram-firefox)
+  (subuser-riot-firefox)
   (subuser-signal)
   )
 
