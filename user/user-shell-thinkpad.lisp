@@ -77,19 +77,10 @@
 (defun subuser-telegram-firefox ()
   (let* ((home (format nil "~a/.local/share/telegram-home"
                        (uiop:getenv "HOME"))))
-    (loop with stack := (list home)
-          for next := (pop stack)
-          while next
-          do (ignore-errors
-               (ask-with-auth 
-                 ()
-                 `(chown-subuser ,next "")))
-          do (setf stack
-                   (append
-                     (mapcar 'namestring
-                             (directory
-                               (format nil "~a/*.*" next)))
-                     stack)))
+    (ignore-errors
+      (ask-with-auth 
+        ()
+        `(chown-subuser ,home "" t)))
     (firefox
       (list "https://web.telegram.org/")
       :pass-stderr nil
@@ -107,19 +98,10 @@
 (defun subuser-riot-firefox ()
   (let* ((home (format nil "~a/.local/share/riot-home"
                        (uiop:getenv "HOME"))))
-    (loop with stack := (list home)
-          for next := (pop stack)
-          while next
-          do (ignore-errors
-               (ask-with-auth 
-                 ()
-                 `(chown-subuser ,next "")))
-          do (setf stack
-                   (append
-                     (mapcar 'namestring
-                             (directory
-                               (format nil "~a/*.*" next)))
-                     stack)))
+    (ignore-errors
+      (ask-with-auth 
+        ()
+        `(chown-subuser ,home "" t)))
     (firefox
       (list "https://riot.dev.mccme.ru/riot-im/")
       :pass-stderr nil
