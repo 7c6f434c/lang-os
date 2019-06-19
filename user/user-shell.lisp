@@ -929,7 +929,9 @@
           collect s)))
 
 (defun ungrab-for-stale-chunked (devices n)
-  (loop while (ignore-errors (ungrab-for-stale devices n))))
+  (loop for prev := nil then new
+        for new := (ignore-errors (ungrab-for-stale devices n))
+        while (not (equal prev new))))
 
 (defun kill-background-process-leaks ()
   (! pkill "Xorg")
