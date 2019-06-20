@@ -16,20 +16,25 @@
 
 (defun im-browsers ())
 
-(defun email-browsers ()
+(defun mccme-webmail-firefox ()
   (firefox (list "https://email.mccme.ru/")
            :pass-stderr nil :pass-stdout nil :wait nil
            :no-close t :stumpwm-tags "cat/em-email email mail mccme no-auto-tags"
            :data "/home/raskin/fallout/"
            :javascript t
            :home t
-           :socks-proxy 1080)
+           :socks-proxy 1080))
+
+(defun github-notifications-firefox ()
   (firefox (list "https://github.com/notifications/")
            :pass-stderr nil :pass-stdout nil :wait nil
            :no-close t :stumpwm-tags "cat/em-email email mail github no-auto-tags"
            :javascript t
-           :socks-proxy 1080)
-  )
+           :socks-proxy 1080))
+
+(defun email-browsers ()
+  (mccme-webmail-firefox)
+  (github-notifications-firefox))
 
 (defun matrix-term ()
   (& urxvt 
