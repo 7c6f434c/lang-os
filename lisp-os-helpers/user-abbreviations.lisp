@@ -160,7 +160,7 @@
 	     (uiop:process-info-output ,first-process)))))))
 
 (defmacro >> (&rest bangs)
-  `(>>-impl ,bangs :stream t))
+  `(>>-impl ,bangs :stream *standard-input*))
 
 (defmacro $ (&rest args)
   (cond

@@ -582,7 +582,13 @@
 (defun
   enter-master-password ()
   (grab-fuse)
-  (!! enter-master-password)
+  (! enter-master-password
+     :< (list (first 
+                (take-reply-value
+                  (ask-with-auth
+                    ()
+                    `(request-secret "Enter the master password" 15))))
+              :terpri t))
   (wait (:timeout 300 :sleep 1)
         (probe-file
           (~ "queries/p-store/zsh@consistency")))
