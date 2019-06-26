@@ -582,6 +582,7 @@
 (defun
   enter-master-password ()
   (grab-fuse)
+  (! queryfs-session-run detach)
   (! enter-master-password
      :< (list (first 
                 (take-reply-value
