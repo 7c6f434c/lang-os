@@ -220,3 +220,4 @@ user_pref("browser.send_pings", false);
 user_pref("gfx.webrender.enabled", true);
 user_pref("gfx.webrender.all", true);
 user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
+user_pref("network.security.esni.enabled", true);
