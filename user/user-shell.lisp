@@ -708,7 +708,7 @@
      (cons
        "list"
        (loop for device in devices
-             collect `(unmount ,@(if (stringp device) (list device) device)))))
+             collect `(unmount ,@(if (stringp device) (list device) (list (first device)))))))
    )
   (wait-on-shell-command (or command "$SHELL")))
 
