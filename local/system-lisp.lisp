@@ -301,6 +301,7 @@
       (or
         (alexandria:starts-with-subseq "/home/" to)
         (alexandria:starts-with-subseq "/tmp/" to)
+        (equal "/tmp" to)
         (not (find
                (second (cl-ppcre:split "/" to))
                '(

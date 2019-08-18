@@ -185,7 +185,7 @@
 (defun subuser-nsjail-x-application
   (command
     &key display
-    environment home name locale locale-archive
+    environment home tmp name locale locale-archive
     (slay t) (wait t) (netns t) verbose-netns network-ports grant
     pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
     mounts system-socket setup directory
@@ -206,7 +206,7 @@
      (socks-proxy (if (and socks-proxy (not (integerp socks-proxy))) 1080 socks-proxy))
      (http-proxy (if (and socks-proxy (not (integerp socks-proxy))) 3128 http-proxy))
      (hostname-suffix (or hostname-suffix
-                          (when (or (eq home t)) "")))
+                          (when (or (eq home t) (eq tmp t)) "")))
      (hostname (or
                  hostname 
                  (when (or hostname-suffix hostname-hidden-suffix)
@@ -235,6 +235,21 @@
                  (list "setfacl" "-m" (format nil "u:~a:rwx" uid) home))
                home)
              home))
+     (tmp (if (eq tmp t)
+            (let* ((containing-directory
+                     (format nil "/tmp/subuser-tmps-~a/"
+                             (get-current-user-name)))
+                   (tmp
+                     (progn
+                       (ensure-directories-exist containing-directory)
+                       (uiop:run-program
+                         (list "mktemp" "-d" "-p" containing-directory
+                               (concatenate 'string hostname "-XXXXXXXX"))
+                         :output (list :string :stripped t)))))
+              (uiop:run-program
+                (list "setfacl" "-m" (format nil "u:~a:rwx" uid) tmp))
+              tmp)
+            tmp))
      )
     (with-system-socket
       (system-socket)
@@ -329,11 +344,13 @@
                  ,@(when grab-dri `(("-B" "/dev/dri")))
                  ,@(when grab-sound `(("-B" "/dev/snd")))
                  ,@(when (or mount-sys grab-dri) `(("-B" "/sys")))
+                 ,@(when tmp `(("-B" ,tmp "/tmp")))
                  ,@(when home `(("-B" ,home)))
                  ,@ mounts))
                ,@(when verbose-nsjail `("verbose"))
                ,@(when keep-namespaces
                    `(("keep-namespaces" ,keep-namespaces)))
+               ,@(when home `(("home" ,home)))
                )
               ,@(when directory `(("directory" ,directory)))
               ,@(when netns

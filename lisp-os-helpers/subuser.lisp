@@ -224,7 +224,7 @@
 	   "-R" "/run/opengl-driver/" "-R" "/run/opengl-driver-32/"
 	   "-R" "/etc/fonts"
            "-T" ,(format nil "/run/user/~a/" internal-uid)
-           ,(if homep "-B" "-T") ,home
+           ,@(when home `(,(if homep "-B" "-T") ,home))
 	   ))
      ,@(when full-dev `("-B" "/dev/" "-B" "/dev/shm"))
      ,@(when hostname `("-H" ,hostname))
@@ -235,7 +235,8 @@
 		      "/tmp/system-lisp/subuser-passwd/~a" uid)
 	      :direction :output :if-exists :supersede)
 	   (format f "root:x:0:0::/:/bin/sh~%")
-	   (format f ".~a:x:~a:~a::~a:/bin/sh~%" internal-uid internal-uid gid home)
+	   (when home
+             (format f ".~a:x:~a:~a::~a:/bin/sh~%" internal-uid internal-uid gid home))
 	   (format f ".~a:x:~a:~a::/:/bin/sh~%" 65534 65534 65534)
 	   )
 	 (list "-R" (format nil "/tmp/system-lisp/subuser-passwd/~a:/etc/passwd" uid)))
@@ -275,7 +276,7 @@
      ,@(when proc-rw `("--proc_rw"))
      ,@(when network `("-N"))
      "-E" "PATH="
-     "-E" ,(format nil "HOME=~a" home)
+     ,@(when home `("-E" ,(format nil "HOME=~a" home)))
      "--"
      ,@ command))
 

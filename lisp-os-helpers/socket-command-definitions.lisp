@@ -103,6 +103,8 @@
                       append (list :hostname (second oo))
                       if (and (listp oo) (equalp (first oo) "keep-namespaces"))
                       append (list :keep-namespaces (second oo))
+                      if (and (listp oo) (equalp (first oo) "home"))
+                      append (list :home (second oo))
                       ))
            if (and (listp o) (equalp (first o) "netns"))
            append (list :netns t :netns-ports-out (second o)

@@ -79,26 +79,31 @@
       :hostname "signal-nsjail"
       :wait nil)))
 
-(defun subuser-telegram-firefox ()
+(defun subuser-telegram-firefox (&rest overrides)
   (let* ((home (format nil "~a/.local/share/telegram-home"
                        (uiop:getenv "HOME"))))
     (ignore-errors
       (ask-with-auth 
         ()
         `(chown-subuser ,home "" t)))
-    (firefox
+    (apply
+      'firefox
       (list "https://web.telegram.org/")
-      :pass-stderr nil
-      :pass-stdout nil
-      :wait nil
-      :no-close t 
-      :stumpwm-tags "cat/e-im im telegram no-auto-tags"
-      :javascript t
-      :socks-proxy 1080
-      :name "telegram-sandbox"
-      :home home
-      :profile-storage (format nil "~a/firefox-profile" home)
-      :grant (list home))))
+      (append
+        overrides
+        (list
+          :pass-stderr nil
+          :pass-stdout nil
+          :wait nil
+          :no-close t 
+          :stumpwm-tags "cat/e-im im telegram no-auto-tags"
+          :javascript t
+          :socks-proxy 1080
+          :name "telegram-sandbox"
+          :home home
+          :tmp t
+          :profile-storage (format nil "~a/firefox-profile" home)
+          :grant (list home))))))
 
 (defun subuser-riot-firefox ()
   (let* ((home (format nil "~a/.local/share/riot-home"
@@ -204,6 +209,13 @@
   (apply 'enter-home
          (append args
                  (list :location "home@Poing"
+                       :extra-requests `((local-resolv-conf)))))
+  (ensure-vps-socks))
+
+(defun enter-home-moscow (&rest args)
+  (apply 'enter-home
+         (append args
+                 (list :location "home@Moscow"
                        :extra-requests `((local-resolv-conf)))))
   (ensure-vps-socks))
 

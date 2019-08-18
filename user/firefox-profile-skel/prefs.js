@@ -221,3 +221,6 @@ user_pref("gfx.webrender.enabled", true);
 user_pref("gfx.webrender.all", true);
 user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
 user_pref("network.security.esni.enabled", true);
+user_pref("dom.max_chrome_script_run_time", 0);
+user_pref("dom.max_script_run_time", 0);
+user_pref("dom.max_ext_content_script_run_time", 0);
