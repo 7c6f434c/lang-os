@@ -135,7 +135,7 @@
 
 (defun communication-windows ()
   (ensure-vps-socks)
-  (matrix-term)
+  ;(matrix-term)
   (im-windows)
   (email-browsers))
 
