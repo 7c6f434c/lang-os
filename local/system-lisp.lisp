@@ -485,9 +485,15 @@
      (media-path (format nil "/media/~a/" device))
      (backup-path (format nil "~a/backup/" media-path))
      (marker-path (format nil "~a/auto-backup-here" backup-path))
+     (device-marker (cl-ppcre:regex-replace-all
+                      "/"
+                      (cl-ppcre:regex-replace-all
+                        "_" device "_underscore_")
+                      "_slash_"))
      )
     (cond
-      ((not (cl-ppcre:scan "^sd[b-z][1-9]$" device)) "wrong-device-name")
+      ((not (or (cl-ppcre:scan "^sd[b-z][1-9]$" device)
+                (cl-ppcre:scan "^OffStorage_[0-9]+/" device))) "wrong-device-name")
       ((not (ignore-errors (modprobe "uas") (modprobe "usb-storage") t))
        "modprobe-failure")
       ((not (probe-file full-path)) "no-device")
@@ -499,7 +505,7 @@
                     (uiop:run-program 
                       (list "mount" full-path media-path)
                       :error-output
-                      (format nil "/tmp/backup-mount-~a.log" device)
+                      (format nil "/tmp/backup-mount-~a.log" device-marker)
                       )
                     t)
                   (probe-file media-path)
@@ -508,17 +514,17 @@
                     (uiop:run-program
                       (list "/root/script/backup_notebook" backup-path)
                       :output
-                      (format nil "/tmp/backup-~a.log" device)
+                      (format nil "/tmp/backup-~a.log" device-marker)
                       :error-output :output)
                     t)
                   ))
               (ignore-errors
                 (uiop:run-program (list "umount" full-path)
-                                  :output (format nil "/tmp/backup-umount-~a.log" device)
+                                  :output (format nil "/tmp/backup-umount-~a.log" device-marker)
                                   :error-output :output))
               (ignore-errors
                 (uiop:run-program (list "umount" media-path)
-                                  :output (format nil "/tmp/backup-umount2-~a.log" device)
+                                  :output (format nil "/tmp/backup-umount2-~a.log" device-marker)
                                   :error-output :output))
               )) "backup-failed")
       (t "ok"))))
