@@ -14,7 +14,11 @@
 (load *common-rc*)
 (defun edrc-common () (ed *common-rc*))
 
-(defun im-browsers ())
+(defun im-browsers ()
+  (firefox (list "http://chat-judge.in.tum.de")
+           :pass-stderr nil :pass-stdout nil :wait nil
+           :no-close t :javascript t :socks-proxy 1080
+           :stumpwm-tags "cat/e-im|chat|im|tum|mattermost|conpra|no-auto-tags"))
 
 (defun mccme-webmail-firefox ()
   (firefox (list "https://email.mccme.ru/")
