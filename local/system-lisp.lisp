@@ -287,6 +287,7 @@
       (alexandria:starts-with-subseq "/dev/video" device)
       (equal "/dev/fuse" device)
       (equal "/dev/kvm" device)
+      (equal "/dev/uinput" device)
       )))
 
 (defun nsjail-mount-allowed-p (from to type)
@@ -447,6 +448,7 @@
     "User presence not confirmed"
     (require-root context)
     (require-presence context))
+  (uiop:run-program (list "vgchange" "-an") :ignore-error-status t)
   (uiop:run-program (list "wpa_cli" "suspend") :ignore-error-status t)
   (power-state (intern (string-upcase state) :keyword))
   (uiop:run-program (list "wpa_cli" "resume") :ignore-error-status t))
@@ -646,6 +648,20 @@
       (lisp-os-helpers/subuser:subuser-uid "root")
       t)
     (quit)))
+
+(defun socket-command-server-commands::rescan-lvm (context)
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
+  (uiop:run-program (list "vgchange" "-an") :ignore-error-status t)
+  (uiop:run-program (list "vgchange" "-ay") :ignore-error-status t))
+
+(defun socket-command-server-commands::uinput-modules (context)
+  (declare (ignorable context))
+  (modprobe "uinput"))
 
 (defvar *auto-wifi* nil)
 (defvar *auto-interfaces* nil)

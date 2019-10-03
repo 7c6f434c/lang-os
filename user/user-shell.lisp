@@ -755,6 +755,7 @@
                     (set-brightness 50) (set-cpu-frequency 2690)
                     ))
   (! queryfs-session-run detach)
+  (& cleanup-loops)
   (grab-kvm) (grab-fuse)
   (sudo::grab-devices `("/dev/fb*"))
   (restart-lisp-shell-server))
@@ -970,6 +971,9 @@
 
 (defun-export sudo::reclaim-file (file &key recursive)
               (ask-with-auth () `(chown-subuser ,file "" ,(or recursive ""))))
+
+(defun-export sudo::rescan-lvm ()
+              (ask-with-auth (:presence t) `(rescan-lvm)))
 
 (defun firefox-profile-alive (path)
   (ignore-errors
