@@ -134,7 +134,7 @@
   (im-browsers)
   (subuser-telegram-firefox)
   (subuser-riot-firefox)
-  (subuser-signal)
+  (&& (subuser-signal))
   )
 
 (defun communication-windows ()
