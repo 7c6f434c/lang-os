@@ -28,6 +28,7 @@
 (use-package :lisp-os-helpers/auth-data)
 (use-package :lisp-os-helpers/kernel)
 (use-package :lisp-os-helpers/util)
+(use-package :lisp-os-helpers/safe-read)
 (use-package :lisp-os-helpers/timestamp)
 
 (unless *socket-main-thread-preexisting*
@@ -271,6 +272,19 @@
     for value := (second data)
     while data
     collect (list (string-downcase (symbol-name key)) value)))
+
+(defun socket-command-server-commands::parsed-wpa-network-list (context interface)
+  (declare (ignorable context))
+  (stringify-atoms (parsed-wpa-network-list interface)))
+
+(defun socket-command-server-commands::wpa-set-enabled-network-essid-list (context essids &optional (interface "wlan0") except)
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
+  (wpa-set-enabled-network-essid-list essids interface (not (equal except ""))))
 
 (defun start-x-allowed-p (context display)
   display

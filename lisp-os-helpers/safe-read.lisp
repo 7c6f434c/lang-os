@@ -2,7 +2,8 @@
   (:use :common-lisp :lisp-os-helpers/util)
   (:export
     #:safe-read
-    #:check-safety))
+    #:check-safety
+    #:stringify-atoms))
 (in-package :lisp-os-helpers/safe-read)
 
 (define-condition unacceptable-symbol (simple-error)
@@ -52,3 +53,10 @@
 		    (check-safety (read source) packages))))
       (unless packages (delete-package *package*))
       form)))
+
+(defun stringify-atoms (form)
+  (cond ((consp form) (cons (stringify-atoms (car form))
+                            (stringify-atoms (cdr form))))
+        ((null form) nil)
+        ((stringp form) form)
+        (t (format nil "~a" form))))

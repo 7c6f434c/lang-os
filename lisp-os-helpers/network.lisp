@@ -20,6 +20,11 @@
     #:local-resolv-conf
     #:dhcp-resolv-conf
     #:local-port-open-p
+    #:parsed-wpa-network-list
+    #:wpa-set-network-status-by-id
+    #:wpa-set-network-status-by-essid
+    #:wpa-set-enabled-network-id-list
+    #:wpa-set-enabled-network-essid-list
     ))
 (in-package :lisp-os-helpers/network)
 
@@ -244,3 +249,43 @@
           (format nil "--~a" (string-downcase protocol))
           "src" (format nil "~a:~a" interface port))
     :output :lines))
+
+(defun parse-wpa-network-list-line (s)
+  (let* ((entries (cl-ppcre:split (string #\Tab) s)))
+    (list :id (parse-integer (first entries))
+          :essid (second entries)
+          :bssid (third entries)
+          :flags (remove "" (cl-ppcre:split "[ \\[\\]]+" (fourth entries))
+                         :test 'equal))))
+
+(defun parsed-wpa-network-list (&optional (interface "wlan0"))
+  (let* ((lines (program-output-lines
+                  `("wpa_cli" "list_networks" "-i" ,interface)))
+         (data-lines (rest lines))
+         (parsed-lines (mapcar 'parse-wpa-network-list-line data-lines)))
+    parsed-lines))
+
+(defun wpa-set-network-status-by-id (id enablep &optional (interface "wlan0"))
+  (uiop:run-program
+    `("wpa_cli" ,(if enablep "enable_network" "disable_network")
+      "-i" ,interface ,(format nil "~a" id))))
+
+(defun wpa-set-network-status-by-essid (essid enablep &optional (interface "wlan0"))
+  (loop for n in (parsed-wpa-network-list interface)
+        for curessid := (getf n :essid)
+        for curid := (getf n :id)
+        when (equal essid curessid)
+        do (wpa-set-network-status-by-id curid enablep interface)))
+
+(defun wpa-set-enabled-network-id-list (ids &optional (interface "wlan0") except)
+  (loop for n in (parsed-wpa-network-list interface)
+        for curid := (getf n :id)
+        do (wpa-set-network-status-by-id
+             curid (if (find curid ids) (not except) except) interface)))
+
+(defun wpa-set-enabled-network-essid-list (essids &optional (interface "wlan0") except)
+  (loop for n in (parsed-wpa-network-list interface)
+        for curid := (getf n :id)
+        for curessid := (getf n :essid)
+        do (wpa-set-network-status-by-id
+             curid (if (find curessid essids :test 'equal) (not except) except) interface)))
