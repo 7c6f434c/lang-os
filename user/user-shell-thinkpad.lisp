@@ -55,19 +55,19 @@
 (defun subuser-signal ()
   (let* ((home (format nil "~a/.local/share/signal-home"
                        (uiop:getenv "HOME"))))
-    (loop with stack := (list home)
-          for next := (pop stack)
-          while next
+    (loop with queue := (list home)
+          while queue
           do (ignore-errors
                (ask-with-auth 
                  ()
-                 `(chown-subuser ,next "")))
-          do (setf stack
-                   (append
-                     (mapcar 'namestring
-                             (directory
-                               (format nil "~a/*.*" next)))
-                     stack)))
+                 `(progn
+                    ,@(loop for entry in queue collect
+                            `(chown-subuser ,entry "")))))
+          do (setf queue
+                   (loop for entry in queue append
+                         (mapcar 'namestring
+                                 (directory
+                                   (format nil "~a/*.*" entry))))))
     (subuser-nsjail-x-application
       (list (true-executable "signal-desktop"))
       :environment `(("HOME" "/signal-home")
