@@ -15,7 +15,11 @@
 (defun edrc-common () (ed *common-rc*))
 
 (defun im-browsers ()
-  (firefox (list "http://chat-judge.in.tum.de")
+  (firefox (list "http://chat-judge.in.tum.de"
+                 "https://judge.in.tum.de/conpra/jury/clarifications.php"
+                 "https://judge.in.tum.de/discuss/c/conpra/"
+                 "https://judge.in.tum.de/conpra/jury/submissions.php"
+                 )
            :pass-stderr nil :pass-stdout nil :wait nil
            :no-close t :javascript t :socks-proxy 1080
            :stumpwm-tags "cat/e-im|chat|im|tum|mattermost|conpra|no-auto-tags"))
