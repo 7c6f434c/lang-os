@@ -19,6 +19,10 @@
                  "https://judge.in.tum.de/conpra/jury/clarifications.php"
                  "https://judge.in.tum.de/discuss/c/conpra/"
                  "https://judge.in.tum.de/conpra/jury/submissions.php"
+                 "https://judge.in.tum.de/conpra/jury/scoreboard.php"
+                 "https://git-judge.in.tum.de/conpra/conpra/wikis/themenliste"
+                 "https://git-judge.in.tum.de/problemsetters/problems/merge_requests"
+                 "https://www7.in.tum.de/um/courses/praktika/conpra/WS19/"
                  )
            :pass-stderr nil :pass-stdout nil :wait nil
            :no-close t :javascript t :socks-proxy 1080
