@@ -102,6 +102,11 @@ pkgs.lib.makeExtensible (self: with self; {
                      MatchIsTablet "on"
                      Driver "evdev"
                    ''
+                   ''
+                     Identifier "Touchpad catchall evdev"
+                     MatchIsTouchpad "on"
+                     Driver "libinput"
+                   ''
                ];
          
                layout = "us";			
