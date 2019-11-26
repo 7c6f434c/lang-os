@@ -777,7 +777,10 @@
     (& gvim (or fullname) :error-output *error-output*)))
 
 (defun start-stumpwm (display)
-  (sudo::start-x display "x-options; x-daemons; stumpwm"))
+  (sudo::starT-x display "x-options & x-daemons & synsettings & keymap-more-symbols; stumpwm"))
+
+(defun start-ratpoison (display)
+  (sudo::start-x display "x-options & synsettings & keymap-more-symbols & ratpoison& sleep 1; ratpoison-config"))
 
 (defun enter-location (&key ii (mcabber t) (brightness 25) (freq 2690)
                         (interface "wlan0") (extra-ips `())
