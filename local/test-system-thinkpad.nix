@@ -26,6 +26,10 @@
     alsaUtils alsaTools mplayer rxvt_unicode mlterm
     androidenv.androidPkgs_9_0.platform-tools adb-sync
     powertop
+    (runCommand "local-keymap" {} ''
+      mkdir -p "$out/share/keymaps/local/"
+      ln -s ${./ru-en.map} "$out/share/keymaps/local/ru-en.map"
+    '')
   ]);
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;

@@ -267,6 +267,11 @@
         "Set CPU frequency"
         `(set-cpu-frequency ,freq)))))
 
+(defun-export
+  sudo::console-keymap (&key (keymap "local/ru-en.map"))
+  (ask-with-auth (:presence t)
+                 `(console-keymap ,@(when keymap (list keymap)))))
+
 (defun update-firefox-launcher ()
   (reset-firefox-launcher :nix-path (list ($ :home) "/home/repos")
                           :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
@@ -753,6 +758,7 @@
                     (usb-eth-modules) (laptop-power-modules)
                     (hostname "localhost")
                     (set-brightness 50) (set-cpu-frequency 2690)
+                    (console-keymap "local/ru-en.map")
                     ))
   (! queryfs-session-run detach)
   (& cleanup-loops)

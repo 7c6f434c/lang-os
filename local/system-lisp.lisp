@@ -681,6 +681,17 @@
   (declare (ignorable context))
   (modprobe "uinput"))
 
+(defun socket-command-server-commands::console-keymap (context &optional keymap)
+  (require-or
+    (require-root context)
+    (require-presence context))
+  (assert (not (cl-ppcre:scan "[.][.]" keymap)))
+  (uiop:run-program
+    (list "loadkeys"
+          (if keymap
+            (format nil "/run/current-system/sw/share/keymaps/~a" keymap)
+            "-d"))))
+
 (defvar *auto-wifi* nil)
 (defvar *auto-interfaces* nil)
 (defvar *auto-ip-addresses* nil)
