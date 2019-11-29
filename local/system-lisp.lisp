@@ -674,8 +674,8 @@
     (progn
       (assert (gethash (list (context-uid context) :owner) *user-info*))
       (require-presence context)))
-  (uiop:run-program (list "vgchange" "-an") :ignore-error-status t)
-  (uiop:run-program (list "vgchange" "-ay") :ignore-error-status t))
+  (uiop:run-program (list "vgchange" "-an") :output t :ignore-error-status t :wait t)
+  (uiop:run-program (list "vgchange" "-ay") :output t :wait t))
 
 (defun socket-command-server-commands::uinput-modules (context)
   (declare (ignorable context))

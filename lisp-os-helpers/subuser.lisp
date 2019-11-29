@@ -221,11 +221,17 @@
 		 ))
 	   "-R" "/bin" "-R" "/usr" "-R" "/nix/store"
 	   "-R" "/var/current-system" "-R" "/run/current-system"
-	   "-R" "/run/opengl-driver/" "-R" "/run/opengl-driver-32/"
 	   "-R" "/etc/fonts"
            "-T" ,(format nil "/run/user/~a/" internal-uid)
            ,@(when home `(,(if homep "-B" "-T") ,home))
 	   ))
+     ,@(unless (or skip-default-mounts
+                   (not (probe-file "/run/opengl-driver/"))
+                   (not (probe-file "/run/opengl-driver-32/")))
+         `(
+           "-R" "/run/opengl-driver/"
+           "-R" "/run/opengl-driver-32/"
+           ))
      ,@(when full-dev `("-B" "/dev/" "-B" "/dev/shm"))
      ,@(when hostname `("-H" ,hostname))
      ,@(when fake-passwd

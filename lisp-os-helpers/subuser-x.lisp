@@ -36,7 +36,8 @@
   (command 
     &key
     display setup verbose-errors
-    name environment options system-socket)
+    name environment options system-socket
+    x-optional x-forbidden)
   (let*
     ((display
        (or
@@ -52,10 +53,15 @@
 	   ()
 	   (ask-server (with-uid-auth `(subuser-uid ,name))))))
      (x-socket (format nil "/tmp/.X11-unix/X~a" display))
+     (x-socket (unless
+                 (or x-forbidden
+                     (and x-optional (not (probe-file x-socket))))
+                 x-socket))
      )
-    (uiop:run-program
-      (list "setfacl" "-m" (format nil "u:~a:rw" uid)
-	    x-socket))
+    (when x-socket
+      (uiop:run-program
+        (list "setfacl" "-m" (format nil "u:~a:rw" uid)
+              x-socket)))
     (when setup
       (funcall
 	setup
@@ -93,12 +99,13 @@
                                 "mounts"
                                 (append
                                   (second oo)
-                                  (list (list "-B" x-socket x-socket)))))
+                                  (when x-socket
+                                    (list (list "-B" x-socket x-socket))))))
                              (t oo))
                            result)
                          finally
                          (progn
-                           (unless mounts-seen
+                           (unless (or mounts-seen (not x-socket))
 			     (push (list "mounts"
 					 (list (list "-B" x-socket x-socket)))
 				   result))
@@ -187,13 +194,14 @@
     &key display
     environment home tmp name locale locale-archive
     (slay t) (wait t) (netns t) verbose-netns network-ports grant
-    pass-stderr pass-stdout full-dev grab-dri launcher-wrappers
+    pass-stderr pass-stdout pass-stdin full-dev grab-dri launcher-wrappers
     mounts system-socket setup directory
     hostname hostname-suffix hostname-hidden-suffix
     grab-devices fake-passwd fake-groups grab-sound grab-camera
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
     mount-sys keep-namespaces
-    dns http-proxy socks-proxy with-dbus with-pulseaudio)
+    dns http-proxy socks-proxy with-dbus with-pulseaudio
+    x-optional)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
      (uid 
@@ -253,6 +261,13 @@
      )
     (with-system-socket
       (system-socket)
+      (when pass-stdin
+        (send-fd-over-unix-socket
+          (concatenate
+            'string (string #\Null)
+            (take-reply-value (ask-server `(fd-socket))))
+          0)
+        (ask-server `(receive-fd stdin)))
       (when pass-stdout
         (send-fd-over-unix-socket
           (concatenate
@@ -295,6 +310,7 @@
                  ,@command)
             :setup setup
             :display display :name name
+            :x-optional x-optional
             :environment
             `(
               ,@(when grab-dri
@@ -362,6 +378,7 @@
                       ,@network-ports)
                      (
                       ,@(when verbose-netns `("verbose"))))))
+              ,@(when pass-stdin `(("stdin-fd" "stdin")))
               ,@(when pass-stdout `(("stdout-fd" "stdout")))
               ,@(when pass-stderr `(("stderr-fd" "stderr")))
               )

@@ -34,6 +34,17 @@
 
 #+sbcl(push 'editor sb-ext:*ed-functions*)
 
+(defmacro ask-with-auth ((&key presence root password) &rest code)
+  `(with-system-socket
+     ()
+     (ask-server
+       (with-uid-auth
+         (,@(if presence `(with-presence-auth ,presence) `(identity))
+           (,@(if password `(with-password-auth ,password) `(identity))
+             (,@(if root `(with-password-auth ,root) `(identity))
+               (list 'list ,@(remove nil code))
+               ,@(if root `(:user "root")))))))))
+
 (defmacro defun-export (name args &rest code)
   `(progn
      (defun ,name ,args ,@code)
@@ -515,17 +526,6 @@
       (with-presence-auth
         "Connect to WiFi"
         `(ensure-wifi ,interface ,(unless dhclient "no-dhcp"))))))
-
-(defmacro ask-with-auth ((&key presence root password) &rest code)
-  `(with-system-socket
-     ()
-     (ask-server
-       (with-uid-auth
-         (,@(if presence `(with-presence-auth ,presence) `(identity))
-           (,@(if password `(with-password-auth ,password) `(identity))
-             (,@(if root `(with-password-auth ,root) `(identity))
-               (list 'list ,@(remove nil code))
-               ,@(if root `(:user "root")))))))))
 
 (defun restart-lisp-shell-server (&key rebuild)
  (when rebuild
