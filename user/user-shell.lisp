@@ -788,6 +788,13 @@
 (defun start-ratpoison (display)
   (sudo::start-x display "x-options & synsettings & keymap-more-symbols & ratpoison& sleep 1; ratpoison-config"))
 
+(defun start-in-ratpoison (display command)
+  (sudo::start-x
+    display
+    (concatenate 'string
+                 "ratpoison & sleep 1; ratpoison-config & keymap-more-symbols & "
+                 command)))
+
 (defun enter-location (&key ii (mcabber t) (brightness 25) (freq 2690)
                         (interface "wlan0") (extra-ips `())
                         (watchperiod "0.3") (location "somewhere")
