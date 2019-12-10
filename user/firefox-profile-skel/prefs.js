@@ -99,6 +99,7 @@ user_pref("services.sync.tabs.lastSyncLocal", "0");
 user_pref("signon.importedFromSqlite", true);
 user_pref("toolkit.telemetry.reportingpolicy.firstRun", false);
 user_pref("general.warnOnAboutConfig", false);
+user_pref("browser.aboutConfig.showWarning", false);
 user_pref("browser.reader.detectedFirstArticle", true);
 user_pref("browser.search.defaultenginename", "DuckDuckGo");
 user_pref("browser.search.order.1", "DuckDuckGo");
