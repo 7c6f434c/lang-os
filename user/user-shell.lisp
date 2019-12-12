@@ -785,6 +785,13 @@
 (defun start-stumpwm (display)
   (sudo::starT-x display "x-options & x-daemons & synsettings & keymap-more-symbols; stumpwm"))
 
+(defun start-in-stumpwm (display command)
+  (sudo::start-x 
+    display
+    (concatenate 'string
+                 "x-options & x-daemons & synsettings & keymap-more-symbols; stumpwm &"
+                 command)))
+
 (defun start-ratpoison (display)
   (sudo::start-x display "x-options & synsettings & keymap-more-symbols & ratpoison& sleep 1; ratpoison-config"))
 
