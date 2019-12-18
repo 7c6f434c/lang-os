@@ -231,7 +231,8 @@
                        :extra-requests `((local-resolv-conf)))))
   (ensure-vps-socks))
 
-(defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min"))
+(defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min")
+                        kill-matrixcli)
   (alexandria:write-string-into-file
     "10" (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
     :if-exists :supersede)
@@ -245,6 +246,7 @@
        ,@(when kill-wifi `((kill-wifi "wlan0")))))
   (when kill-ssh (stumpwm-eval `(close-ssh-windows)))
   (when kill-bg (kill-background-process-leaks))
+  (when kill-matrixcli (! pkill -f matrixcli))
   (! x-options)
   )
 
