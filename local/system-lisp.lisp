@@ -147,6 +147,18 @@
 (defun socket-command-server-commands::run (context &rest command)
   (require-root context)
   (uiop:run-program command :output "/dev/tty62" :error-output "/dev/tty62"))
+
+(defun socket-command-server-commands::setuid-run (context command &optional uid gid) 
+  (require-root context)
+  (uiop:run-program
+    (add-command-simulate-setuid
+      command
+      (or (ignore-errors (parse-integer uid))
+          (and uid (third (multiple-value-list (iolib/syscalls:getpwnam uid))))
+          (context-uid context))
+      :gid gid)
+    :output "/dev/tty62" :error-output "/dev/tty62"))
+
 (defun socket-command-server-commands::run-pipe (context input &rest command)
   (require-root context)
   (with-input-from-string (s input)
@@ -691,6 +703,32 @@
           (if keymap
             (format nil "/run/current-system/sw/share/keymaps/~a" keymap)
             "-d"))))
+
+(defun start-sway-allowed-p (context)
+  (require-presence context)
+  t)
+
+(defun socket-command-server-commands::start-sway (context &optional config)
+  (unless
+    (ignore-errors (start-sway-allowed-p context))
+    (error "Starting Sway is not allowed"))
+  (let* ((uid (context-uid context))
+         (uid (or (and (integerp uid) uid)
+                  (ignore-errors (parse-integer uid))
+                  (third (multiple-value-list
+                           (iolib/syscalls:getpwnam uid)))))
+         (runtime-dir (format nil "/run/user/~a" uid)))
+    (run-in-vt
+      (add-command-env
+      (add-command-simulate-setuid 
+        `(
+          "/var/current-system/sw/bin/.sway-wrapped"
+          ,@(when config `("-c" ,config))
+          )
+        uid)
+      `(("XDG_RUNTIME_DIR" ,runtime-dir))
+      :env-helper "/usr/bin/env")))
+  t)
 
 (defvar *auto-wifi* nil)
 (defvar *auto-interfaces* nil)

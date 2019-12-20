@@ -95,8 +95,12 @@
                       if (equalp oo "fake-passwd") append (list :fake-passwd t)
                       if (equalp oo "fake-groups") append (list :fake-groups t)
                       if (equalp oo "verbose") append (list :verbose t)
+                      if (and (listp oo) (equalp (first oo) "dev-log-socket"))
+                      append (list :dev-log-socket (second oo))
                       if (and (listp oo) (equalp (first oo) "fake-groups"))
                       append (list :fake-groups (second oo))
+                      if (and (listp oo) (equalp (first oo) "fake-usernames"))
+                      append (list :fake-usernames (second oo))
                       if (and (listp oo) (equalp (first oo) "mounts"))
                       append (list :mounts (second oo))
                       if (and (listp oo) (equalp (first oo) "hostname"))
@@ -107,8 +111,12 @@
                       append (list :home (second oo))
                       ))
            if (and (listp o) (equalp (first o) "netns"))
-           append (list :netns t :netns-ports-out (second o)
-                        :netns-verbose (find "verbose" (third o) :test 'equal))
+           append (list :netns t
+                        :netns-ports-out (second o)
+                        :netns-ports-in (third o)
+                        :netns-verbose (find "verbose" (fourth o) :test 'equal)
+                        :netns-tuntap-devices
+                        (second (find "tuntap-devices" (fourth o) :test 'equalp :key 'first)))
            if (and (listp o) (equalp (first o) "stdin-fd"))
            append (list :stdin-fd
                         (getf

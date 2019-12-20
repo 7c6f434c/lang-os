@@ -150,12 +150,13 @@ pkgs.lib.makeExtensible (self: with self; {
           linkedSystems = x.linkedSystems ++ ["clx-truetype" "xkeyboard" "xembed"];
           buildInputs = x.buildInputs ++ (with lispPackages; [clx-truetype xkeyboard xembed]);
         }))
-        xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host
-        iotop
+        xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host iotop syslogng
+        sway swaybg tunctl
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
         (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
         (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])
         (swPieces.cProgram "numeric-su" ../c/numeric-su.c [] [])
+        (swPieces.cProgram "simulate-setuid" ../c/simulate-setid.c [] [])
         lispOsHelpers
       ]) ++ (with stage1; [firmwareSet] ++ _kernelModulePackages)
       ++ systemFonts;

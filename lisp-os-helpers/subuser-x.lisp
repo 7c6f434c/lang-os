@@ -193,11 +193,15 @@
   (command
     &key display
     environment home tmp name locale locale-archive
-    (slay t) (wait t) (netns t) verbose-netns network-ports grant
-    pass-stderr pass-stdout pass-stdin full-dev grab-dri launcher-wrappers
+    (slay t) (wait t) (netns t) verbose-netns
+    network-ports network-ports-in
+    netns-tuntap-devices
+    grant
+    pass-stderr pass-stdout pass-stdin full-dev dev-log-socket
+    grab-dri launcher-wrappers
     mounts system-socket setup directory
     hostname hostname-suffix hostname-hidden-suffix
-    grab-devices fake-passwd fake-groups grab-sound grab-camera
+    grab-devices fake-passwd fake-groups fake-usernames grab-sound grab-camera
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
     mount-sys keep-namespaces
     dns http-proxy socks-proxy with-dbus with-pulseaudio
@@ -352,8 +356,10 @@
               ,@(when wait `("wait"))
               ("nsjail" "network"
                ,@(when (or with-pulseaudio full-dev) `("full-dev"))
+               ,@(when (or dev-log-socket) `(("dev-log-socket" ,dev-log-socket)))
                ,@(when (or with-pulseaudio fake-passwd) `("fake-passwd"))
                ,@(when fake-groups `(("fake-groups" ,fake-groups)))
+               ,@(when fake-usernames `(("fake-usernames" ,fake-usernames)))
                ("hostname" ,hostname)
                ("mounts"
                 (
@@ -376,8 +382,12 @@
                       ,@(when http-proxy `(((,http-proxy tcp))))
                       ,@(when socks-proxy `(((,socks-proxy tcp))))
                       ,@network-ports)
+                     ,network-ports-in
                      (
-                      ,@(when verbose-netns `("verbose"))))))
+                      ,@(when verbose-netns `("verbose"))
+                      ,@(when netns-tuntap-devices
+                          `(("tuntap-devices" ,netns-tuntap-devices)))
+                      ))))
               ,@(when pass-stdin `(("stdin-fd" "stdin")))
               ,@(when pass-stdout `(("stdout-fd" "stdout")))
               ,@(when pass-stderr `(("stderr-fd" "stderr")))

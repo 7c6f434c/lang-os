@@ -10,13 +10,17 @@
     #:chown-subuser
     #:run-as-subuser
     #:nsjail-mount-allowed-p
+    #:add-command-numeric-su
+    #:add-command-simulate-setuid
     ))
 (in-package :lisp-os-helpers/subuser)
 
 (defvar *subuser-uid-shift* 100000)
 (defvar *nogroup* 65534)
 (defvar *numeric-su-helper* "/run/current-system/sw/bin/numeric-su")
+(defvar *simulate-setuid-helper* "/run/current-system/sw/bin/simulate-setuid")
 (defvar *nsjail-helper* "/run/current-system/sw/bin/nsjail")
+(defvar *socat-helper* "/run/current-system/sw/bin/socat")
 
 (defun select-subuser (user &key uid name)
   (unless (or uid name) (error "Subuser selection requires either name or uid"))
@@ -164,18 +168,34 @@
      ,(format nil "~a" gid)
      ,@ command))
 
+(defun add-command-simulate-setuid (command uid &key gid)
+  (assert uid)
+  `(,*simulate-setuid-helper*
+     ,(format nil "~a" uid)
+     ,(format nil "~a"
+              (or gid
+                  (fourth (multiple-value-list
+                            (iolib/syscalls:getpwuid
+                              (parse-integer (format nil "~a" uid)))))))
+     ,@ command))
+
 (defun-weak
   nsjail-mount-allowed-p (from to type)
-  (declare (ignorable type))
-  (and
-    (or
-      (alexandria:starts-with-subseq "/home/" from)
-      (alexandria:starts-with-subseq "/tmp/" from)
-      )
-    (or
-      (alexandria:starts-with-subseq "/home/" to)
-      (alexandria:starts-with-subseq "/tmp/" to)
-      )
+  (declare (ignorable from to type))
+  (or
+    (and
+      (or
+        (alexandria:starts-with-subseq "/home/" from)
+        (alexandria:starts-with-subseq "/tmp/" from)
+        )
+      (or
+        (alexandria:starts-with-subseq "/home/" to)
+        (alexandria:starts-with-subseq "/tmp/" to)
+        ))
+    (and
+      (alexandria:starts-with-subseq "/dev/" from)
+      (find type '("B" "R") :test 'equal)
+      (equal from to))
     ))
 
 (defun add-command-nsjail
@@ -185,9 +205,10 @@
 	   mounts skip-default-mounts
 	   (proc-rw t)
 	   (internal-uid uid) (internal-gid gid)
-           fake-passwd fake-groups
+           fake-passwd fake-groups fake-usernames
            skip-mount-check
-	   full-dev (home (format nil "/tmp/home.~a" uid) homep)
+	   full-dev writeable-dev dev-log-socket
+           (home (format nil "/tmp/home.~a" uid) homep)
 	   (rlimit-as "max") (rlimit-core "0") (rlimit-cpu "max")
 	   (rlimit-fsize "max") (rlimit-nofile "max")
 	   (rlimit-nproc "max") (rlimit-stack "max")
@@ -214,6 +235,27 @@
 	 `(
 	   "-R" "/etc/ssl" "-R" "/etc/resolv.conf" "-R" "/etc/machine-id"
 	   "-T" "/tmp"
+           ,@(when writeable-dev `("-T" "/dev"))
+           ,@(when dev-log-socket
+               (when (equal dev-log-socket "")
+                 (let* ((tmpdir
+                          (uiop:run-program
+                            "mktemp -d -p /tmp/subuser-homes/"
+                            :output '(:string :stripped t)))
+                        (socket (format nil "~a/log-socket" tmpdir)))
+                   (uiop:run-program
+                     (list "chown" (format nil "~a" uid) tmpdir))
+                   (uiop:launch-program
+                     (add-command-numeric-su
+                       `("socat"
+                         ,(format nil "unix-listen:~a,mode=0666,fork" socket)
+                         "stdio")
+                       uid))
+                   (setf dev-log-socket socket)))
+               (uiop:run-program
+                 (add-command-numeric-su
+                   (list "test" "-w" dev-log-socket) uid))
+               `("-B" ,(format nil "~a:/dev/log" dev-log-socket)))
 	   ,@(unless full-dev
 	       `("-B" "/dev/null" "-B" "/dev/full" "-B" "/dev/zero"
 		 "-B" "/dev/random" "-B" "/dev/urandom"
@@ -243,6 +285,8 @@
 	   (format f "root:x:0:0::/:/bin/sh~%")
 	   (when home
              (format f ".~a:x:~a:~a::~a:/bin/sh~%" internal-uid internal-uid gid home))
+           (loop for u in fake-usernames do
+                 (format f "~a:x:~a:~a::~a:/bin/sh~%" u internal-uid gid "/"))
 	   (format f ".~a:x:~a:~a::/:/bin/sh~%" 65534 65534 65534)
 	   )
 	 (list "-R" (format nil "/tmp/system-lisp/subuser-passwd/~a:/etc/passwd" uid)))
@@ -286,8 +330,53 @@
      "--"
      ,@ command))
 
-(defun add-command-netns (command &key ports-out uid gid (directory "/")
+(defun socat-passthrough-commands (ports tmpdir)
+  (loop
+    with listen-commands := nil
+    with connect-commands := nil
+    for p in ports
+    for n upfrom 1
+    for nt := (format nil "~6,'0d" n)
+    for lp := (first p)
+    for lhost := (or (second p) "127.0.0.1")
+    for cp := (or (third p) lp)
+    for chost := (or (fourth p) lhost)
+    for lpn := (first lp)
+    for lpp := (or (second lp) :tcp)
+    for cpn := (first cp)
+    for cpp := (or (second cp) lpp :tcp)
+    for socket := (format nil "~a/~a" tmpdir nt)
+    for listen := (cond 
+                    ((equalp (string lpp) "tcp")
+                     (format nil "tcp-listen:~a,forever,bind=~a,reuseaddr" lpn lhost))
+                    ((equalp (string lpp) "udp")
+                     (format nil "udp-listen:~a,bind=~a,reuseaddr" lpn lhost))
+                    ((equalp (string lpp) "unix")
+                     (format nil "unix-listen:~a,mode=~a,forever" lpn (or (third lp) "0666")))
+                    (t (error "Unknown protocol: ~a" lpp)))
+    for connect := (cond
+                     ((equalp (string cpp) "tcp")
+                      (format nil "tcp-connect:~a:~a" chost cpn))
+                     ((equalp (string cpp) "udp")
+                      (format nil "udp-sendto:~a:~a" chost cpn))
+                     ((equalp (string cpp) "unix")
+                      (format nil "unix-connect:~a" cpn))
+                     (t (error "Unknown protocol: ~a" cpp)))
+    for listen-command :=
+    (list "socat" (format nil "~a,fork" listen)
+          (format nil "unix-connect:~a" socket))
+    for connect-command :=
+    (list "socat" 
+          (format nil "unix-listen:~a,forever,fork" socket)
+          connect)
+    do (push connect-command connect-commands)
+    do (push listen-command listen-commands)
+    finally (return (list connect-commands listen-commands))))
+
+(defun add-command-netns (command &key ports-out ports-in
+                                  uid gid (directory "/")
 				  (path "/var/current-system/sw/bin")
+                                  tuntap-devices
                                   hostname verbose)
   (ensure-directories-exist "/tmp/subuser-homes/")
   (let* 
@@ -296,39 +385,33 @@
                                :output '(:string :stripped t)))
      (mkdir-command (list "mkdir" "-p" tmpdir))
      (clean-dir-command (list "rm" "-rf" tmpdir))
-     (socat-commands
-       (loop
-	 with listen-commands := nil
-	 with connect-commands := nil
-	 for p in ports-out
-	 for n upfrom 1
-	 for nt := (format nil "~6,'0d" n)
-	 for lp := (first p)
-	 for host := (or (second p) "127.0.0.1")
-	 for cp := (or (third p) lp)
-	 for lpn := (first lp)
-	 for lpp := (or (second lp) :tcp)
-	 for cpn := (first cp)
-	 for cpp := (or (second cp) lpp :tcp)
-	 for socket := (format nil "~a/~a" tmpdir nt)
-	 for listen := (if (equalp (string lpp) "tcp")
-			 (format nil "tcp-listen:~a,forever" lpn)
-			 (format nil "udp-listen:~a" lpn))
-	 for connect := (if (equalp (string cpp) "tcp")
-			  (format nil "tcp-connect:~a:~a" host cpn)
-			  (format nil "udp-sendto:~a:~a" host cpn))
-	 for listen-command :=
-	 (list "socat" (format nil "~a,fork,reuseaddr" listen)
-	       (format nil "unix-connect:~a" socket))
-	 for connect-command :=
-	 (list "socat" 
-	       (format nil "unix-listen:~a,forever,fork" socket)
-	       connect)
-	 do (push connect-command connect-commands)
-	 do (push listen-command listen-commands)
-	 finally (return (list connect-commands listen-commands))))
-     (connect-commands (first socat-commands))
-     (listen-commands (second socat-commands))
+     (socat-commands-out (socat-passthrough-commands ports-out tmpdir))
+     (socat-commands-in (socat-passthrough-commands ports-in tmpdir))
+     (tuntap-commands
+       (append
+         (loop for d in tuntap-devices
+               for name = (first d)
+               for address = (second d)
+               for mode = (or (third d) :tap)
+               for options = (fourth d)
+               collect
+               `("ip" "tuntap" "add"
+                 "mode" ,(string-downcase mode)
+                 "name" ,name
+                 ,@(loop for o in options
+                         when (find o '(:pi :vnet_hdr :one_queue :multi_queue)
+                                    :key 'string :test 'equalp)
+                         collect (string-downcase o)))
+               collect
+               `("sh" "-c" ,(format nil "while ! ip link show ~a > /dev/null; do sleep 0.1; done" name))
+               collect
+               `("ip" "link" "set" ,name "up")
+               collect
+               `("ip" "addr" "add" ,address "dev" ,name))))
+     (outside-commands (append (first socat-commands-out) (second socat-commands-in)))
+     (inside-commands (append tuntap-commands
+                              (second socat-commands-out)
+                              (first socat-commands-in)))
      (inner-unshare `(, *nsjail-helper*
                        ,@(unless verbose `("-Q"))
                       "-e" "-c" "/"
@@ -355,7 +438,7 @@
 	 "/bin/sh" "-c"
 	 (format
 	   nil "~{ ~a & ~} sleep 0.3; mkdir -p \"$HOME\"; cd; ~a; exit_value=$?; pkill -INT -P $$; exit $exit_value"
-	   (mapcar 'collapse-command listen-commands)
+	   (mapcar 'collapse-command inside-commands)
 	   (collapse-command inner-unshare))))
      ;(outer-unshare `("unshare" "-U" "-r" "-n" ,@ inner-setup))
      (outer-unshare `(
@@ -385,7 +468,7 @@
 	 (format nil "test -n \"$PATH\" || export PATH=~a; ~a; ~{~a & ~} ~a; exit_value=$?; ~a; pkill -INT -P $$; exit $exit_value"
 		 (escape-for-shell path)
 		 (collapse-command mkdir-command)
-		 (mapcar 'collapse-command connect-commands)
+		 (mapcar 'collapse-command outside-commands)
 		 (collapse-command outer-unshare)
 		 (collapse-command clean-dir-command)))))
     (iolib/syscalls:lchown tmpdir uid gid)
@@ -396,7 +479,8 @@
 			    pty wait slurp-stdout slurp-stderr
 			    feed-stdin slay
                             (directory "/")
-			    netns netns-ports-out netns-verbose
+			    netns netns-ports-out netns-ports-in netns-verbose
+                            netns-tuntap-devices
 			    nsjail nsjail-settings)
   (let*
     ((uid
@@ -412,7 +496,10 @@
      (command-to-wrap
        (if netns
 	 (add-command-netns 
-	   command-to-wrap :ports-out netns-ports-out
+	   command-to-wrap
+           :ports-out netns-ports-out
+           :ports-in netns-ports-in
+           :tuntap-devices netns-tuntap-devices
 	   :uid uid :gid gid :verbose netns-verbose
            :directory directory)
 	 command-to-wrap))
