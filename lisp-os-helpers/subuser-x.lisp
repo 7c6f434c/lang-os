@@ -196,7 +196,7 @@
     (slay t) (wait t) (netns t) verbose-netns
     network-ports network-ports-in
     netns-tuntap-devices
-    grant
+    grant grant-read
     pass-stderr pass-stdout pass-stdin full-dev dev-log-socket
     grab-dri launcher-wrappers
     mounts system-socket setup directory
@@ -300,6 +300,11 @@
                   for dn := (mapcar 'namestring dl)
                   append dn)
                ,name))))
+      (loop
+        for g in grant-read
+        do
+        (uiop:run-program
+          (list "setfacl" "-R" "-m" (format nil "u:~a:rX" uid) g)))
       (loop
         for g in grant
         do

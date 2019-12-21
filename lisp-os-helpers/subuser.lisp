@@ -394,6 +394,8 @@
                for address = (second d)
                for mode = (or (third d) :tap)
                for options = (fourth d)
+               for version = (if (find "6" options :test 'equal)
+                                 "-6" "-4")
                collect
                `("ip" "tuntap" "add"
                  "mode" ,(string-downcase mode)
@@ -407,7 +409,7 @@
                collect
                `("ip" "link" "set" ,name "up")
                collect
-               `("ip" "addr" "add" ,address "dev" ,name))))
+               `("ip" ,version "addr" "add" ,address "dev" ,name))))
      (outside-commands (append (first socat-commands-out) (second socat-commands-in)))
      (inside-commands (append tuntap-commands
                               (second socat-commands-out)

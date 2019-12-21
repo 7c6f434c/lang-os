@@ -34,31 +34,6 @@
 
 #+sbcl(push 'editor sb-ext:*ed-functions*)
 
-(defmacro ask-with-auth ((&key presence root password) &rest code)
-  `(with-system-socket
-     ()
-     (ask-server
-       (with-uid-auth
-         (,@(if presence `(with-presence-auth ,presence) `(identity))
-           (,@(if password `(with-password-auth ,password) `(identity))
-             (,@(if root `(with-password-auth ,root) `(identity))
-               (list 'list ,@(remove nil code))
-               ,@(if root `(:user "root")))))))))
-
-(defmacro defun-export (name args &rest code)
-  `(progn
-     (defun ,name ,args ,@code)
-     (export ',name (find-package ,(package-name (symbol-package name))))))
-
-(defmacro defmacro-export (name args &rest code)
-  `(progn
-     (defmacro ,name ,args ,@code)
-     (export ',name (find-package ,(package-name (symbol-package name))))))
-
-(defun ~ (&rest components)
-  (format nil "~a~{/~a~}"
-          ($ :home) components))
-
 (defun-export
   sudo::start-x (&optional (display 0) command)
   (with-system-socket 
@@ -497,9 +472,6 @@
                        nil "file:///~a"
                        (namestring (truename file))))))
            arglist)))
-
-(defun true-executable (f)
-  (namestring (truename (which f))))
 
 (defun-export
   sudo::root-urxvt

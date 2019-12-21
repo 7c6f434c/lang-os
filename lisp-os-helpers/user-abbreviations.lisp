@@ -11,6 +11,11 @@
     #:build-shell
     #:create-eval-socket
     #:>file
+    #:ask-with-auth
+    #:defun-export
+    #:defmacro-export
+    #:~
+    #:true-executable
     ))
 (in-package :lisp-os-helpers/user-abbreviations)
 
@@ -293,3 +298,32 @@
     (:pathname p :stream s :keep t)
     (write string :stream s)
     p))
+
+(defmacro ask-with-auth ((&key presence root password) &rest code)
+  `(with-system-socket
+     ()
+     (ask-server
+       (with-uid-auth
+         (,@(if presence `(with-presence-auth ,presence) `(identity))
+           (,@(if password `(with-password-auth ,password) `(identity))
+             (,@(if root `(with-password-auth ,root) `(identity))
+               (list 'list ,@(remove nil code))
+               ,@(if root `(:user "root")))))))))
+
+(defmacro defun-export (name args &rest code)
+  `(progn
+     (defun ,name ,args ,@code)
+     (export ',name (find-package ,(package-name (symbol-package name))))))
+
+(defmacro defmacro-export (name args &rest code)
+  `(progn
+     (defmacro ,name ,args ,@code)
+     (export ',name (find-package ,(package-name (symbol-package name))))))
+
+(defun ~ (&rest components)
+  (format nil "~a~{/~a~}"
+          ($ :home) components))
+
+(defun true-executable (f)
+  (namestring (truename (which f))))
+
