@@ -356,11 +356,11 @@
                     (t (error "Unknown protocol: ~a" lpp)))
     for connect := (cond
                      ((equalp (string cpp) "tcp")
-                      (format nil "tcp-connect:~a:~a" chost cpn))
+                      (format nil "tcp-connect:~a:~a~{,~a~}" chost cpn (third cp)))
                      ((equalp (string cpp) "udp")
-                      (format nil "udp-sendto:~a:~a" chost cpn))
+                      (format nil "udp-sendto:~a:~a~{,~a~}" chost cpn (third cp)))
                      ((equalp (string cpp) "unix")
-                      (format nil "unix-connect:~a" cpn))
+                      (format nil "unix-connect:~a~{,~a~}" cpn (third cp)))
                      (t (error "Unknown protocol: ~a" cpp)))
     for listen-command :=
     (list "socat" (format nil "~a,fork" listen)
@@ -409,11 +409,15 @@
                collect
                `("ip" "link" "set" ,name "up")
                collect
-               `("ip" ,version "addr" "add" ,address "dev" ,name))))
+               `("ip" ,version "addr" "add" ,address "dev" ,name
+                 ,@(when (equal version "-6") `("nodad")))
+               when verbose collect `("ip" "address" "show")
+               when verbose collect `("ip" "link" "show")
+               )))
      (outside-commands (append (first socat-commands-out) (second socat-commands-in)))
-     (inside-commands (append tuntap-commands
-                              (second socat-commands-out)
+     (inside-commands (append (second socat-commands-out)
                               (first socat-commands-in)))
+     (inside-commands-pre (append tuntap-commands))
      (inner-unshare `(, *nsjail-helper*
                        ,@(unless verbose `("-Q"))
                       "-e" "-c" "/"
@@ -439,7 +443,8 @@
        (list
 	 "/bin/sh" "-c"
 	 (format
-	   nil "~{ ~a & ~} sleep 0.3; mkdir -p \"$HOME\"; cd; ~a; exit_value=$?; pkill -INT -P $$; exit $exit_value"
+	   nil "~{ ~a ; ~}~{ ~a & ~} sleep 0.3; mkdir -p \"$HOME\"; cd; ~a; exit_value=$?; pkill -INT -P $$; exit $exit_value"
+	   (mapcar 'collapse-command inside-commands-pre)
 	   (mapcar 'collapse-command inside-commands)
 	   (collapse-command inner-unshare))))
      ;(outer-unshare `("unshare" "-U" "-r" "-n" ,@ inner-setup))

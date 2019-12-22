@@ -693,6 +693,10 @@
   (declare (ignorable context))
   (modprobe "uinput"))
 
+(defun socket-command-server-commands::tun-modules (context)
+  (declare (ignorable context))
+  (modprobe "tun"))
+
 (defun socket-command-server-commands::console-keymap (context &optional keymap)
   (require-or
     (require-root context)

@@ -116,7 +116,8 @@
                         :netns-ports-in (third o)
                         :netns-verbose (find "verbose" (fourth o) :test 'equal)
                         :netns-tuntap-devices
-                        (second (find "tuntap-devices" (fourth o) :test 'equalp :key 'first)))
+                        (second (find "tuntap-devices" (fourth o) :test 'equalp
+                                      :key (lambda (x) (and x (listp x) (first x))))))
            if (and (listp o) (equalp (first o) "stdin-fd"))
            append (list :stdin-fd
                         (getf
