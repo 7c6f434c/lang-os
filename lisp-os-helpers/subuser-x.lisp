@@ -383,7 +383,8 @@
               ,@(when netns
                   `(("netns"
                      (
-                      ,@(when dns `( ((53 :udp)) ((53 :tcp))  ))
+                      ,@(when dns `( ((53 :udp) ,@(when (integerp dns) `(() (,dns))))
+                                     ((53 :tcp) ,@(when (integerp dns) `(() (,dns))))  ))
                       ,@(when http-proxy `(((,http-proxy tcp))))
                       ,@(when socks-proxy `(((,socks-proxy tcp))))
                       ,@network-ports)
