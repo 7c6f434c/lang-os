@@ -289,6 +289,7 @@ pkgs.lib.makeExtensible (self: with self; {
       (etcPieces.authEtc {
         security.pam.services = {
           sshd = {};
+          cupsd = {};
         };
         environment.sessionVariables = sessionVariables;
       })
