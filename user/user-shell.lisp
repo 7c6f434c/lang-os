@@ -755,7 +755,7 @@
     (& gvim (or fullname) :error-output *error-output*)))
 
 (defun start-stumpwm (display)
-  (sudo::starT-x display "x-options & x-daemons & synsettings & keymap-more-symbols; stumpwm"))
+  (sudo::starT-x display "x-options & x-daemons & synsettings & keymap-more-symbols; stumpwm && sleep 3"))
 
 (defun start-in-stumpwm (display command)
   (sudo::start-x 
