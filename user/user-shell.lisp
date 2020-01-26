@@ -249,9 +249,10 @@
   (with-system-socket
     ()
     (ask-server
-      (with-presence-auth
-        "Set CPU frequency"
-        `(set-cpu-frequency ,freq)))))
+      (with-uid-auth
+        (with-presence-auth
+          "Set CPU frequency"
+          `(set-cpu-frequency ,freq))))))
 
 (defun-export
   sudo::console-keymap (&key (keymap "local/ru-en.map"))
@@ -755,7 +756,7 @@
     (& gvim (or fullname) :error-output *error-output*)))
 
 (defun start-stumpwm (display)
-  (sudo::starT-x display "x-options & x-daemons & synsettings & keymap-more-symbols; stumpwm && sleep 3"))
+  (sudo::start-x display "x-options & x-daemons & synsettings & keymap-more-symbols; sleep 5; stumpwm && sleep 3"))
 
 (defun start-in-stumpwm (display command)
   (sudo::start-x 

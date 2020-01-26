@@ -268,6 +268,9 @@
     (funcall context :password-auth-user)
     (funcall context :uid-auth-verified-user)))
 
+(defun socket-command-server-commands::whoami (context)
+  (context-uid context))
+
 (defun require-uid (context user)
   (unless
     (equal user (context-uid context))
