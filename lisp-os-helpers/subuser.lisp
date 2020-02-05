@@ -211,7 +211,7 @@
            (home (format nil "/tmp/home.~a" uid) homep)
 	   (rlimit-as "max") (rlimit-core "0") (rlimit-cpu "max")
 	   (rlimit-fsize "max") (rlimit-nofile "max")
-	   (rlimit-nproc "max") (rlimit-stack "max")
+	   (rlimit-nproc "max") (rlimit-stack "16384")
            keep-namespaces
            (directory "/")
 	   )
