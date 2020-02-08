@@ -792,7 +792,6 @@
        ,@(loop for ip in extra-ips collect
                `(add-ip-address ,interface ,ip)))
     `(progn ,@ extra-requests))
-  (! web-stream-updater-starter detach)
   (enter-master-password)
   (email-fetchers-fast)
   (im-online-here
