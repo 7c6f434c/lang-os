@@ -246,7 +246,9 @@
        (set-cpu-frequency ,cpu-frequency)
        (set-brightness ,brightness)
        ,@(when kill-wifi `((kill-wifi "wlan0")))))
-  (when kill-ssh (ignore-errors (stumpwm-eval `(close-ssh-windows))))
+  (when kill-ssh
+    (ignore-errors (stumpwm-eval `(close-ssh-windows)))
+    (! pkill ssh-fwd))
   (when kill-bg (kill-background-process-leaks))
   (when kill-matrixcli (! pkill -f matrixcli))
   (! x-options)
