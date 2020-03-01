@@ -734,6 +734,41 @@
       :env-helper "/usr/bin/env")))
   t)
 
+(defun socket-command-server-commands::reconfigure-bind (context &rest options)
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
+  (let* ((empty (find "empty" options :test 'equalp))
+         (restart (find "restart" options :test 'equalp))
+         (target "/var/etc/bind.conf")
+         (source-config "/run/current-system/services/from-nixos/bind.conf")
+         (source-forwarders "/etc/resolv.conf.dhclient-new")
+         (servers (unless empty
+                    (with-open-file (f source-forwarders)
+                      (loop with res := nil
+                            for l := (read-line f nil nil)
+                            for entries = (cl-ppcre:split " " l)
+                            while l
+                            when (equalp (first entries) "nameserver")
+                            unless (equalp (second entries) "127.0.0.1")
+                            do (pushnew (second entries) res)
+                            finally (return res)))))
+         (forwarders-clause (format nil "forwarders { ~{~a;~} };" servers))
+         (config-lines
+           (with-open-file (f source-config)
+             (loop for l := (read-line f nil nil)
+                   for forwardersp = (cl-ppcre:scan "^ *forwarders[ {]" l)
+                   while l
+                   collect (if forwardersp forwarders-clause l))))
+         (config-text (format nil "~{~a~%~}" config-lines)))
+    (alexandria:write-string-into-file config-text target :if-exists :supersede)
+    (if restart
+      (socket-command-server-commands::restart-bind context)
+      servers)))
+
 (defvar *auto-wifi* nil)
 (defvar *auto-interfaces* nil)
 (defvar *auto-ip-addresses* nil)

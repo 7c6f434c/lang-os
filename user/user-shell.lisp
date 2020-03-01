@@ -543,7 +543,7 @@
 
 (defun-export
   sudo::rewifi (&key (interface "wlan0") restart (dhcp t) dhcp-resolv-conf
-                     reload-module)
+                     reload-module no-dns-forward)
   (ask-with-auth
     (:presence "Reconnect to WiFi")
     (if (ethernet-attached "eth0") `(progn) `(flush-interface "eth0"))
@@ -551,7 +551,7 @@
     `(ensure-wifi ,interface ,(when restart "restart") ,(unless dhcp "no-dhcp")
                   ,(when dhcp-resolv-conf "use-dhcp-resolv-conf")
                   ,(when reload-module "reload-module"))
-    `(restart-bind))
+    `(reconfigure-bind "restart" ,@(when no-dns-forward `("empty"))))
   (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home))))
 
 (defun grab-fuse (&optional name)

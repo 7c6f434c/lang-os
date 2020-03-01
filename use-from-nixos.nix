@@ -1,11 +1,13 @@
 {pkgs ? import <nixpkgs> {}, nixos ? import <nixpkgs/nixos>}:
 rec {
+  nixosFun = config: (nixos {configuration = config;});
+
   serviceScript = name: config:
-    (builtins.getAttr name (nixos {configuration = config;}).config.systemd.services).runner;
+    (builtins.getAttr name (nixosFun config).config.systemd.services).runner;
 
   etcSelectTarget = filename: config:
     let
-      nixosInstance = nixos {configuration = config;};
+      nixosInstance = nixosFun config;
       selected = (pkgs.lib.filterAttrs (k: v: v.target == filename) nixosInstance.config.environment.etc);
         source = if selected == {} then null else (builtins.getAttr (builtins.head (builtins.attrNames selected)) selected).source;
     in (if source == null then null else if pkgs.lib.isString source then source else source.outPath);
@@ -24,7 +26,7 @@ rec {
 
   etcSelectPrefix = filenamePrefix: config:
     let
-      nixosInstance = nixos {configuration = config;};
+      nixosInstance = nixosFun config;
       selected = (pkgs.lib.filterAttrs
                            (k: v: pkgs.lib.hasPrefix filenamePrefix v.target)
                            nixosInstance.config.environment.etc);

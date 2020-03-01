@@ -126,6 +126,36 @@ pkgs.lib.makeExtensible (self: with self; {
 	};
   NixOSWithX = nixos {configuration = NixOSXConfig;};
 
+  bindConfig = {
+          services.bind = {
+                  enable = true;
+                  ipv4Only = false;
+                  cacheNetworks = [
+                          "127.0.0.0/24"
+                                  "::1/128"
+                                  "localhost"
+                                  "192.168.0.0/16"
+                  ];
+                  zones = [
+                  {
+                          name = "local";
+                          file = "" + ./local;
+                  }
+                  {
+                          name = "root-servers.net";
+                          file = "" + ./root-servers;
+                  }
+                  {
+                          name = ".";
+                          file = "" + ./root-servers;
+                  }
+                  ];
+                  extraConfig = ''
+                          logging { category default { default_stderr; }; };
+                  '';
+          };
+  };
+  
   openglPackages = [];
   openglPackages32 = [];
   openglDriver = pkgs.buildEnv {
@@ -216,27 +246,9 @@ pkgs.lib.makeExtensible (self: with self; {
 	     ${pkgs.cups.out}/bin/cupsd -f
 	   '';
       };
-      "from-nixos/bind" = fromNixOS.serviceScript "bind" {
-        services.bind = {
-	  enable = true;
-	  ipv4Only = false;
-	  cacheNetworks = [
-	    "127.0.0.0/24"
-	    "::1/128"
-	    "localhost"
-	    "192.168.0.0/16"
-	  ];
-	  zones = [
-            {
-                    name = "root-servers.net";
-                    file = "" + ./root-servers;
-            }
-          ];
-	  extraConfig = ''
-	    logging { category default { default_stderr; }; };
-	  '';
-	};
-      };
+      "from-nixos/bind" = fromNixOS.serviceScript "bind" 
+        (pkgs.lib.recursiveUpdate bindConfig {services.bind.configFile = "/var/etc/bind.conf";});
+      "from-nixos/bind.conf" = (fromNixOS.nixosFun bindConfig).config.services.bind.configFile;
       "from-nixos/xorg" = pkgs.writeScript "xorg-start" ''
 	    ln -Tfs "${openglDriver}" /run/opengl-driver
 	    ln -Tfs "${openglDriver32}" /run/opengl-driver-32

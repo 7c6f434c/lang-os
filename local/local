@@ -1,0 +1,8 @@
+; Local zone
+;                         
+$TTL 518400
+
+@	IN	NS	ns.local.
+@	IN	SOA	ns.local. ns.local. ( 0 86400 600 86400000 60 )
+
+ns.local.     3600000 IN      A       127.0.0.1

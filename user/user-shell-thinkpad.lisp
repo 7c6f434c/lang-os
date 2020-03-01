@@ -248,7 +248,8 @@
        ,@(when kill-wifi `((kill-wifi "wlan0")))))
   (when kill-ssh
     (ignore-errors (stumpwm-eval `(close-ssh-windows)))
-    (! pkill ssh-fwd))
+    (! pkill "-HUP" ssh-fwd)
+    (! pkill "-HUP" -f /ssh-fwd))
   (when kill-bg (kill-background-process-leaks))
   (when kill-matrixcli (! pkill -f matrixcli))
   (! x-options)
