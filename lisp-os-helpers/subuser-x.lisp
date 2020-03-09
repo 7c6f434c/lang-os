@@ -202,6 +202,7 @@
     mounts system-socket setup directory
     hostname hostname-suffix hostname-hidden-suffix
     grab-devices fake-passwd fake-groups fake-usernames grab-sound grab-camera
+    resolv-conf machine-id
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
     mount-sys keep-namespaces
     dns http-proxy socks-proxy with-dbus with-pulseaudio
@@ -365,6 +366,8 @@
                ,@(when (or with-pulseaudio fake-passwd) `("fake-passwd"))
                ,@(when fake-groups `(("fake-groups" ,fake-groups)))
                ,@(when fake-usernames `(("fake-usernames" ,fake-usernames)))
+               ,@(when (or resolv-conf) `(("resolv-conf" ,resolv-conf)))
+               ,@(when (or machine-id) `(("machine-id" ,machine-id)))
                ("hostname" ,hostname)
                ("mounts"
                 (

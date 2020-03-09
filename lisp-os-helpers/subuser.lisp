@@ -214,6 +214,8 @@
 	   (rlimit-nproc "max") (rlimit-stack "16384")
            keep-namespaces
            (directory "/")
+           (resolv-conf "/etc/resolv.conf")
+           (machine-id "/etc/machine-id")
 	   )
   `(,*nsjail-helper*
      ,@(unless verbose `("-q"))
@@ -233,7 +235,12 @@
      ,@(when gid `("-g" ,(format nil "~a:~a" internal-gid gid)))
      ,@(unless skip-default-mounts
 	 `(
-	   "-R" "/etc/ssl" "-R" "/etc/resolv.conf" "-R" "/etc/machine-id"
+	   "-R" "/etc/ssl"
+           "-R" ,(progn
+                   (uiop:run-program (add-command-numeric-su
+                                       (list "stat" resolv-conf) uid))
+                   (format nil "~a:/etc/resolv.conf" resolv-conf))
+           "-R" ,(format nil "~a:/etc/machine-id" machine-id)
 	   "-T" "/tmp"
            ,@(when writeable-dev `("-T" "/dev"))
            ,@(when dev-log-socket
