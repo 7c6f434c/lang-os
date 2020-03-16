@@ -31,7 +31,7 @@
       pkgs.lmmath
       pkgs.comic-neue
       pkgs.iosevka
-      pkgs.symbola
+      /*pkgs.symbola*/
       (pkgs.ghostscript + "/share/ghostscript/fonts/")
       pkgs.mph_2b_damase
 
