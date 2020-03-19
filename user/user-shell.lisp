@@ -724,7 +724,7 @@
                     ,(if wifi
                        `(background-thread
                           (ensure-wifi
-                            (if (stringp wifi) wifi "wlan0")))
+                            ,(if (stringp wifi) wifi "wlan0")))
                        `(list))
                     (load-sound "usb")
                     (storage-modules) (usb-hid-modules)
