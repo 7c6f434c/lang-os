@@ -81,6 +81,8 @@
            append (list :feed-stdin (second o))
            if (and (listp o) (equalp (first o) "directory"))
            append (list :directory (second o))
+           if (and (listp o) (equalp (first o) "chroot"))
+           append (list :chroot (second o))
            if (and (listp o) (equalp (first o) "nsjail"))
            append (list
                     :nsjail t :nsjail-settings

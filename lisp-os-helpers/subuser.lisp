@@ -488,6 +488,21 @@
     (iolib/syscalls:lchown tmpdir uid gid)
     result))
 
+(defun prepare-basic-chroot (&optional (target "/run/basic-chroot/"))
+  (loop for dir in `("nix" "sys" "proc" "etc" "bin" "usr" "dev"
+                     "run/current-system" "var/current-system"
+                     "tmp/.X11-unix")
+        do (unless (directory (format nil "~a/~a/*.*" target dir))
+             (ensure-directories-exist (format nil "~a/~a/" target dir))
+             (uiop:run-program `("mount" "--rbind"
+                                 ,(format nil "/~a/" dir)
+                                 ,(format nil "~a/~a/" target dir)))))
+  (uiop:run-program (list "chmod" "a+rwxt" (format nil "~a/tmp/" target)))
+  target)
+
+(defun add-command-chroot (command target)
+  (list "/bin/sh" "-c" (format nil "chroot ~a ~a" target (collapse-command command))))
+
 (defun run-as-subuser (user command &key uid (gid 65534) name environment
 			    stdin-fd stdout-fd stderr-fd
 			    pty wait slurp-stdout slurp-stderr
@@ -495,7 +510,8 @@
                             (directory "/")
 			    netns netns-ports-out netns-ports-in netns-verbose
                             netns-tuntap-devices
-			    nsjail nsjail-settings)
+			    nsjail nsjail-settings
+                            chroot)
   (let*
     ((uid
        (cond
@@ -526,6 +542,16 @@
              :directory directory
 	     nsjail-settings))
 	 (t (add-command-numeric-su command-to-wrap uid :gid gid))))
+     (command-to-wrap
+       (cond
+         ((equal chroot "")
+          (add-command-chroot command-to-wrap (prepare-basic-chroot)))
+         (chroot
+           (add-command-chroot command-to-wrap 
+                               (prepare-basic-chroot
+                                 (format nil "/run/basic-chroots/~a/~a/"
+                                         user chroot))))
+         (t command-to-wrap)))
      (wrapped-command command-to-wrap)
      (process
        (iolib/os:create-process
