@@ -333,6 +333,7 @@
                     ("proxy"         ,(format nil "http://127.0.0.1:~a" http-proxy))
                     ("http_proxy"    ,(format nil "http://127.0.0.1:~a" http-proxy))
                     ("https_proxy"   ,(format nil "http://127.0.0.1:~a" http-proxy))
+                    ("wss_proxy"     ,(format nil "http://127.0.0.1:~a" http-proxy))
                     ("ftp_proxy"     ,(format nil "http://127.0.0.1:~a" http-proxy))
                     ))
               ,@(when socks-proxy
