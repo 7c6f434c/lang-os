@@ -270,3 +270,6 @@
   (sudo:tether-android)
   (sudo:tether-android)
   (! unlock-phone))
+
+(defun webrtc-chromium (url &rest args)
+  (apply 'subuser-nsjail-x-application (list (truename "/home/raskin/.nix-personal/hydra-grab/chromium/bin/chromium") "--no-sandbox" url) :grab-sound t :netns nil :pass-stderr t :grab-dri t :grab-camera t :home t :tmp t  :full-dev t :fake-groups `("audio" "video") :with-dbus t :fake-passwd t args))
