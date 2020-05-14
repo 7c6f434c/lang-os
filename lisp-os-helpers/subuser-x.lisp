@@ -242,7 +242,9 @@
                         (ensure-directories-exist containing-directory)
                         (uiop:run-program
                           (list "mktemp" "-d" "-p" containing-directory
-                                (concatenate 'string hostname "-XXXXXXXX"))
+                                (concatenate 'string 
+                                             (timestamp-usec-recent-base36) 
+                                             "-" hostname "-XXXXXXXX"))
                           :output (list :string :stripped t)))))
                (uiop:run-program
                  (list "setfacl" "-m" (format nil "u:~a:rwx" uid) home))
