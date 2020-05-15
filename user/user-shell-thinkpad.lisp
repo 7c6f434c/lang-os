@@ -60,7 +60,7 @@
   (unless (local-port-open-p 1080)
     (vps-term)))
 
-(defun subuser-signal ()
+(defun subuser-signal (&key wait verbose)
   (let* ((home (format nil "~a/.local/share/signal-home"
                        (uiop:getenv "HOME"))))
     (loop with queue := (list home)
@@ -76,6 +76,7 @@
                          (mapcar 'namestring
                                  (directory
                                    (format nil "~a/*.*" entry))))))
+    (when verbose (format *trace-output* "Directory grab done~%"))
     (subuser-nsjail-x-application
       (list (true-executable "signal-desktop"))
       :environment `(("HOME" "/signal-home")
@@ -89,7 +90,9 @@
       :mounts `(("-B" ,home "/signal-home"))
       :grant (list home)
       :hostname "signal-nsjail"
-      :wait nil)))
+      :wait wait
+      :pass-stdout verbose
+      :pass-stderr verbose)))
 
 (defun subuser-telegram-firefox (&rest overrides)
   (let* ((home (format nil "~a/.local/share/telegram-home"
