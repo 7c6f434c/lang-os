@@ -83,6 +83,22 @@
            append (list :directory (second o))
            if (and (listp o) (equalp (first o) "chroot"))
            append (list :chroot (second o))
+           if (and (listp o) (equalp (first o) "masking-mounts"))
+           append (list :masking-mounts
+                        (loop 
+                          for (source target . options) in (second o)
+                          collect 
+                          (append (list source target)
+                                  (loop
+                                    for opt in options
+                                    collect 
+                                    (intern (string-upcase opt) :keyword)))))
+           if (and (listp o) (equalp (first o) "fake-groups"))
+           append (list :fake-groups (second o))
+           if (equalp o "fake-passwd") append (list :fake-passwd t)
+           if (and (listp o) (equalp (first o) "fake-usernames"))
+           append (list :fake-usernames (second o))
+           if (equalp o "clear-env") append (list :clear-env t)
            if (and (listp o) (equalp (first o) "nsjail"))
            append (list
                     :nsjail t :nsjail-settings
@@ -96,6 +112,7 @@
                       if (equalp oo "full-dev") append (list :full-dev t)
                       if (equalp oo "fake-passwd") append (list :fake-passwd t)
                       if (equalp oo "fake-groups") append (list :fake-groups t)
+                      if (equalp oo "newprivs") append (list :enable-newprivs t)
                       if (and (listp oo) (equalp (first oo) "resolv-conf"))
                       append (list :resolv-conf (second oo))
                       if (and (listp o) (equalp (first o) "machine-id"))

@@ -21,6 +21,7 @@
 (defvar *simulate-setuid-helper* "/run/current-system/sw/bin/simulate-setuid")
 (defvar *nsjail-helper* "/run/current-system/sw/bin/nsjail")
 (defvar *socat-helper* "/run/current-system/sw/bin/socat")
+(defvar *unshare-helper* "/run/current-system/sw/bin/unshare")
 
 (defun select-subuser (user &key uid name)
   (unless (or uid name) (error "Subuser selection requires either name or uid"))
@@ -213,6 +214,7 @@
 	   (rlimit-fsize "max") (rlimit-nofile "max")
 	   (rlimit-nproc "max") (rlimit-stack "16384")
            keep-namespaces
+           enable-newprivs
            (directory "/")
            (resolv-conf "/etc/resolv.conf")
            (machine-id "/etc/machine-id")
@@ -232,6 +234,7 @@
              do (assert (cl-ppcre:scan "^[a-z_]+$" ns))
              collect
              (format nil "--disable_clone_new~a" ns))
+     ,@(when enable-newprivs `("--disable_no_new_privs"))
      ,@(when gid `("-g" ,(format nil "~a:~a" internal-gid gid)))
      ,@(unless skip-default-mounts
 	 `(
@@ -444,6 +447,7 @@
                       "--rlimit_nofile" "max"
                       "--rlimit_nproc"  "max"
                       "--rlimit_stack"  "max"
+                      "--disable_no_new_privs"
                       "--"
                       ,@ command))
      (inner-setup
@@ -465,6 +469,7 @@
                       "--keep_caps"
                       "--disable_clone_newuts"
                       "--disable_clone_newipc"
+                      "--disable_no_new_privs"
                       "--proc_rw"
                       "--rlimit_as"     "max"
                       "--rlimit_core"   "max"
@@ -491,6 +496,7 @@
 (defun prepare-basic-chroot (&optional (target "/run/basic-chroot/"))
   (loop for dir in `("nix" "sys" "proc" "etc" "bin" "usr" "dev"
                      "run/current-system" "var/current-system"
+                     "var/empty"
                      "tmp/.X11-unix")
         do (unless (directory (format nil "~a/~a/*.*" target dir))
              (ensure-directories-exist (format nil "~a/~a/" target dir))
@@ -503,6 +509,48 @@
 (defun add-command-chroot (command target)
   (list "/bin/sh" "-c" (format nil "chroot ~a ~a" target (collapse-command command))))
 
+(defun add-command-masking-mounts (command target)
+  (let* ((root-entries
+           (cl-ppcre:split
+             (string #\Newline)
+             (uiop:run-program `("ls" "-a" "/")
+                               :output '(string :stripped t))))
+         (make-mount
+           (lambda (name)
+             (cond ((not (probe-file (format nil "/~a/." name)))
+                    (list "mount" "--bind" "/dev/null" (format nil "/~a" name)))
+                   ((find name `("dev" "var") :test 'equal) nil)
+                   ((probe-file (format nil "~a/~a" target name))
+                    (list "mount" "--rbind" (format nil "~a/~a" target name)
+                          (format nil "/~a" name)))
+                   (t (list "mount" "--bind" "/var/empty"
+                            (format nil "/~a" name)))))))))
+
+(defun add-command-mounts (command mounts)
+  (let* ((flat-command (collapse-command command))
+         (mount-commands 
+           (loop 
+             for (source target . options) in mounts
+             for tmpfsp := (find :tmpfs options)
+             for create-file-p := (find :create-file options)
+             for create-directory-p := (find :create-directory options)
+             for bind-switch := (if (find :recursive options) "--rbind" "--bind")
+             when create-file-p collect (list "touch" target)
+             when create-directory-p collect (list "mkdir" "-p" target)
+             when tmpfsp 
+             collect (list "mount" "-t" "tmpfs" source target)
+             unless tmpfsp
+             collect (list "mount" bind-switch source target)
+             when (find :read-only options)
+             collect (list "mount" "-o" "bind,remount,ro" target)))
+         (flat-mount-commands (mapcar 'collapse-command mount-commands))
+         (inner-command
+           (list "/bin/sh" "-c" (format nil "~{~a ; ~} ~a"
+                                   flat-mount-commands flat-command)))
+         (unshare-command 
+           `(,*unshare-helper* "-m" ,@ inner-command)))
+    unshare-command))
+
 (defun run-as-subuser (user command &key uid (gid 65534) name environment
 			    stdin-fd stdout-fd stderr-fd
 			    pty wait slurp-stdout slurp-stderr
@@ -511,7 +559,9 @@
 			    netns netns-ports-out netns-ports-in netns-verbose
                             netns-tuntap-devices
 			    nsjail nsjail-settings
-                            chroot)
+                            chroot masking-mounts skip-masking-mounts-check
+                            fake-passwd fake-groups fake-usernames
+                            clear-env)
   (let*
     ((uid
        (cond
@@ -521,7 +571,8 @@
 	 (t (subuser-uid user :name name))))
      (command-with-env 
        (add-command-env command environment
-			:env-helper "/usr/bin/env"))
+			:env-helper "/usr/bin/env"
+                        :clear-env t))
      (command-to-wrap command-with-env)
      (command-to-wrap
        (if netns
@@ -552,6 +603,59 @@
                                  (format nil "/run/basic-chroots/~a/~a/"
                                          user chroot))))
          (t command-to-wrap)))
+     (command-to-wrap
+       (cond ((or nsjail
+                  (and (null masking-mounts)
+                       (not fake-passwd)
+                       (null fake-groups)))
+              command-to-wrap)
+             (t
+               (loop for (source target . options) in masking-mounts
+                     for kind = (cond
+                                  ((find :tmpfs options) "T")
+                                  ((find :read-only options) "R")
+                                  ( t"B"))
+                     unless skip-masking-mounts-check
+                     do (assert (nsjail-mount-allowed-p source target kind)))
+               (add-command-mounts
+                 command-to-wrap
+                 (append
+                   masking-mounts
+                   (when fake-passwd
+                     (ensure-directories-exist "/tmp/system-lisp/subuser-passwd/")
+                     (with-open-file 
+                       (f (format nil 
+                                  "/tmp/system-lisp/subuser-passwd/~a" uid)
+                          :direction :output :if-exists :supersede)
+                       (format f "root:x:0:0::/:/bin/sh~%")
+                       (format f ".~a:x:~a:~a::~a:/bin/sh~%" uid uid gid
+                               (second 
+                                 (or (find-if 
+                                       (lambda (x)
+                                         (and (listp x)
+                                              (equal (first x) "HOME")))
+                                       environment) '("HOME" "/"))))
+                       (loop for u in fake-usernames do
+                             (format f "~a:x:~a:~a::~a:/bin/sh~%" u uid gid "/"))
+                       (format f ".~a:x:~a:~a::/:/bin/sh~%" 65534 65534 65534)
+                       )
+                     `((,(format nil "/tmp/system-lisp/subuser-passwd/~a" uid)
+                         "/etc/passwd" :read-only)))
+                   (when fake-groups
+                     (ensure-directories-exist "/tmp/system-lisp/subuser-passwd/")
+                     (with-open-file 
+                       (f (format nil 
+                                  "/tmp/system-lisp/subuser-passwd/~a.group" uid)
+                          :direction :output :if-exists :supersede)
+                       (format f "root:x:0:~%")
+                       (format f ".~a:x:~a:~%" uid gid)
+                       (format f "~{~{~a:x:~a:~}~%~}" (if (listp fake-groups) 
+                                                        (loop for g in fake-groups
+                                                              if (listp g) collect g
+                                                              else collect (list g 65534))
+                                                        (list))))
+                     `((,(format nil "/tmp/system-lisp/subuser-passwd/~a.group" uid)
+                        "/etc/group" :read-only))))))))
      (wrapped-command command-to-wrap)
      (process
        (iolib/os:create-process

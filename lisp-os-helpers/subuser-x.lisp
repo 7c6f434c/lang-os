@@ -198,15 +198,16 @@
     netns-tuntap-devices
     grant grant-read
     pass-stderr pass-stdout pass-stdin full-dev dev-log-socket
+    newprivs
     grab-dri launcher-wrappers
-    mounts system-socket setup directory
+    mounts system-socket setup directory cd-home
     hostname hostname-suffix hostname-hidden-suffix
     grab-devices fake-passwd fake-groups fake-usernames grab-sound grab-camera
     resolv-conf machine-id
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
     mount-sys keep-namespaces
     dns http-proxy socks-proxy with-dbus with-pulseaudio
-    x-optional)
+    x-optional skip-nsjail masking-mounts clear-env)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
      (uid 
@@ -250,6 +251,7 @@
                  (list "setfacl" "-m" (format nil "u:~a:rwx" uid) home))
                home)
              home))
+     (directory (if (and home cd-home (not directory)) home directory))
      (tmp (if (eq tmp t)
             (let* ((containing-directory
                      (format nil "/tmp/subuser-tmps-~a/"
@@ -363,7 +365,7 @@
             `(
               ,@(when slay `("slay"))
               ,@(when wait `("wait"))
-              ("nsjail" "network"
+              ,@(unless skip-nsjail `(("nsjail" "network"
                ,@(when (or with-pulseaudio full-dev) `("full-dev"))
                ,@(when (or dev-log-socket) `(("dev-log-socket" ,dev-log-socket)))
                ,@(when (or with-pulseaudio fake-passwd) `("fake-passwd"))
@@ -383,9 +385,15 @@
                ,@(when verbose-nsjail `("verbose"))
                ,@(when keep-namespaces
                    `(("keep-namespaces" ,keep-namespaces)))
+               ,@(when newprivs `("newprivs"))
                ,@(when home `(("home" ,home)))
-               )
+               )))
+              ,@(when masking-mounts `(("masking-mounts" ,masking-mounts)))
+              ,@(when fake-passwd `("fake-passwd"))
+              ,@(when fake-groups `(("fake-groups" ,fake-groups)))
+              ,@(when fake-usernames `(("fake-usernames" ,fake-usernames)))
               ,@(when directory `(("directory" ,directory)))
+              ,@(when clear-env `("clear-env"))
               ,@(when netns
                   `(("netns"
                      (

@@ -97,24 +97,25 @@
                      :if-exists :overwrite :element-type 'character)
     (format f "~a" string)))
 
-(defun add-command-env (command env &key (env-helper "env"))
+(defun add-command-env (command env &key (env-helper "env") clear-env)
   (let*
     ((prefix
        `(,env-helper
-         ,@(loop
-             for e in env
-             for k :=
-             (etypecase e
-               (string e)
-               (list (first e)))
-             for v :=
-             (etypecase e
-               (string (uiop:getenv k))
-               (list (second e)))
-             when (null v) collect "-u"
-             when (null v) collect k
-             when v collect (format nil "~a=~a" k v))
-         )))
+          ,@(when clear-env `("-i"))
+          ,@(loop
+              for e in env
+              for k :=
+              (etypecase e
+                (string e)
+                (list (first e)))
+              for v :=
+              (etypecase e
+                (string (uiop:getenv k))
+                (list (second e)))
+              when (null v) collect "-u"
+              when (null v) collect k
+              when v collect (format nil "~a=~a" k v))
+          )))
     (etypecase command
       (string `(,@prefix "sh" "-c" ,command))
       (list `(,@prefix ,@command)))))

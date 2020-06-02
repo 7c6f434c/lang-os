@@ -46,7 +46,7 @@ rec {
   '';
   homeScript = ''
     if test -z "$HOME"; then
-      HOME="$(mktemp -d)"
+      export HOME="$(mktemp -d)"
       _HOME_KILL="$HOME"
     else
       _HOME_KILL=
