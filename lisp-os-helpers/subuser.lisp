@@ -570,7 +570,10 @@
 		   (subuser-uid user :name name)))
 	 (t (subuser-uid user :name name))))
      (command-with-env 
-       (add-command-env command environment
+       (add-command-env command
+                        (append
+                          `(("HOME" "/homeless-shelter/"))
+                          environment)
 			:env-helper "/usr/bin/env"
                         :clear-env t))
      (command-to-wrap command-with-env)
