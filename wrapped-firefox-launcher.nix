@@ -45,7 +45,7 @@ rec {
     test -n "${baseProfile}" && yes n | cp -riT "${baseProfile}" "$_FIREFOX_PROFILE"
   '';
   homeScript = ''
-    if test -z "$HOME"; then
+    if test -z "$HOME" || ! test -d "$HOME"; then
       export HOME="$(mktemp -d)"
       _HOME_KILL="$HOME"
     else
