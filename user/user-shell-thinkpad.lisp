@@ -237,7 +237,7 @@
   (ensure-vps-socks))
 
 (defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min")
-                        kill-matrixcli)
+                        kill-matrixcli standby-options standby)
   (alexandria:write-string-into-file
     "10" (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
     :if-exists :supersede)
@@ -256,6 +256,7 @@
   (when kill-bg (kill-background-process-leaks))
   (when kill-matrixcli (! pkill -f matrixcli))
   (! x-options)
+  (when standby (apply 'standby standby-options))
   )
 
 (defun xrandr-home-poing ()
