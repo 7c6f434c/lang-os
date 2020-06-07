@@ -30,7 +30,7 @@ pkgs.lib.makeExtensible (self: with self; {
     mytmp="''${TMPDIR:-/tmp}/temporary-bus-$(id -u)/"
     padir="$(mktemp -d -p "$mytmp")"
 
-    test -n "$HOME" || export HOME="$padir"
+    ( test -n "$HOME" && test -d "$HOME" && test -w "$HOME" ) || export HOME="$padir"
 
     cat "${pkgs.pulseaudioLight}"/etc/pulse/default.pa |
       grep -Ev 'load-module module-(console-kit|systemd-.*|esound-protocol-unix)' |

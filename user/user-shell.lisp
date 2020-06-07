@@ -778,20 +778,27 @@
 (defun enter-location (&key ii (mcabber t) (brightness 25) (freq 2690)
                         (interface "wlan0") (extra-ips `())
                         (watchperiod "0.3") (location "somewhere")
-                        (extra-requests ()) (skip-wifi nil))
+                        (extra-requests ()) (skip-wifi nil)
+                        (bind-forward nil) (restart-bind (not skip-wifi))
+                        (proxy-config "direct.squid"))
   (alexandria:write-string-into-file
     location
     (format nil "~a/.location" (uiop:getenv "HOME"))
     :if-exists :supersede)
   (ask-with-auth
     (:presence t)
-    (unless skip-wifi `(ensure-wifi ,interface))
+    (if skip-wifi `(progn) `(ensure-wifi ,interface))
+    (if restart-bind
+      `(reconfigure-bind "restart" ,@(unless bind-forward `("empty")))
+      `(progn))
     `(set-brightness ,brightness)
     `(set-cpu-frequency ,freq)
     `(list
        ,@(loop for ip in extra-ips collect
                `(add-ip-address ,interface ,ip)))
     `(progn ,@ extra-requests))
+  (when proxy-config
+    (& proxy-restart (format nil "~a/src/rc/squid/~a" ($ :home) proxy-config)))
   (enter-master-password)
   (email-fetchers-fast)
   (im-online-here
