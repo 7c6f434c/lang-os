@@ -254,7 +254,9 @@
     (! pkill "-HUP" ssh-fwd)
     (! pkill "-HUP" -f /ssh-fwd))
   (when kill-bg (kill-background-process-leaks))
-  (when kill-matrixcli (! pkill -f matrixcli))
+  (when kill-matrixcli
+    (! pkill -f /matrixcli)
+    (! pkill -f " matrixcli"))
   (! x-options)
   (when standby (apply 'standby standby-options))
   )
