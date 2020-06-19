@@ -142,16 +142,15 @@ pkgs.lib.makeExtensible (self: with self; {
                           file = "" + ./local;
                   }
                   {
-                          name = "root-servers.net";
-                          file = "" + ./root-servers;
-                  }
-                  {
                           name = ".";
                           file = "" + ./root-servers;
                   }
                   ];
                   extraConfig = ''
                           logging { category default { default_stderr; }; };
+                  '';
+                  extraOptions = ''
+                          managed-keys-directory "/var/lib/bind/";
                   '';
           };
   };
