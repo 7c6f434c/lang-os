@@ -704,6 +704,8 @@
 
 (defun standby
   (&key (state "mem") (sync t) (forget-secrets t) im-offline (re-wifi t) (randr t) kill-my-x x-lock)
+  (loop for d in (directory (~ "mnt/*/")) do
+        (& fusermount -u (namestring d)))
   (when randr (! := (:display (or ($ :display) ":0")) x-randr-options))
   (when x-lock (! := (:display (or ($ :display) ":0")) xscreensaver-command -lock))
   (! sh -c "echo 5 > ~/.watchperiod")

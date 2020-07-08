@@ -237,7 +237,10 @@
   (ensure-vps-socks))
 
 (defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min")
-                        kill-matrixcli standby-options standby)
+                        kill-matrixcli standby-options standby kill-mounts)
+  (when kill-mounts
+    (loop for d in (directory (~ "mnt/*/")) do
+          (& fusermount -u (namestring d))))
   (alexandria:write-string-into-file
     "10" (format nil "~a/.watchperiod" (uiop:getenv "HOME"))
     :if-exists :supersede)
