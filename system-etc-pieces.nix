@@ -27,10 +27,22 @@ rec {
     ln -s /var/etc/resolv.conf.dhclient-new "$out"
   '';
 
+  removeSystemdRun = package: pkgs.runCommand "${package.name}-udev-rules" {} ''
+    mkdir -p "$out/lib/udev/rules.d"
+    cp -rTf "${package}/lib/udev/rules.d" "$out/lib/udev/rules.d"
+    chmod u+rwX -R "$out"
+    grep '\<systemd-run' -rl "$out/lib/udev/rules.d" |
+      tee /dev/stderr |
+      xargs sed -i -re 's@([ 	"'"'"'=]|^)(/[-_/.a-z0-9]+/)?systemd-run\>@@'
+    if grep '\<systemd-run' -r "$out/lib/udev/rules.d"; then exit 1; fi
+  '';
+
   udevConf = {packages ? [], extraRules ? ""}: {
     systemd.package = pkgs.eudev;
     services.udev = {
-      packages = [pkgs.fuse pkgs.libinput pkgs.lvm2 pkgs.android-udev-rules
+      packages = pkgs.lib.mkForce
+      ([pkgs.fuse pkgs.libinput pkgs.android-udev-rules
+        (removeSystemdRun pkgs.lvm2)
         (pkgs.runCommand "eudev-lib-rules" {} ''
           mkdir -p "$out/etc/udev/rules.d/"
           cp -r "${pkgs.eudev}/var/lib/udev/rules.d"/{50-udev-default.rules,60-persistent-storage.rules} "$out/etc/udev/rules.d/"
@@ -49,7 +61,7 @@ rec {
             LABEL="local_touchpad_end"
           EOF
         '')
-      ] ++ packages;
+      ] ++ packages);
       inherit extraRules;
     };
     boot.hardwareScan = true;
