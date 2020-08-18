@@ -404,6 +404,11 @@
   (require-presence context)
   (disable-ip-link interface))
 
+(defun socket-command-server-commands::kill-dhclient
+  (context interface)
+  (require-presence context)
+  (stop-link-dhclient interface))
+
 (defun socket-command-server-commands::activate-interface
   (context interface)
   (require-presence context)
@@ -620,6 +625,8 @@
     ((equal choice "usb")
      (modprobe "snd-usb-audio")
      (modprobe "snd-hda-intel" "index=1"))
+    ((equal choice "usb-only")
+     (modprobe "snd-usb-audio"))
     ((equal choice "none"))
     ((or
        (equal choice "built-in")

@@ -9,6 +9,7 @@
     #:enable-ip-link
     #:disable-ip-link
     #:run-link-dhclient
+    #:stop-link-dhclient
     #:port-open-p
     #:wpa-supplicant-status
     #:ensure-wpa-supplicant
@@ -168,6 +169,11 @@
   (run-program-return-success
     (uiop:run-program
       (list "dhclient" "-1" interface))))
+
+(defun stop-link-dhclient (interface)
+  (run-program-return-success
+    (uiop:run-program
+      (list "pkill" "-f" (format nil "dhclient (.* )?~a" interface)))))
 
 (defun port-open-p (port &key (host "127.0.0.1"))
   (ignore-errors
