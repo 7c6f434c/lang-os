@@ -37,8 +37,9 @@
            :home t
            :socks-proxy 1080))
 
-(defun github-notifications-firefox ()
-  (firefox (list "https://github.com/notifications/")
+(defun github-notifications-firefox (&key (nixos-discourse t))
+  (firefox `("https://github.com/notifications/"
+             ,@(when nixos-discourse `("https://discourse.nixos.org/")))
            :pass-stderr nil :pass-stdout nil :wait nil
            :no-close t :stumpwm-tags "cat/em-email email mail github no-auto-tags"
            :javascript t
