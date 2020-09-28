@@ -107,6 +107,7 @@
                       if (equalp oo "network") append (list :network t)
                       if (equalp oo "no-network") append (list :network nil)
                       if (equalp oo "skip-default-mounts") append (list :skip-default-mounts t)
+                      if (equalp oo "no-proc") append (list :proc nil :proc-rw nil)
                       if (equalp oo "proc-rw") append (list :proc-rw t)
                       if (equalp oo "proc-ro") append (list :proc-rw nil)
                       if (equalp oo "full-dev") append (list :full-dev t)
@@ -138,6 +139,9 @@
                         :netns-ports-out (second o)
                         :netns-ports-in (third o)
                         :netns-verbose (find "verbose" (fourth o) :test 'equal)
+                        :netns-proc (not (find "no-proc" (fourth o) :test 'equal))
+                        :netns-proc-rw (not (or (find "proc-ro" (fourth o) :test 'equal)
+                                                (find "no-proc" (fourth o) :test 'equal)))
                         :netns-tuntap-devices
                         (second (find "tuntap-devices" (fourth o) :test 'equalp
                                       :key (lambda (x) (and x (listp x) (first x))))))

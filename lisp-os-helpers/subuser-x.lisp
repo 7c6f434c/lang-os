@@ -207,7 +207,8 @@
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
     mount-sys keep-namespaces
     dns http-proxy socks-proxy with-dbus with-pulseaudio
-    x-optional skip-nsjail masking-mounts clear-env)
+    x-optional skip-nsjail masking-mounts clear-env
+    (proc-rw t) (no-proc nil))
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
      (uid 
@@ -387,6 +388,8 @@
                    `(("keep-namespaces" ,keep-namespaces)))
                ,@(when newprivs `("newprivs"))
                ,@(when home `(("home" ,home)))
+               ,@(when no-proc `("no-proc"))
+               ,@(unless proc-rw `("proc-ro"))
                )))
               ,@(when masking-mounts `(("masking-mounts" ,masking-mounts)))
               ,@(when fake-passwd `("fake-passwd"))
@@ -407,6 +410,8 @@
                       ,@(when verbose-netns `("verbose"))
                       ,@(when netns-tuntap-devices
                           `(("tuntap-devices" ,netns-tuntap-devices)))
+                      ,@(unless proc-rw `("proc-ro"))
+                      ,@(when no-proc `("no-proc"))
                       ))))
               ,@(when pass-stdin `(("stdin-fd" "stdin")))
               ,@(when pass-stdout `(("stdout-fd" "stdout")))

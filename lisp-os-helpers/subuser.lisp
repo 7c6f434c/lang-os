@@ -205,6 +205,7 @@
 	   (gid 65534) (network nil) hostname
 	   mounts skip-default-mounts
 	   (proc-rw t)
+           (proc t)
 	   (internal-uid uid) (internal-gid gid)
            fake-passwd fake-groups fake-usernames
            skip-mount-check
@@ -334,6 +335,7 @@
 	 collect (concatenate 'string "-" type)
 	 collect target-reference)
      ,@(when proc-rw `("--proc_rw"))
+     ,@(unless proc `("--disable_proc"))
      ,@(when network `("-N"))
      "-E" "PATH="
      ,@(when home `("-E" ,(format nil "HOME=~a" home)))
@@ -387,7 +389,9 @@
                                   uid gid (directory "/")
 				  (path "/var/current-system/sw/bin")
                                   tuntap-devices
-                                  hostname verbose)
+                                  hostname verbose
+                                  (proc-rw t)
+                                  (proc t))
   (ensure-directories-exist "/tmp/subuser-homes/")
   (let* 
     ((*print-right-margin* (expt 10 9))
@@ -436,7 +440,8 @@
                       "-D" ,directory
                       ,@(when hostname `("-H" ,hostname))
                       "--keep_caps"
-                      "--proc_rw"
+                      ,@(when proc-rw `("--proc_rw"))
+                      ,@(unless proc `("--disable_proc"))
                       "--disable_clone_newnet"
                       "--disable_clone_newipc"
                       "--disable_clone_newuts"
@@ -470,7 +475,8 @@
                       "--disable_clone_newuts"
                       "--disable_clone_newipc"
                       "--disable_no_new_privs"
-                      "--proc_rw"
+                      ,@(when proc-rw `("--proc_rw"))
+                      ,@(unless proc `("--disable_proc"))
                       "--rlimit_as"     "max"
                       "--rlimit_core"   "max"
                       "--rlimit_cpu"    "max"
@@ -558,6 +564,7 @@
                             (directory "/")
 			    netns netns-ports-out netns-ports-in netns-verbose
                             netns-tuntap-devices
+                            (netns-proc-rw t) (netns-proc t)
 			    nsjail nsjail-settings
                             chroot masking-mounts skip-masking-mounts-check
                             fake-passwd fake-groups fake-usernames
@@ -585,7 +592,8 @@
            :ports-in netns-ports-in
            :tuntap-devices netns-tuntap-devices
 	   :uid uid :gid gid :verbose netns-verbose
-           :directory directory)
+           :directory directory
+           :proc-rw netns-proc-rw :proc netns-proc)
 	 command-to-wrap))
      (command-to-wrap
        (cond
