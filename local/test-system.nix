@@ -24,6 +24,7 @@ pkgs.lib.makeExtensible (self: with self; {
     inherit pkgs;
     src = "" + ../lisp-os-helpers;
     deps = with pkgs.lispPackages; [
+      alexandria
       iolib iterate local-time cl-ppcre bordeaux-threads alexandria trivial-backtrace
       clsql clsql-sqlite3 parenscript drakma cl-html-parse
     ];

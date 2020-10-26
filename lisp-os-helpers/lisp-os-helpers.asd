@@ -2,6 +2,14 @@
   :lisp-os-helpers
   :depends-on
   (
+   ;; Apparently we need to make sure depedencies of dependencies are listed first
+   :uiop
+   :alexandria
+   :iolib.common-lisp
+   :iolib.base
+   :cffi
+   :uffi
+   ;; The real dependencies
    :iolib :iolib/os :iolib/syscalls
    :uiop :iterate :cl-ppcre :bordeaux-threads :local-time alexandria :trivial-backtrace
    :clsql :clsql-sqlite3 :parenscript :drakma :cl-html-parse
