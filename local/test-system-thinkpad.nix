@@ -69,4 +69,24 @@
   };
   
   openglPackages = with self.pkgs; [ beignet vaapiIntel libvdpau-va-gl vaapiVdpau ];
+
+  pkgs = super.pkgs // {
+    xorg = super.pkgs.xorg // {
+      xorgserver = super.pkgs.xorg.xorgserver.overrideAttrs (x: {
+        src = self.pkgs.fetchFromGitLab {
+          domain = "gitlab.freedesktop.org";
+          owner = "xorg";
+          repo = "xserver";
+          rev = "b3ae038c";
+          hash = "sha256:18gnjyypy3qcqmxahc5rs82xhlrn606yf5jhz6jiy5c0ib3gcafw";
+        };
+        preConfigure = "";
+        buildInputs = super.pkgs.xorg.xorgserver.buildInputs ++ [
+          self.pkgs.autoreconfHook
+          self.pkgs.xorg.utilmacros
+          self.pkgs.xorg.fontutil
+        ];
+      });
+    };
+  };
 })

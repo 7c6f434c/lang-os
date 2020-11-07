@@ -16,14 +16,14 @@ pkgs.lib.makeExtensible (self: with self; {
     blacklistUdevRules = ["80-net-name-slot.rules"];
   });
 
-  swPieces = import ../system-sw-pieces.nix { inherit pkgs; };
+  swPieces = import ../system-sw-pieces.nix { inherit (self) pkgs; };
  
-  postgresql-package = pkgs.postgresql95;
+  postgresql-package = self.pkgs.postgresql95;
  
   lispOsHelpers = import ../lisp-os-helpers.nix {
-    inherit pkgs;
+    inherit (self) pkgs;
     src = "" + ../lisp-os-helpers;
-    deps = with pkgs.lispPackages; [
+    deps = with self.pkgs.lispPackages; [
       alexandria
       iolib iterate local-time cl-ppcre bordeaux-threads alexandria trivial-backtrace
       clsql clsql-sqlite3 parenscript drakma cl-html-parse
@@ -33,7 +33,7 @@ pkgs.lib.makeExtensible (self: with self; {
   systemLispSettings = "/dev/null";
 
   systemLisp = import ../system-lisp.nix { 
-          deps = with pkgs.lispPackages; [
+          deps = with self.pkgs.lispPackages; [
             lispOsHelpers
           ];
           code = ''(defvar *lisp-os-helpers-package* "${lispOsHelpers}")
@@ -56,7 +56,7 @@ pkgs.lib.makeExtensible (self: with self; {
           '';
         };
 
-  loopStarter = command: pkgs.writeScript "loop-starter" ''
+  loopStarter = command: self.pkgs.writeScript "loop-starter" ''
           trap : 1 2 3 13 14 15
           while true; do
                 sleep 1
@@ -122,7 +122,7 @@ pkgs.lib.makeExtensible (self: with self; {
                deviceSection = ''
                  Option "DRI" "3"
                '';
-               videoDrivers = pkgs.lib.mkForce ["modesetting"];
+               videoDrivers = self.pkgs.lib.mkForce ["modesetting"];
 	     };
 	};
   NixOSWithX = nixos {configuration = NixOSXConfig;};
@@ -158,18 +158,18 @@ pkgs.lib.makeExtensible (self: with self; {
   
   openglPackages = [];
   openglPackages32 = [];
-  openglDriver = pkgs.buildEnv {
+  openglDriver = self.pkgs.buildEnv {
     name = "opengl-driver";
     paths = [ NixOSWithX.config.hardware.opengl.package ] ++
       openglPackages;
   };
-  openglDriver32 = pkgs.buildEnv {
+  openglDriver32 = self.pkgs.buildEnv {
     name = "opengl-driver-32";
     paths = [ NixOSWithX.config.hardware.opengl.package32 ] ++
       openglPackages32;
   };
 
-  swPackages = swPieces.corePackages ++ (with pkgs; [
+  swPackages = swPieces.corePackages ++ (with self.pkgs; [
         (hiPrio glibcLocales)
         vim monotone screen xterm xorg.xprop
         sbcl lispPackages.clwrapper lispPackages.uiop asdf
@@ -209,13 +209,13 @@ pkgs.lib.makeExtensible (self: with self; {
     global = import ../system-global.nix {inherit systemEtc;};
     setuid = import ../system-setuid.nix {
       setuidPrograms = [
-        { name = "su"; src="${pkgs.shadow.su}/bin/su"; setuid=true; }
-        { name = "unix_chkpwd"; src="${pkgs.pam}/bin/unix_chkpwd.orig"; setuid=true; }
-        { name = "fusermount"; src="${pkgs.fuse}/bin/fusermount"; setuid=true; }
-        { name = "fusermount3"; src="${pkgs.fuse3}/bin/fusermount3"; setuid=true; }
+        { name = "su"; src="${self.pkgs.shadow.su}/bin/su"; setuid=true; }
+        { name = "unix_chkpwd"; src="${self.pkgs.pam}/bin/unix_chkpwd.orig"; setuid=true; }
+        { name = "fusermount"; src="${self.pkgs.fuse}/bin/fusermount"; setuid=true; }
+        { name = "fusermount3"; src="${self.pkgs.fuse3}/bin/fusermount3"; setuid=true; }
       ];
     };
-    sw = pkgs.buildEnv rec {
+    sw = self.pkgs.buildEnv rec {
       name = "system-path";
       paths = swPackages;
       extraOutputsToInstall = swPieces.allOutputNames paths;
@@ -237,37 +237,37 @@ pkgs.lib.makeExtensible (self: with self; {
          services.printing = {
            enable = true;
 	   gutenprint = true;
-	   drivers = with pkgs; [
+	   drivers = with self.pkgs; [
 	     foo2zjs foomatic_filters ghostscript cups_filters samba
              /* hplip */
 	   ];
          };
 	 systemd.services.cups.serviceConfig.ExecStart = ''
-	     ${pkgs.cups.out}/bin/cupsd -f
+	     ${self.pkgs.cups.out}/bin/cupsd -f
 	   '';
       };
       "from-nixos/bind" = fromNixOS.serviceScript "bind" 
-        (pkgs.lib.recursiveUpdate bindConfig {services.bind.configFile = "/var/etc/bind.conf";});
+        (self.pkgs.lib.recursiveUpdate bindConfig {services.bind.configFile = "/var/etc/bind.conf";});
       "from-nixos/bind.conf" = (fromNixOS.nixosFun bindConfig).config.services.bind.configFile;
-      "from-nixos/xorg" = pkgs.writeScript "xorg-start" ''
+      "from-nixos/xorg" = self.pkgs.writeScript "xorg-start" ''
 	    ln -Tfs "${openglDriver}" /run/opengl-driver
 	    ln -Tfs "${openglDriver32}" /run/opengl-driver-32
-	    ln -Tfs "${pkgs.libglvnd}" /run/libglvnd
-	    ln -Tfs "${pkgs.pkgsi686Linux.libglvnd}" /run/libglvnd-32
+	    ln -Tfs "${self.pkgs.libglvnd}" /run/libglvnd
+	    ln -Tfs "${self.pkgs.pkgsi686Linux.libglvnd}" /run/libglvnd-32
 	    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/run/opengl-driver/lib:/run/opengl-driver-32/lib:/run/libglvnd/lib:/run/libglvnd-32/lib"
 
-	    ${pkgs.xorg.xorgserver}/bin/Xorg vt"$((7+''${1:-0}))" :"''${1:-0}" -logfile "/var/log/X.''${1:-0}.log" -config "${(fromNixOS.etcSelectComponent "X11/xorg.conf" NixOSXConfig)."X11/xorg.conf"}"
+	    ${self.pkgs.xorg.xorgserver}/bin/Xorg vt"$((7+''${1:-0}))" :"''${1:-0}" -logfile "/var/log/X.''${1:-0}.log" -config "${(fromNixOS.etcSelectComponent "X11/xorg.conf" NixOSXConfig)."X11/xorg.conf"}"
       '';
-      "udevd" = pkgs.writeScript "udevd" ''
-          ${pkgs.eudev}/bin/udevd &
-          ${pkgs.eudev}/bin/udevadm trigger --action add
-          ${pkgs.eudev}/bin/udevadm settle
+      "udevd" = self.pkgs.writeScript "udevd" ''
+          ${self.pkgs.eudev}/bin/udevd &
+          ${self.pkgs.eudev}/bin/udevadm trigger --action add
+          ${self.pkgs.eudev}/bin/udevadm settle
         '';
-      "nix-daemon" = pkgs.writeScript "nix-daemon" ''
-        ${pkgs.nix}/bin/nix-daemon
+      "nix-daemon" = self.pkgs.writeScript "nix-daemon" ''
+        ${self.pkgs.nix}/bin/nix-daemon
       '';
-      "dmesg-logger" = pkgs.writeScript "dmesg-logger" ''
-        ${pkgs.utillinux}/bin/dmesg -w
+      "dmesg-logger" = self.pkgs.writeScript "dmesg-logger" ''
+        ${self.pkgs.utillinux}/bin/dmesg -w
       '';
       "language-daemon/system-lisp" = systemLisp;
       "language-daemon/system-gerbil" = systemGerbil;
@@ -275,13 +275,13 @@ pkgs.lib.makeExtensible (self: with self; {
     };
   };
   systemInstance = import ../system-instance.nix {
-    inherit pkgs;
+    inherit (self) pkgs;
     inherit stage1;
     inherit systemParts;
     kernelParameters = ["intel_pstate=disable"];
   };
 
-  etcPieces = import ../system-etc-pieces.nix { inherit pkgs nixos; };
+  etcPieces = import ../system-etc-pieces.nix { inherit (self) pkgs nixos; };
 
   inherit (etcPieces) fromNixOS;
 
@@ -293,7 +293,7 @@ pkgs.lib.makeExtensible (self: with self; {
     useSandbox = true;
   };
 
-  systemEtc = pkgs.buildEnv {
+  systemEtc = self.pkgs.buildEnv {
     name = "system-etc";
     paths = [
       (etcPieces.timeEtc "UTC")
@@ -310,9 +310,9 @@ pkgs.lib.makeExtensible (self: with self; {
       etcPieces.mountEtc
       (etcPieces.deeplinkAttrset "etc-ssl"
         {
-          "ssl/certs/ca-bundle.crt" = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-          "ssl/certs/ca-certificates.crt" = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-          "pki/tls/certs/ca-bundle.crt" =  "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+          "ssl/certs/ca-bundle.crt" = "${self.pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+          "ssl/certs/ca-certificates.crt" = "${self.pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+          "pki/tls/certs/ca-bundle.crt" =  "${self.pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
         })
       (etcPieces.deeplinkAttrset "etc-fonts"
        (fromNixOS.etcSelectComponent "fonts" {
@@ -346,5 +346,5 @@ pkgs.lib.makeExtensible (self: with self; {
   };
 
   nixosTools = (import <nixpkgs/nixos/modules/installer/tools/tools.nix> 
-    {inherit pkgs; inherit (pkgs) lib; config={}; modulesPath = null;}).config.system.build;
+    {inherit (self) pkgs; inherit (self.pkgs) lib; config={}; modulesPath = null;}).config.system.build;
 })
