@@ -49,4 +49,14 @@ pkgs.lib.makeExtensible (self: with self; {
 
     exit $code
   '';
+
+  withOwnedHome = pkgs.writeScriptBin "with-owned-home" ''
+    cd
+    test -w . || cd "$(mktemp -d)"
+    mkdir owned-home
+    cd owned-home
+    chmod a+rX .
+    export HOME="$(pwd)"
+    "$@"
+  '';
 })

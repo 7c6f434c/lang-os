@@ -15,6 +15,7 @@
     #:reset-bus-helpers
     #:*dbus-helper*
     #:*pulseaudio-helper*
+    #:*owned-home-helper*
     #:subuser-nsjail-x-application
     ))
 (in-package :lisp-os-helpers/subuser-x)
@@ -24,6 +25,7 @@
 (defvar *firefox-launcher* nil)
 (defvar *dbus-helper* nil)
 (defvar *pulseaudio-helper* nil)
+(defvar *owned-home-helper* nil)
 
 (defun absolutise-command (command)
   (if (listp (first command))
@@ -157,6 +159,15 @@
                   "withPulseaudio" :nix-file nix-file
                   :nix-path nix-path
                   :out-link (when out-link (format nil "~a-pa" out-link))))))
+    *owned-home-helper*
+    (format nil 
+            "~a/bin/with-owned-home"
+            (namestring
+              (truename
+                (nix-build
+                  "withOwnedHome" :nix-file nix-file
+                  :nix-path nix-path
+                  :out-link (when out-link (format nil "~a-pa" out-link))))))
     ))
 
 (defun firefox-pref-value-js (value)
@@ -206,7 +217,7 @@
     resolv-conf machine-id
     (path "/var/current-system/sw/bin") verbose-errors verbose-nsjail
     mount-sys keep-namespaces
-    dns http-proxy socks-proxy with-dbus with-pulseaudio
+    dns http-proxy socks-proxy with-dbus with-pulseaudio with-owned-home
     x-optional skip-nsjail masking-mounts clear-env
     (proc-rw t) (no-proc nil))
   (let*
@@ -320,6 +331,7 @@
         (prog1
           (subuser-command-with-x
             `(,@ launcher-wrappers
+                 ,@(when with-owned-home (list *owned-home-helper*))
                  ,@(when with-dbus (list *dbus-helper*))
                  ,@(when with-pulseaudio (list *pulseaudio-helper*))
                  ,@command)
