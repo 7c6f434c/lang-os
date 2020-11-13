@@ -167,7 +167,7 @@
                 (nix-build
                   "withOwnedHome" :nix-file nix-file
                   :nix-path nix-path
-                  :out-link (when out-link (format nil "~a-pa" out-link))))))
+                  :out-link (when out-link (format nil "~a-owned-home" out-link))))))
     ))
 
 (defun firefox-pref-value-js (value)
