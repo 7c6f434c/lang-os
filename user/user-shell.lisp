@@ -261,7 +261,7 @@
                  `(console-keymap ,@(when keymap (list keymap)))))
 
 (defun update-firefox-launcher ()
-  (reset-firefox-launcher :nix-path (list ($ :home) "/home/repos")
+  (reset-firefox-launcher :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
                           :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
                                                     ($ :home))
                           :out-link (~ ".nix-personal/firefox-launcher")
@@ -270,7 +270,7 @@
                                   ($ :home))
                           :verbose t)
   (reset-bus-helpers
-    :nix-path (list ($ :home) "/home/repos" (cl-ppcre:split ":" ($ :nix_path)))
+    :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
     :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")
     :out-link (~ ".nix-personal/bus-wrapper")
     ))
