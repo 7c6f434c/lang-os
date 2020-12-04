@@ -348,7 +348,7 @@
                         no-close after-marionette-requests
                         marionette-requests-wait-content
                         stumpwm-tags
-                        hostname-hidden-suffix
+                        hostname-hidden-suffix hostname-suffix
                         grab-sound grab-camera grab-devices
                         extra-urls keep-namespaces
                         &allow-other-keys)
@@ -463,8 +463,12 @@
                 :options
                 `(("nsjail" 
                    ("hostname" 
-                    ,(masked-username
-                       name hostname-hidden-suffix)))))
+                    ,(format nil
+                             "~a~a~a"
+                             (masked-username
+                               name hostname-hidden-suffix)
+                             (if hostname-suffix "." "")
+                             (or hostname-suffix ""))))))
               )))
           :name "Marionette command feeder"))
     (apply 'subuser-firefox
