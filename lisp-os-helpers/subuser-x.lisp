@@ -207,7 +207,7 @@
     (slay t) (wait t) (netns t) verbose-netns
     network-ports network-ports-in
     netns-tuntap-devices
-    grant grant-read
+    grant grant-read grant-single grant-read-single
     pass-stderr pass-stdout pass-stdin full-dev dev-log-socket
     newprivs
     grab-dri launcher-wrappers
@@ -327,6 +327,16 @@
         do
         (uiop:run-program
           (list "setfacl" "-R" "-m" (format nil "u:~a:rwX" uid) g)))
+      (loop
+        for g in grant-read-single
+        do
+        (uiop:run-program
+          (list "setfacl" "-m" (format nil "u:~a:rX" uid) g)))
+      (loop
+        for g in grant-single
+        do
+        (uiop:run-program
+          (list "setfacl" "-m" (format nil "u:~a:rwX" uid) g)))
       (unwind-protect
         (prog1
           (subuser-command-with-x
