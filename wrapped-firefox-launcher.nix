@@ -1,6 +1,6 @@
 { 
   pkgs ? import <nixpkgs> {}, firefox ? p: p.firefox, firefoxName ? "firefox"
-  , marionette ? p: p.python2Packages.marionette-harness
+  , marionette ? p: (import ./marionette-python-packages.nix {pkgs = p;}).marionette-harness
   , profileContent ? null
   , baseProfile ? import ./firefox-profile.nix { inherit pkgs firefox; finalContent = profileContent; }
   , name ? "firefox-launcher"
@@ -29,7 +29,7 @@ rec {
           exit()
         value = (eval(code))
         if value != None:
-          print(value)
+          print(unicode(value).encode("utf-8"))
       except EOFError:
         exit()
       except Exception as e:
@@ -53,12 +53,13 @@ rec {
     fi;
   '';
   marionettePythonRunner = pkgs.writeScript "marionette-runner" ''
-    python -u -c '${marionettePythonPrologue}'
+    pypy -u -c '${marionettePythonPrologue}'
   '';
   marionetteScript = ''
     if test -n "$MARIONETTE_SOCKET"; then
       export MARIONETTE_PORT="''${MARIONETTE_PORT:-2828}"
-      export PYTHONIOENCODING=utf-8:surrogateescape
+      export PYTHONIOENCODING=utf-8:surrogateencode
+      export LANG=en_US.UTF-8
       (
         source "${marionetteEnv}"
         "${socatCmd}" -t 60 unix-listen:"$MARIONETTE_SOCKET",forever,fork,rcvbuf=1,sndbuf=1 exec:'${marionettePythonRunner}',rcvbuf=1,sndbuf=1 &

@@ -82,7 +82,7 @@
      )
     (uiop:run-program
       command :output '(:string :stripped t)
-      :error-output t)))
+      :error-output nil)))
 
 (defun nix-instantiate (&rest args)
   (cl-ppcre:split *line-break-regexpr* (apply 'nix-instantiate-raw args)))
