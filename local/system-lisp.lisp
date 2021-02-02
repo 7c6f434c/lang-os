@@ -776,6 +776,21 @@
       (socket-command-server-commands::restart-bind context)
       servers)))
 
+(defun socket-command-server-commands::update-root-zone (context &rest options)
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
+  (with-open-file (f "/var/lib/bind/root-servers"
+                     :direction :output :if-exists :supersede
+                     :if-does-not-exist :create)
+    (uiop:run-program
+      (list "curl" "--proxy" "socks5h://127.0.0.1:1080/"
+            "https://www.internic.net/domain/root.zone")
+      :output f)))
+
 (defvar *auto-wifi* nil)
 (defvar *auto-interfaces* nil)
 (defvar *auto-ip-addresses* nil)

@@ -144,7 +144,7 @@ pkgs.lib.makeExtensible (self: with self; {
                   }
                   {
                           name = ".";
-                          file = "" + ./root-servers;
+                          file = "/var/lib/bind/root-servers";
                   }
                   ];
                   extraConfig = ''
