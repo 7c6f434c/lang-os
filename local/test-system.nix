@@ -141,10 +141,12 @@ pkgs.lib.makeExtensible (self: with self; {
                   {
                           name = "local";
                           file = "" + ./local;
+                          master = true;
                   }
                   {
                           name = ".";
                           file = "/var/lib/bind/root-servers";
+                          master = true;
                   }
                   ];
                   extraConfig = ''
