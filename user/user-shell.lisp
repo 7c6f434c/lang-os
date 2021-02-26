@@ -26,6 +26,10 @@
 (use-package :lisp-os-helpers/marionette)
 (use-package :lisp-os-helpers/network)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (import 'lisp-os-helpers/subuser-x::*firefox-profile-contents*)
+  (import 'lisp-os-helpers/subuser-x::*firefox-profile-combiner*))
+
 (setf *random-state* (make-random-state t))
 
 (defpackage :sudo (:use))
@@ -260,22 +264,56 @@
   (ask-with-auth (:presence t)
                  `(console-keymap ,@(when keymap (list keymap)))))
 
-(defun update-firefox-launcher ()
-  (reset-firefox-launcher :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
-                          :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
-                                                    ($ :home))
-                          :out-link (~ ".nix-personal/firefox-launcher")
-                          :profile-contents
-                          (format nil "~a/src/nix/lang-os/user/firefox-profile-skel/"
-                                  ($ :home))
-                          :verbose t)
-  (reset-bus-helpers
-    :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
-    :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")
-    :out-link (~ ".nix-personal/bus-wrapper")
-    ))
+(defmacro with-firefox-launcher ((profile combiner launcher) &body body)
+  `(let* ((*firefox-profile-contents* ,profile)
+          (*firefox-profile-combiner* ,combiner)
+          (*firefox-launcher* ,launcher))
+     (declare (special *firefox-profile-contents*)
+              (special *firefox-profile-combiner*)
+              (special *firefox-launcher*))
+     ,@body))
 
-(unless lisp-os-helpers/subuser-x:*firefox-launcher* (update-firefox-launcher))
+(defmacro with-firefox-launcher-packed ((pack) &body body)
+  (let ((p (gensym)))
+    `(let ((,p ,pack))
+       (with-firefox-launcher ((first ,p) (second ,p) (third ,p)) ,@body))))
+
+(defmacro with-firefox-variant ((&optional variant) &body body)
+  `(with-firefox-launcher-packed ((gethash ,variant *firefox-variants*)) ,@body))
+
+(defvar *firefox-variants* (make-hash-table))
+
+(defun update-firefox-launcher (&optional variant)
+  (let ((variant-string (if variant (string-downcase (format nil "-~a" variant)) "")))
+    (with-firefox-launcher
+      (nil nil nil)
+      (reset-firefox-launcher
+        :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
+        :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
+                                  ($ :home))
+        :out-link (~ ".nix-personal" (concatenate 'string "firefox-launcher" variant-string))
+        :profile-contents
+        (format nil "~a/src/nix/lang-os/user/firefox-profile-skel~a/"
+                ($ :home)
+                variant-string)
+        :verbose t)
+      (setf (gethash variant *firefox-variants*)
+            (list *firefox-profile-contents* *firefox-profile-combiner* *firefox-launcher*))
+      (reset-bus-helpers
+        :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
+        :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")
+        :out-link (~ ".nix-personal/bus-wrapper")
+        ))
+    (unless variant
+      (let ((pack (gethash nil *firefox-variants*)))
+        (setf *firefox-profile-contents* (first pack)
+              *firefox-profile-combiner* (second pack)
+              *firefox-launcher* (third pack))))))
+
+(unless lisp-os-helpers/subuser-x:*firefox-launcher*
+  (update-firefox-launcher)
+  (update-firefox-launcher 'natural)
+  (update-firefox-launcher 'noconfig))
 
 (defun ethernet-attached (interface)
   (getf (first (lisp-os-helpers/network::parsed-ip-address-show interface)) :lower-up))
@@ -347,6 +385,7 @@
                         marionette-requests marionette-requests-quiet
                         no-close after-marionette-requests
                         marionette-requests-wait-content
+                        extensions late-urls
                         stumpwm-tags
                         hostname-hidden-suffix hostname-suffix
                         grab-sound grab-camera grab-devices
@@ -416,7 +455,7 @@
       (and 
         (or marionette-requests
             after-marionette-requests
-            stumpwm-tags)
+            stumpwm-tags extensions late-urls)
         marionette-socket)
       (bordeaux-threads:make-thread
         (lambda ()
@@ -433,6 +472,23 @@
             (with-marionette
               (marionette-socket)
               (marionette-wait-ready :context :chrome :timeout 15)
+              (loop for e in extensions
+                    do (format *trace-output* "Installing ~s~%" e)
+                    do (format *trace-output*
+                               "Result: ~a~%"
+                               (ignore-errors 
+                                 (ask-marionette
+                                   (format nil "Addons(session).install(~s,True),session.set_context(session.CONTEXT_CONTENT)" e)))))
+              (loop for u in late-urls
+                    do (format 
+                         *trace-output*
+                         "Opening URL: ~s~%Result: ~a~%"
+                         u
+                         (ignore-errors
+                           (ask-marionette
+                             (format 
+                               nil 
+                               "session.switch_to_window(session.open('tab',True)['handle'],True), session.set_context(session.CONTEXT_CONTENT), session.navigate('~a')" (lisp-os-helpers/marionette::escape-for-python u))))))
               (when marionette-requests-wait-content
                 (marionette-wait-ready 
                   :context :content :timeout

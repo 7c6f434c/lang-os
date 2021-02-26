@@ -1,0 +1,23 @@
+@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+
+#tabbrowser-tabs:not(:hover) {
+  background-color: magenta !important;
+  height: 3px !important;
+  min-height: 3px !important;
+  max-height: 3px !important;
+  overflow: hidden !important;
+}
+
+#nav-bar :focus{
+  background-color: cyan !important;
+  color: red !important;
+}
+
+#main-window:not([customizing]) #nav-bar:not(:focus-within):not(:hover) { 
+  background-color: cyan !important;
+  height: 3px !important;
+  min-height: 3px !important;
+  max-height: 3px !important;
+  overflow: hidden !important;
+} 
+

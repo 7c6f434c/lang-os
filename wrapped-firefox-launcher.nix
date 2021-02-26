@@ -18,6 +18,7 @@ rec {
   '';
   marionettePythonPrologue = ''
     from marionette_driver.marionette import Marionette;
+    from marionette_driver.addons import Addons;
     import os;
     import sys;
     session = Marionette(host="127.0.0.1",port=os.getenv("MARIONETTE_PORT") or 2828,bin=False,socket_timeout=3600,startup_timeout=1);
