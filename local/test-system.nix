@@ -177,7 +177,12 @@ pkgs.lib.makeExtensible (self: with self; {
         sbcl lispPackages.clwrapper lispPackages.uiop asdf
         gerbil guile
 	postgresql-package
-        nsjail unionfs-fuse
+        (lib.overrideDerivation nsjail (x: {
+          postPatch = ''
+            sed -e s/YYUSE/YY_USE/g -i kafel/src/*.y
+          '';
+        }))
+        unionfs-fuse
         (lib.overrideDerivation lispPackages.stumpwm (x: {
           linkedSystems = x.linkedSystems ++ ["clx-truetype" "xkeyboard" "xembed"];
           buildInputs = x.buildInputs ++ (with lispPackages; [clx-truetype xkeyboard xembed]);

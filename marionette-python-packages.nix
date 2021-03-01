@@ -21,4 +21,8 @@ pkgs.lib.makeExtensible (self: with self; {
   h2 = callPackage ./marionette-harness/h2.nix { };
   hyperframe = callPackage ./marionette-harness/hyperframe.nix { };
   wptserve = callPackage ./marionette-harness/wptserve.nix { };
+
+  pytest-forked = callPackage ./marionette-harness/pytest-forked.nix {};
+  requests = callPackage ./marionette-harness/requests.nix {};
+  browsermob-proxy = callPackage ./marionette-harness/browsermob-proxy.nix {};
 })
