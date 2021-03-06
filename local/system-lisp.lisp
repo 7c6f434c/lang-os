@@ -783,13 +783,20 @@
     (progn
       (assert (gethash (list (context-uid context) :owner) *user-info*))
       (require-presence context)))
-  (with-open-file (f "/var/lib/bind/root-servers"
+  (run-program-return-success
+    (uiop:run-program
+      (list "cp" "-f"
+            "/var/lib/bind/root-servers" "/var/lib/bind/root-servers.old")))
+  (with-open-file (f "/var/lib/bind/root-servers.new"
                      :direction :output :if-exists :supersede
                      :if-does-not-exist :create)
     (uiop:run-program
       (list "curl" "--proxy" "socks5h://127.0.0.1:1080/"
             "https://www.internic.net/domain/root.zone")
-      :output f)))
+      :output f))
+  (uiop:run-program
+    (list "cp" "-f"
+          "/var/lib/bind/root-servers.new" "/var/lib/bind/root-servers")))
 
 (defvar *auto-wifi* nil)
 (defvar *auto-interfaces* nil)
