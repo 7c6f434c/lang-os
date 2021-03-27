@@ -1,4 +1,4 @@
-{ stdenv, buildPythonPackage, fetchPypi
+{ stdenv, lib, buildPythonPackage, fetchPypi
 , enum34, hpack, hyperframe }:
 
 buildPythonPackage rec {
@@ -12,7 +12,7 @@ buildPythonPackage rec {
 
   propagatedBuildInputs = [ enum34 hpack hyperframe ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "HTTP/2 State-Machine based protocol implementation";
     homepage = "http://hyper.rtfd.org/";
     license = licenses.mit;
