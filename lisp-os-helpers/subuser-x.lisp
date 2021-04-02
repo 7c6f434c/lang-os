@@ -203,7 +203,7 @@
 (defun subuser-nsjail-x-application
   (command
     &key display
-    environment home tmp name locale locale-archive
+    environment home inner-home tmp name locale locale-archive
     (slay t) (wait t) (netns t) verbose-netns
     network-ports network-ports-in
     netns-tuntap-devices
@@ -263,7 +263,8 @@
                  (list "setfacl" "-m" (format nil "u:~a:rwx" uid) home))
                home)
              home))
-     (directory (if (and home cd-home (not directory)) home directory))
+     (inner-home (when home (or inner-home home)))
+     (directory (if (and inner-home cd-home (not directory)) inner-home directory))
      (tmp (if (eq tmp t)
             (let* ((containing-directory
                      (format nil "/tmp/subuser-tmps-~a/"
@@ -375,7 +376,7 @@
                     ("SOCKS_PORT"    ,(format nil "~a" socks-proxy))
                     ("SOCKS_VERSION" "5")
                     ))
-              ,@(when home `(("HOME" ,home)))
+              ,@(when inner-home `(("HOME" ,inner-home)))
               ("PATH" ,path)
               ("LANG" ,(or locale (uiop:getenv "LANG") "en_US.UTF-8"))
               ("LOCALE_ARCHIVE"
@@ -403,7 +404,7 @@
                  ,@(when grab-sound `(("-B" "/dev/snd")))
                  ,@(when (or mount-sys grab-dri) `(("-B" "/sys")))
                  ,@(when tmp `(("-B" ,tmp "/tmp")))
-                 ,@(when home `(("-B" ,home)))
+                 ,@(when home `(("-B" ,home ,inner-home)("-B" ,home ,home)))
                  ,@ mounts))
                ,@(when verbose-nsjail `("verbose"))
                ,@(when keep-namespaces
