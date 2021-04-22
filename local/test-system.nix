@@ -18,7 +18,7 @@ pkgs.lib.makeExtensible (self: with self; {
 
   swPieces = import ../system-sw-pieces.nix { inherit (self) pkgs; };
  
-  postgresql-package = self.pkgs.postgresql95;
+  postgresql-package = self.pkgs.postgresql_13;
  
   lispOsHelpers = import ../lisp-os-helpers.nix {
     inherit (self) pkgs;
