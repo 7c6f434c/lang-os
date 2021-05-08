@@ -309,6 +309,7 @@ pkgs.lib.makeExtensible (self: with self; {
         security.pam.services = {
           sshd = {};
           cupsd = {};
+          cups = {};
         };
         environment.sessionVariables = sessionVariables;
       })
