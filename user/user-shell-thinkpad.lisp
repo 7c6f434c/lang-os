@@ -142,6 +142,27 @@
       :profile-storage (format nil "~a/firefox-profile" home)
       :grant (list home))))
 
+(defun subuser-nix-riot-firefox ()
+  (let* ((home (format nil "~a/.local/share/riot-nix-home"
+                       (uiop:getenv "HOME"))))
+    (ignore-errors
+      (ask-with-auth 
+        ()
+        `(chown-subuser ,home "" t)))
+    (firefox
+      (list "https://app.nitro.chat/")
+      :pass-stderr nil
+      :pass-stdout nil
+      :wait nil
+      :no-close t 
+      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags nix"
+      :javascript t
+      :socks-proxy 1080
+      :name "nix-riot-sandbox"
+      :home home
+      :profile-storage (format nil "~a/firefox-profile" home)
+      :grant (list home))))
+
 (defun im-windows ()
   (im-browsers)
   (subuser-telegram-firefox)
