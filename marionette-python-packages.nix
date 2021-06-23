@@ -25,4 +25,7 @@ pkgs.lib.makeExtensible (self: with self; {
   pytest-forked = callPackage ./marionette-harness/pytest-forked.nix {};
   requests = callPackage ./marionette-harness/requests.nix {};
   browsermob-proxy = callPackage ./marionette-harness/browsermob-proxy.nix {};
+
+  certifi = callPackage ./marionette-harness/certifi.nix {};
+  urllib3 = callPackage ./marionette-harness/urllib3.nix {};
 })
