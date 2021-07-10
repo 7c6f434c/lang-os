@@ -82,6 +82,10 @@ rec {
           "resolv.conf" = "/var/etc/resolv.conf";
           "resolv.conf.dhclient" = "/var/etc/resolv.conf.dhclient";
           "resolv.conf.dhclient-new" = "/var/etc/resolv.conf.dhclient-new";
+          "resolv.conf.localhost-tcp" = "${pkgs.writeText "resolv.conf" ''
+            nameserver 127.0.0.1
+            options use-vc
+          ''}";
         };
   mountEtc = deeplinkAttrset "etc-mount" {
         fstab = "/dev/null";
