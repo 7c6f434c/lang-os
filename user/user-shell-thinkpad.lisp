@@ -176,6 +176,34 @@
   (im-windows)
   (email-browsers))
 
+(defun subuser-midpass-firefox (&rest overrides)
+  (let* ((home (format nil "~a/.local/share/midpass-home"
+                       (uiop:getenv "HOME"))))
+    (ignore-errors
+      (ask-with-auth 
+        ()
+        `(chown-subuser ,home "" t)))
+    (apply
+      'firefox
+      (list )
+      (append
+        overrides
+        (list
+          :late-urls (list "https://midpass.ru/")
+          :extensions (mapcar 'namestring (directory (~ ".nix-personal/personal-firefox-extensions-result/*.*")))
+          :pass-stderr nil
+          :pass-stdout nil
+          :wait nil
+          :no-close t 
+          :stumpwm-tags "midpass"
+          :javascript t
+          :socks-proxy 1080
+          :name "midpass-sandbox"
+          :home home
+          :tmp t
+          :profile-storage (format nil "~a/firefox-profile" home)
+          :grant (list home))))))
+
 (defun enter-labri (&rest args &key (brightness 400) (extra-ips `())
                           (location "LaBRI.fr")
                           &allow-other-keys)
