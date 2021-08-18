@@ -6,10 +6,16 @@
   *compile-file-pathname*
   *load-pathname*))
 
-(defvar *common-rc*
+(defparameter *common-rc*
   (format nil
-          "~a/src/nix/lang-os/user/user-shell.lisp"
-          (uiop:getenv "HOME")))
+          "~a/user-shell.lisp"
+          (cl-ppcre:regex-replace 
+            "/[^/]*$" 
+            (namestring
+              (or 
+                *compile-file-pathname*
+                *load-pathname*))
+            "")))
 
 (load *common-rc*)
 (defun edrc-common () (ed *common-rc*))

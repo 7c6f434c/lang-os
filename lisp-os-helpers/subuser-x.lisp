@@ -116,22 +116,24 @@
         :verbose verbose-errors))))
 
 (defun reset-firefox-launcher (&key profile-contents nix-path nix-wrapper-file
-                                    out-link verbose)
+                                    out-link verbose fast)
   (setf *firefox-profile-contents* profile-contents)
   (let
     ((firefox-scripts 
        (namestring
          (truename
-           (nix-build
-             (format
-               nil
-               "with import ~s { profileContent = \"\" + ~a; }; firefoxScripts"
-               nix-wrapper-file 
-               (cl-ppcre:regex-replace
-                 "/$" (namestring (truename profile-contents)) ""))
-             :nix-path nix-path
-             :out-link out-link
-             :verbose verbose)))))
+           (if (and out-link fast)
+             out-link
+             (nix-build
+               (format
+                 nil
+                 "with import ~s { profileContent = \"\" + ~a; }; firefoxScripts"
+                 nix-wrapper-file 
+                 (cl-ppcre:regex-replace
+                   "/$" (namestring (truename profile-contents)) ""))
+               :nix-path nix-path
+               :out-link out-link
+               :verbose verbose))))))
     (setf *firefox-profile-combiner* 
           (format nil "~a/bin/~a" firefox-scripts "combine-firefox-profile"))
     (setf *firefox-launcher*
@@ -139,36 +141,46 @@
 
 (defun reset-bus-helpers
   (&key
-    (nix-path (cl-ppcre:split ":" (uiop:getenv "NIX_PATH"))) nix-file out-link)
-  (setf
-    *dbus-helper* 
-    (format nil 
-            "~a/bin/with-dbus"
-            (namestring
-              (truename
-                (nix-build
-                  "withDBus" :nix-file nix-file
-                  :nix-path nix-path
-                  :out-link (when out-link (format nil "~a-dbus" out-link))))))
-    *pulseaudio-helper*
-    (format nil 
-            "~a/bin/with-pulseaudio"
-            (namestring
-              (truename
-                (nix-build
-                  "withPulseaudio" :nix-file nix-file
-                  :nix-path nix-path
-                  :out-link (when out-link (format nil "~a-pa" out-link))))))
-    *owned-home-helper*
-    (format nil 
-            "~a/bin/with-owned-home"
-            (namestring
-              (truename
-                (nix-build
-                  "withOwnedHome" :nix-file nix-file
-                  :nix-path nix-path
-                  :out-link (when out-link (format nil "~a-owned-home" out-link))))))
-    ))
+    (nix-path (cl-ppcre:split ":" (uiop:getenv "NIX_PATH"))) nix-file
+    out-link fast)
+  (let (
+        (dbus-out-link (when out-link (format nil "~a-dbus" out-link)))
+        (pulseaudio-out-link (when out-link (format nil "~a-pa" out-link)))
+        (owned-home-out-link (when out-link (format nil "~a-owned-home" out-link)))
+        )
+    (if (and fast out-link)
+      (setf *dbus-helper* dbus-out-link
+            *pulseaudio-helper* pulseaudio-out-link
+            *owned-home-helper* owned-home-out-link)
+      (setf
+        *dbus-helper* 
+        (format nil 
+                "~a/bin/with-dbus"
+                (namestring
+                  (truename
+                    (nix-build
+                      "withDBus" :nix-file nix-file
+                      :nix-path nix-path
+                      :out-link dbus-out-link))))
+        *pulseaudio-helper*
+        (format nil 
+                "~a/bin/with-pulseaudio"
+                (namestring
+                  (truename
+                    (nix-build
+                      "withPulseaudio" :nix-file nix-file
+                      :nix-path nix-path
+                      :out-link pulseaudio-out-link))))
+        *owned-home-helper*
+        (format nil 
+                "~a/bin/with-owned-home"
+                (namestring
+                  (truename
+                    (nix-build
+                      "withOwnedHome" :nix-file nix-file
+                      :nix-path nix-path
+                      :out-link owned-home-out-link))))
+        ))))
 
 (defun firefox-pref-value-js (value)
   (cond

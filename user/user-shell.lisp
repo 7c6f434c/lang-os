@@ -283,7 +283,7 @@
 
 (defvar *firefox-variants* (make-hash-table))
 
-(defun update-firefox-launcher (&optional variant)
+(defun update-firefox-launcher (&key variant fast) 
   (let ((variant-string (if variant (string-downcase (format nil "-~a" variant)) "")))
     (with-firefox-launcher
       (nil nil nil)
@@ -292,6 +292,7 @@
         :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
                                   ($ :home))
         :out-link (~ ".nix-personal" (concatenate 'string "firefox-launcher" variant-string))
+        :fast fast
         :profile-contents
         (format nil "~a/src/nix/lang-os/user/firefox-profile-skel~a/"
                 ($ :home)
@@ -303,17 +304,21 @@
         :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
         :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")
         :out-link (~ ".nix-personal/bus-wrapper")
-        ))
+        :fast fast))
     (unless variant
       (let ((pack (gethash nil *firefox-variants*)))
         (setf *firefox-profile-contents* (first pack)
               *firefox-profile-combiner* (second pack)
               *firefox-launcher* (third pack))))))
 
+(defun update-firefox-variants (&key fast)
+  (update-firefox-launcher :fast fast)
+  (update-firefox-launcher :variant 'natural :fast fast)
+  (update-firefox-launcher :variant 'noconfig :fast fast))
+
 (unless lisp-os-helpers/subuser-x:*firefox-launcher*
-  (update-firefox-launcher)
-  (update-firefox-launcher 'natural)
-  (update-firefox-launcher 'noconfig))
+  (when (probe-file (~ "src/nix/lang-os"))
+    (update-firefox-variants)))
 
 (defun ethernet-attached (interface)
   (getf (first (lisp-os-helpers/network::parsed-ip-address-show interface)) :lower-up))
@@ -1058,3 +1063,7 @@
       (uiop:run-program (list "chmod" "u+rwX" "-R" (namestring path)))
       (uiop:run-program (list "rm" "-r" "-f" (namestring path)))
       path)))
+
+(defvar *shell-init-hooks* nil)
+(defun lisp-shell-init () (mapcar 'funcall *shell-init-hooks*))
+(push (lambda () (update-firefox-variants :fast t)) *shell-init-hooks*)
