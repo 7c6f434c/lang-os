@@ -785,7 +785,7 @@
   (when randr (& := (:display (or ($ :display) ":0")) x-randr-options))
   (when re-wifi (sudo::rewifi)))
 
-(defun boot-login-init (&key (wifi "wlan0"))
+(defun boot-login-init (&key (wifi "wlan0") (sound "usb"))
   (ask-with-auth (:presence t)
                  `(list
                     ,(if wifi
@@ -793,7 +793,7 @@
                           (ensure-wifi
                             ,(if (stringp wifi) wifi "wlan0")))
                        `(list))
-                    (load-sound "usb")
+                    (load-sound ,sound)
                     (storage-modules) (usb-hid-modules)
                     (usb-eth-modules) (laptop-power-modules)
                     (hostname "localhost")
@@ -1067,3 +1067,4 @@
 (defvar *shell-init-hooks* nil)
 (defun lisp-shell-init () (mapcar 'funcall *shell-init-hooks*))
 (push (lambda () (update-firefox-variants :fast t)) *shell-init-hooks*)
+(push (lambda () (uiop:setup-temporary-directory)) *shell-init-hooks*)

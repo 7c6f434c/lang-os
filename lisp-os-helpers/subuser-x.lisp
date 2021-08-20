@@ -123,7 +123,7 @@
        (namestring
          (truename
            (if (and out-link fast)
-             out-link
+             (namestring (truename out-link))
              (nix-build
                (format
                  nil
@@ -147,40 +147,53 @@
         (dbus-out-link (when out-link (format nil "~a-dbus" out-link)))
         (pulseaudio-out-link (when out-link (format nil "~a-pa" out-link)))
         (owned-home-out-link (when out-link (format nil "~a-owned-home" out-link)))
+        dbus-helper pulseaudio-helper owned-home-helper
         )
     (if (and fast out-link)
-      (setf *dbus-helper* dbus-out-link
-            *pulseaudio-helper* pulseaudio-out-link
-            *owned-home-helper* owned-home-out-link)
-      (setf
-        *dbus-helper* 
-        (format nil 
-                "~a/bin/with-dbus"
-                (namestring
-                  (truename
-                    (nix-build
-                      "withDBus" :nix-file nix-file
-                      :nix-path nix-path
-                      :out-link dbus-out-link))))
-        *pulseaudio-helper*
-        (format nil 
-                "~a/bin/with-pulseaudio"
-                (namestring
-                  (truename
-                    (nix-build
-                      "withPulseaudio" :nix-file nix-file
-                      :nix-path nix-path
-                      :out-link pulseaudio-out-link))))
-        *owned-home-helper*
-        (format nil 
-                "~a/bin/with-owned-home"
-                (namestring
-                  (truename
-                    (nix-build
-                      "withOwnedHome" :nix-file nix-file
-                      :nix-path nix-path
-                      :out-link owned-home-out-link))))
-        ))))
+      (setf 
+        dbus-helper dbus-out-link
+        pulseaudio-helper pulseaudio-out-link
+        owned-home-helper owned-home-out-link
+        )
+      (setf 
+        dbus-helper
+        (nix-build
+          "withDBus" :nix-file nix-file
+          :nix-path nix-path
+          :out-link dbus-out-link)
+        pulseaudio-helper
+        (nix-build
+          "withPulseaudio" :nix-file nix-file
+          :nix-path nix-path
+          :out-link pulseaudio-out-link)
+        owned-home-helper
+        (nix-build
+          "withOwnedHome" :nix-file nix-file
+          :nix-path nix-path
+          :out-link owned-home-out-link)
+        )
+      )
+    (setf
+      *dbus-helper* 
+      (format nil 
+              "~a/bin/with-dbus"
+              (namestring
+                (truename
+                  dbus-helper)))
+      *pulseaudio-helper*
+      (format nil 
+              "~a/bin/with-pulseaudio"
+              (namestring
+                (truename
+                  pulseaudio-helper)))
+      *owned-home-helper*
+      (format nil 
+              "~a/bin/with-owned-home"
+              (namestring
+                (truename
+                  owned-home-helper)))
+      )
+    ))
 
 (defun firefox-pref-value-js (value)
   (cond
