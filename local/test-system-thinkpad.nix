@@ -21,15 +21,37 @@
     '';
   });
 
+  stumpwmConfigDir = /home/raskin/src/lsp/stumpwm-config;
+  stumpwmContrib = /home/repos/stumpwm-contrib;
+  stumpwmLangOS = ../stumpwm;
+
+  stumpwmWithConfig = self.pkgs.runCommand "stumpwm-with-config" {} ''
+    mkdir -p "$out/bin"
+    cp -r "${self.stumpwmContrib}" "contrib"
+    chmod u+rwX -R contrib
+    export HOME="$PWD"
+    ${self.stumpwmWithDeps}/bin/stumpwm-lisp-launcher.sh \
+      --eval '(require :stumpwm)' --eval '(in-package :stumpwm)' \
+      --eval '(defvar stumpwm::*local-module-dir* "'"$PWD"'/contrib/")' \
+      --eval '(defvar stumpwm::*langos* "${self.stumpwmLangOS}/")' \
+      --load "${self.stumpwmConfigDir}"/setup.lisp \
+      --load "${self.stumpwmConfigDir}"/all-defs.lisp \
+      --eval '(sb-ext:save-lisp-and-die "'"$out"'/bin/stumpwm-with-config" 
+        :executable t )'
+    test -x "$out/bin/stumpwm-with-config"
+  '';
+
+
   swPackages = super.swPackages ++ (with self.pkgs; [
     zsh python expect firmwareLinuxNonfree
     alsaUtils alsaTools mplayer rxvt_unicode mlterm
     androidenv.androidPkgs_9_0.platform-tools adb-sync
     powertop
-    (runCommand "local-keymap" {} ''
+    (self.pkgs.runCommand "local-keymap" {} ''
       mkdir -p "$out/share/keymaps/local/"
       ln -s ${./ru-en.map} "$out/share/keymaps/local/ru-en.map"
     '')
+    self.stumpwmWithConfig
   ]);
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;

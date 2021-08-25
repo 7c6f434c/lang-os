@@ -27,12 +27,12 @@
   (window-pid-p w pid))
 
 (defun-set-tags-by-condition
-  set-tags-by-prop-string (prop-string) (w)
-  (window-prop-string-p w prop-string))
+  set-tags-by-prop-string (prop-string value) (w)
+  (window-prop-string-p w prop-string value))
 
 (defun-set-tags-by-condition
-  set-tags-by-prop-int (prop-int) (w)
-  (window-prop-int-p w prop-int))
+  set-tags-by-prop-int (prop-int value) (w)
+  (window-prop-int-p w prop-int value))
 
 (defun-set-tags-by-condition
   set-tags-by-hostname-and-pid (hostname pid) (w)

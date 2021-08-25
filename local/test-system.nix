@@ -171,6 +171,13 @@ pkgs.lib.makeExtensible (self: with self; {
       openglPackages32;
   };
 
+  stumpwmWithDeps =
+  (self.pkgs.lib.overrideDerivation self.pkgs.lispPackages.stumpwm (x: {
+      linkedSystems = x.linkedSystems ++ ["clx-truetype" "xkeyboard" "xembed"];
+      buildInputs = x.buildInputs ++
+        (with self.pkgs.lispPackages; [clx-truetype xkeyboard xembed]);
+  }));
+
   swPackages = swPieces.corePackages ++ (with self.pkgs; [
         (hiPrio glibcLocales)
         vim monotone screen xterm xorg.xprop
@@ -182,11 +189,8 @@ pkgs.lib.makeExtensible (self: with self; {
             sed -e s/YYUSE/YY_USE/g -i kafel/src/*.y
           '';
         }))
+        stumpwmWithDeps
         unionfs-fuse
-        (lib.overrideDerivation lispPackages.stumpwm (x: {
-          linkedSystems = x.linkedSystems ++ ["clx-truetype" "xkeyboard" "xembed"];
-          buildInputs = x.buildInputs ++ (with lispPackages; [clx-truetype xkeyboard xembed]);
-        }))
         xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host iotop syslogng
         sway swaybg tunctl
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
@@ -195,6 +199,14 @@ pkgs.lib.makeExtensible (self: with self; {
         (swPieces.cProgram "numeric-su" ../c/numeric-su.c [] [])
         (swPieces.cProgram "simulate-setuid" ../c/simulate-setid.c [] [])
         lispOsHelpers
+        (self.pkgs.runCommand "dejavu-fonts-sliced" {} ''
+          mkdir -p "$out/share/fonts-sliced"
+          cd "$out/share/fonts-sliced"
+          for i in $(find "${self.pkgs.dejavu_fonts}" -name "*.ttf"); do
+            mkdir "$(basename "$i" .ttf)"
+            ln -s "$i" "$(basename "$i" .ttf)/"
+          done
+        '')
       ]) ++ (with stage1; [firmwareSet] ++ _kernelModulePackages)
       ++ systemFonts;
 
@@ -300,6 +312,31 @@ pkgs.lib.makeExtensible (self: with self; {
     useSandbox = true;
   };
 
+  NixOSEtcFonts = (fromNixOS.etcSelectComponent "fonts" {
+    fonts = {
+      fonts = systemFonts;
+      enableDefaultFonts = true;
+      fontconfig = {
+        enable = true;
+        hinting.autohint = true;
+        confPackages = fontconfigConfPackages;
+      };
+    };
+  });
+
+  gdFontPath = self.pkgs.runCommand "gd-font-path" {} ''
+    mkdir -p "$out"
+    ( find $(
+      cat $(find -L "${self.NixOSEtcFonts.fonts}" -name "*.conf" -type f | tee /dev/stderr) | grep "[<]dir[>]" |
+      sed -e 's@</dir>@&\n@g' |
+      sed -e 's@<dir>@\n&@g' |
+      grep "[<]dir[>]" |
+      sed -e 's@<[^>]*>@@g' | grep . |
+      sed -e 's@.*@&/lib/X11/fonts\n&/share/fonts@' | tee /dev/stderr
+    ) -type d 2>/dev/null || true) |
+    tr '\n' : | sed -e 's/:$//' > "$out/gd-font-path.conf"
+  '';
+
   systemEtc = self.pkgs.buildEnv {
     name = "system-etc";
     paths = [
@@ -323,17 +360,8 @@ pkgs.lib.makeExtensible (self: with self; {
           "pki/tls/certs/ca-bundle.crt" =  "${self.pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
         })
       (etcPieces.deeplinkAttrset "etc-fonts"
-       (fromNixOS.etcSelectComponent "fonts" {
-          fonts = {
-            fonts = systemFonts;
-            enableDefaultFonts = true;
-            fontconfig = {
-              enable = true;
-              hinting.autohint = true;
-              confPackages = fontconfigConfPackages;
-            };
-          };
-        }))
+       NixOSEtcFonts)
+      gdFontPath
       (etcPieces.deeplinkAttrset "etc-nix"
         (fromNixOS.etcSelectPrefix "nix/" {
           nix = nixOptions;
