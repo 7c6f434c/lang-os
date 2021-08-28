@@ -23,13 +23,14 @@
 
     installPhase = ''
       mkdir -p "$out/bin"
-      NIX_LISP_PRELAUNCH_HOOK='nix_lisp_run_single_form "(progn
+      common-lisp.sh --eval '(progn
         (asdf:load-system :lisp-os-helpers)
-        "'"'"'${loadrc src}'"'"'"
-        (funcall (find-symbol \"BUILD-SHELL\"
-                    (find-package \"LISP-OS-HELPERS/USER-ABBREVIATIONS\")) 
-            \""'"$out/bin/user-lisp-shell"'"\")
-      )"' common-lisp.sh
+        ${loadrc src}
+        (funcall (find-symbol "BUILD-SHELL"
+                    (find-package "LISP-OS-HELPERS/USER-ABBREVIATIONS")) 
+            "'"$out"'/bin/user-lisp-shell")
+      )'
+     test -x "$out/bin/user-lisp-shell"
     '';
   };
 }

@@ -264,6 +264,8 @@
   (ask-with-auth (:presence t)
                  `(console-keymap ,@(when keymap (list keymap)))))
 
+(defvar *firefox-variants* (make-hash-table :test 'equal))
+
 (defmacro with-firefox-launcher ((profile combiner launcher) &body body)
   `(let* ((*firefox-profile-contents* ,profile)
           (*firefox-profile-combiner* ,combiner)
@@ -279,9 +281,8 @@
        (with-firefox-launcher ((first ,p) (second ,p) (third ,p)) ,@body))))
 
 (defmacro with-firefox-variant ((&optional variant) &body body)
-  `(with-firefox-launcher-packed ((gethash ,variant *firefox-variants*)) ,@body))
-
-(defvar *firefox-variants* (make-hash-table))
+  `(with-firefox-launcher-packed 
+     ((gethash ,(string-downcase variant) *firefox-variants*)) ,@body))
 
 (defun update-firefox-launcher (&key variant fast) 
   (let ((variant-string (if variant (string-downcase (format nil "-~a" variant)) "")))
@@ -298,7 +299,7 @@
                 ($ :home)
                 variant-string)
         :verbose t)
-      (setf (gethash variant *firefox-variants*)
+      (setf (gethash (string-downcase variant) *firefox-variants*)
             (list *firefox-profile-contents* *firefox-profile-combiner* *firefox-launcher*))
       (reset-bus-helpers
         :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
@@ -318,7 +319,7 @@
 
 (unless lisp-os-helpers/subuser-x:*firefox-launcher*
   (when (probe-file (~ "src/nix/lang-os"))
-    (update-firefox-variants)))
+    (update-firefox-variants :fast t)))
 
 (defun ethernet-attached (interface)
   (getf (first (lisp-os-helpers/network::parsed-ip-address-show interface)) :lower-up))
