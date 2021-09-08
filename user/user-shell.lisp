@@ -299,8 +299,14 @@
                 ($ :home)
                 variant-string)
         :verbose t)
-      (setf (gethash (string-downcase variant) *firefox-variants*)
-            (list *firefox-profile-contents* *firefox-profile-combiner* *firefox-launcher*))
+      (setf 
+        (gethash (string-downcase variant) *firefox-variants*)
+        (list *firefox-profile-contents* *firefox-profile-combiner* *firefox-launcher*)
+        (gethash (string-upcase variant) *firefox-variants*)
+        (list *firefox-profile-contents* *firefox-profile-combiner* *firefox-launcher*)
+        (gethash variant *firefox-variants*)
+        (list *firefox-profile-contents* *firefox-profile-combiner* *firefox-launcher*)
+        )
       (reset-bus-helpers
         :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
         :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")
