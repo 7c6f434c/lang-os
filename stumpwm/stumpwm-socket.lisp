@@ -9,6 +9,7 @@
     (sb-ext:run-program "chmod" (list "u=rwx" "og=" socket-container)
                         :search t :wait t)
     (format *trace-output* "Socket FS preparations done~%")
+    (sleep 0.1)
     (sb-bsd-sockets:socket-bind socket socket-name)
     (sb-bsd-sockets:socket-listen socket 3)
     (format *trace-output* "Socket created~%")
