@@ -1,7 +1,7 @@
 (import ./test-system.nix {}).extend ( self: super: {
   stage1 = super.stage1.extend (s1self: s1super: {
-    #kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux_latest;
-    kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux;
+    kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux_latest;
+    #kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux;
 
     mountScript = ''
       modprobe atkbd
