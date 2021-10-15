@@ -712,7 +712,11 @@
   (uiop:run-program
     (list "loadkeys"
           (if keymap
-            (format nil "/run/current-system/sw/share/keymaps/~a" keymap)
+            (namestring 
+              (truename
+                (format 
+                  nil "/run/current-system/sw/share/keymaps/~a" 
+                  keymap)))
             "-d"))))
 
 (defun start-sway-allowed-p (context)
