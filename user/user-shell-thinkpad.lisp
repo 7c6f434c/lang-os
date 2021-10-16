@@ -274,7 +274,6 @@
          ))
     (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home))))
   (ensure-vps-socks)
-  (&& (sleep 1) (! web-stream-updater-starter detach))
   (! x-options))
 
 (defun enter-home-poing (&rest args)
@@ -282,8 +281,7 @@
          (append args
                  (list :location "home@Poing"
                        :extra-requests `((local-resolv-conf)))))
-  (ensure-vps-socks)
-  (&& (sleep 1) (! web-stream-updater-starter detach)))
+  (ensure-vps-socks))
 
 (defun enter-home-moscow (&rest args)
   (apply 'enter-home
