@@ -530,7 +530,9 @@
      )
     (cond
       ((not (or (cl-ppcre:scan "^sd[b-z][1-9]$" device)
-                (cl-ppcre:scan "^OffStorage_[0-9]+/" device))) "wrong-device-name")
+                (cl-ppcre:scan "^OffStorage_[-_0-9]+/" device)
+                (cl-ppcre:scan "^OffStorage-[-_0-9]+/" device)
+                )) "wrong-device-name")
       ((not (ignore-errors (modprobe "uas") (modprobe "usb-storage") t))
        "modprobe-failure")
       ((not (probe-file full-path)) "no-device")
