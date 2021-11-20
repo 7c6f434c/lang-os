@@ -99,8 +99,8 @@ rec {
              ["hostname" "hosts" "nsswitch.conf"]
              {
                networking.hostName="localhost";
-               networking.hosts."127.0.0.1" = ["localhost4" "localhost"];
-               networking.hosts."::1" = ["localhost6"];
+               networking.hosts."127.0.0.1" = ["localhost4" "localhost" "localhost4.local"];
+               networking.hosts."::1" = ["localhost6" "localhost6.local"];
              })
      // resolvEtc.entries // ianaEtc.entries //
      { "machine-id" = "/var/etc/machine-id"; }
