@@ -49,6 +49,8 @@ user_pref("browser.search.suggest.enabled", false);
 user_pref("browser.search.update", false);
 user_pref("browser.sessionhistory.max_entries", 999);
 user_pref("browser.sessionstore.max_windows_undo", 1);
+user_pref("browser.sessionstore.resume_from_crash", false);
+user_pref("browser.sessionstore.max_resumed_crashes", 0);
 user_pref("browser.sessionstore.upgradeBackup.latestBuildID", "0");
 user_pref("browser.shell.checkDefaultBrowser", false);
 user_pref("browser.startup.homepage", "about:blank");
