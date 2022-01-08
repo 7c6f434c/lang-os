@@ -16,6 +16,7 @@ pkgs.lib.makeExtensible (self: with self; {
   mozrunner = callPackage ./marionette-harness/mozrunner.nix { };
   moztest = callPackage ./marionette-harness/moztest.nix { };
   mozversion = callPackage ./marionette-harness/mozversion.nix { };
+  mozterm = callPackage ./marionette-harness/mozterm.nix {};
 
   hpack = callPackage ./marionette-harness/hpack.nix { };
   h2 = callPackage ./marionette-harness/h2.nix { };
