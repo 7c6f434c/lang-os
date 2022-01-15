@@ -29,4 +29,12 @@ pkgs.lib.makeExtensible (self: with self; {
 
   certifi = callPackage ./marionette-harness/certifi.nix {};
   urllib3 = callPackage ./marionette-harness/urllib3.nix {};
+
+  hypothesis = callPackage ./marionette-harness/hypothesis.nix {};
+  pytest-xdist = callPackage ./marionette-harness/pytest-xdist.nix {};
+  pytest_xdist = pytest-xdist;
+  chardet = callPackage ./marionette-harness/chardet.nix {};
+  cryptography = callPackage ./marionette-harness/cryptography.nix {};
+  iso8601 = callPackage ./marionette-harness/iso8601.nix {};
+  pyopenssl = callPackage ./marionette-harness/pyopenssl.nix {};
 })
