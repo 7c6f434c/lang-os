@@ -551,7 +551,8 @@
                   (probe-file marker-path)
                   (ignore-errors
                     (uiop:run-program
-                      (list "/root/script/backup_notebook" backup-path)
+                      (list "/root/script/backup_notebook" 
+                            backup-path "auto-backup-here")
                       :output
                       (format nil "/tmp/backup-~a.log" device-marker)
                       :error-output :output)
