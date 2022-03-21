@@ -72,6 +72,7 @@
     extraOptions = super.nixOptions.extraOptions or "" + ''
           gc-keep-outputs = true
           gc-keep-derivations = true
+          experimental-features = nix-command
     '';
   };
 
