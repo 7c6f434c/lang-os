@@ -247,6 +247,9 @@ pkgs.lib.makeExtensible (self: with self; {
       "from-nixos/postgresql" = fromNixOS.serviceScript "postgresql"
         { services.postgresql.enable = true;
           services.postgresql.package = postgresql-package;
+          services.postgresql.authentication = ''
+            local all all md5
+          '';
           services.postgresql.extraConfig = ''
             max_locks_per_transaction = 64
             shared_buffers = 131072
