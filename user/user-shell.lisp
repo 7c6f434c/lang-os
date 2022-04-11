@@ -1,4 +1,6 @@
 ; vim:filetype=lisp
+(defvar *lisp-os-helpers-package*)
+
 (defun load-helpers ()
   (require :sb-posix)
   (require :sb-bsd-sockets)

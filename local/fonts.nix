@@ -15,7 +15,7 @@
       pkgs.unifont_upper
       pkgs.freefont_ttf
       pkgs.clearlyU
-      pkgs.ucsFonts
+      pkgs.ucs-fonts
       pkgs.wqy_zenhei
       pkgs.junicode
       pkgs.lmodern
@@ -30,7 +30,7 @@
       pkgs.cm_unicode
       pkgs.lmmath
       pkgs.comic-neue
-      pkgs.iosevka
+      pkgs.iosevka-bin
       /*pkgs.symbola*/
       (pkgs.ghostscript + "/share/ghostscript/fonts/")
       pkgs.mph_2b_damase

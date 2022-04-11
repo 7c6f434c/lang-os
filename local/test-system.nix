@@ -229,7 +229,7 @@ pkgs.lib.makeExtensible (self: with self; {
     setuid = import ../system-setuid.nix {
       setuidPrograms = [
         { name = "su"; src="${self.pkgs.shadow.su}/bin/su"; setuid=true; }
-        { name = "unix_chkpwd"; src="${self.pkgs.pam}/bin/unix_chkpwd.orig"; setuid=true; }
+        { name = "unix_chkpwd"; src="${self.pkgs.pam}/bin/unix_chkpwd"; setuid=true; }
         { name = "fusermount"; src="${self.pkgs.fuse}/bin/fusermount"; setuid=true; }
         { name = "fusermount3"; src="${self.pkgs.fuse3}/bin/fusermount3"; setuid=true; }
       ];
@@ -260,7 +260,7 @@ pkgs.lib.makeExtensible (self: with self; {
            enable = true;
 	   gutenprint = true;
 	   drivers = with self.pkgs; [
-	     foo2zjs foomatic_filters ghostscript cups_filters samba
+	     foo2zjs foomatic-filters ghostscript cups-filters samba
              /* hplip */
 	   ];
          };
