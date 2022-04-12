@@ -140,7 +140,7 @@
       :pass-stdout nil
       :wait nil
       :no-close t 
-      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags"
+      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags dev.mccme.ru"
       :javascript t
       :socks-proxy 1080
       :name "riot-sandbox"
@@ -165,6 +165,27 @@
       :javascript t
       :socks-proxy 1080
       :name "nix-riot-sandbox"
+      :home home
+      :profile-storage (format nil "~a/firefox-profile" home)
+      :grant (list home))))
+
+(defun subuser-tum-riot-firefox ()
+  (let* ((home (format nil "~a/.local/share/riot-tum-home"
+                       (uiop:getenv "HOME"))))
+    (ignore-errors
+      (ask-with-auth 
+        ()
+        `(chown-subuser ,home "" t)))
+    (firefox
+      (list "https://matrix.in.tum.de/")
+      :pass-stderr nil
+      :pass-stdout nil
+      :wait nil
+      :no-close t 
+      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags in.tum.de"
+      :javascript t
+      :socks-proxy 1080
+      :name "tum-riot-sandbox"
       :home home
       :profile-storage (format nil "~a/firefox-profile" home)
       :grant (list home))))
