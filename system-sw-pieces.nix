@@ -5,7 +5,7 @@
   corePackages = with pkgs; [
     coreutils utillinux grub2_efi bashInteractive nix shadow
     iproute openssh curl procps gnugrep gnused gptfdisk
-    cpio dhcp less nettools iw wpa_supplicant findutils
+    cpio dhcp dhcpcd less nettools iw wpa_supplicant findutils
     parted gzip bzip2 xz e2fsprogs dosfstools glibc gnutar 
     psmisc pam kbd lynx fuse fuse3 ncurses acl eudev kmod git
     strace efibootmgr gcc binutils socat rlwrap fbterm which

@@ -119,6 +119,7 @@
       (ensure-daemon-group "lp")
       (grant-to-user "cups" "/var/lib/cups/")
       (grant-to-group "lp" "/var/lib/cups/")
+      (ensure-daemon-user "dhcpcd")
 
       (unless
         (port-open-p 22)

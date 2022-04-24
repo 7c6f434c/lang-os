@@ -163,17 +163,24 @@
 (defun run-link-dhclient (interface)
   (run-program-return-success
     (uiop:run-program
-      (list "pkill" "-f" (format nil "dhclient -1 ~a" interface))))
-  (alexandria:write-string-into-file "" "/etc/resolv.conf.dhclient-new"
-                                     :if-exists :supersede)
+      (list "dhcpcd" "-x" interface)))
   (run-program-return-success
     (uiop:run-program
-      (list "dhclient" "-1" interface))))
+      (list "cp" "/etc/resolv.conf" "/etc/resolv.conf.dhclient")))
+  (run-program-return-success
+    (uiop:run-program
+      (list "dhcpcd" "-p" interface)))
+  (run-program-return-success
+    (uiop:run-program
+      (list "cp" "/etc/resolv.conf" "/etc/resolv.conf.dhclient-new")))
+  (run-program-return-success
+    (uiop:run-program
+      (list "cp" "/etc/resolv.conf.dhclient" "/etc/resolv.conf"))))
 
 (defun stop-link-dhclient (interface)
   (run-program-return-success
     (uiop:run-program
-      (list "pkill" "-f" (format nil "dhclient (.* )?~a" interface)))))
+      (list "dhcpcd" "-x" interface))))
 
 (defun port-open-p (port &key (host "127.0.0.1"))
   (ignore-errors
