@@ -6,3 +6,4 @@ $TTL 518400
 @	IN	SOA	ns.local. ns.local. ( 0 86400 600 86400000 60 )
 
 ns.local.     3600000 IN      A       127.0.0.1
+dev.mccme.ru.local.     60      IN      A       185.54.136.139
