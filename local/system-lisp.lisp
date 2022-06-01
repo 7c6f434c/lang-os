@@ -429,6 +429,14 @@
   (local-resolv-conf)
   "OK")
 
+(defun socket-command-server-commands::router-resolv-conf (context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
+  (router-resolv-conf)
+  "OK")
+
 (defun socket-command-server-commands::configure-unscoped-ptrace
   (context &optional allowed)
   (require-or

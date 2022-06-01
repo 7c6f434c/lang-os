@@ -18,8 +18,10 @@
     #:stop-wpa-supplicant
     #:wpa-supplicant-wait-connection
     #:wpa-supplicant-running-p
+    #:get-default-gateway
     #:local-resolv-conf
     #:dhcp-resolv-conf
+    #:router-resolv-conf
     #:local-port-open-p
     #:parsed-wpa-network-list
     #:wpa-set-network-status-by-id
@@ -238,6 +240,16 @@
     when (equalp current-state state) return t
     do (sleep sleep)))
 
+(defun get-default-gateway ()
+  (let* ((lines (program-output-lines
+                  `("ip" "route" "show" "default")))
+         (first-line (first lines))
+         (via (cl-ppcre:regex-replace-all
+                " .*"
+                (cl-ppcre:regex-replace-all
+                  "^.* via " first-line "") "")))
+    via))
+
 (defun local-resolv-conf (&optional search)
   (with-open-file
     (f "/var/etc/resolv.conf" :direction :output :if-exists :supersede)
@@ -255,6 +267,13 @@
         "/etc/resolv.conf.dhclient-new"))
     "/etc/resolv.conf"
     :if-exists :supersede))
+
+(defun router-resolv-conf (&optional search)
+  (with-open-file
+    (f "/var/etc/resolv.conf" :direction :output :if-exists :supersede)
+    (when search
+      (format f "search ~a~%" search))
+    (format f "nameserver ~a~%" (get-default-gateway))))
 
 (defun local-port-open-p (port &optional (protocol :tcp) (interface "*"))
   (uiop:run-program

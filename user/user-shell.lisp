@@ -1031,6 +1031,11 @@
                 (:presence t)
                 `(local-resolv-conf)))
 
+(defun-export sudo::router-resolv-conf ()
+              (ask-with-auth
+                (:presence t)
+                `(router-resolv-conf)))
+
 (defun-export sudo::kill-wifi (&optional (interface "wlan0"))
               (ask-with-auth
                 (:presence t)
