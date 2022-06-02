@@ -241,7 +241,8 @@
       "OK")
     (error "Stopping gpm failed")))
 
-(defun socket-command-server-commands::dhclient (context interface &optional copy-resolv)
+(defun socket-command-server-commands::dhclient (context interface &optional 
+                                                         copy-resolv no-resolv router-resolv)
   (require-or
     "Owner access not confirmed"
     (require-root context)
@@ -249,8 +250,9 @@
   (require-presence context)
   (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient"))
   (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient-new"))
-  (run-link-dhclient interface)
-  (when copy-resolv (dhcp-resolv-conf)))
+  (run-link-dhclient interface :no-resolv no-resolv)
+  (when copy-resolv (dhcp-resolv-conf))
+  (when router-resolv (router-resolv-conf)))
 
 (defun socket-command-server-commands::add-ip-address (context interface address &optional (netmask-length 24))
   (require-or
@@ -389,9 +391,13 @@
     (wpa-supplicant-wait-connection interface)
     (error "WiFi connection failed on ~a" interface))
   (unless (find "no-dhcp" options :test 'equalp)
-    (run-link-dhclient interface)
+    (run-link-dhclient 
+      interface 
+      :no-resolv (find "no-resolv" options :test 'equalp))
     (when (find "use-dhcp-resolv-conf" options :test 'equalp)
-      (dhcp-resolv-conf)))
+      (dhcp-resolv-conf))
+    (when (find "use-router-resolv-conf" options :test 'equalp)
+      (router-resolv-conf)))
   "OK")
 
 (defun socket-command-server-commands::kill-wifi

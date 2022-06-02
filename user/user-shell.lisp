@@ -567,13 +567,18 @@
           ,(true-executable "urxvt") "-e" ,@ command)))))
 
 (defun-export
-  sudo::wifi (interface &optional (dhclient t))
+  sudo::wifi (interface &optional 
+                        (dhclient t) (dhcp-resolv nil)
+                        (router-resolv nil))
   (with-system-socket
     ()
     (ask-server
       (with-presence-auth
         "Connect to WiFi"
-        `(ensure-wifi ,interface ,(unless dhclient "no-dhcp"))))))
+        `(ensure-wifi ,interface 
+                      ,(unless dhclient "no-dhcp")
+                      ,(unless dhcp-resolv "no-resolv")
+                      ,(when router-resolv "use-router-resolv-conf"))))))
 
 (defun restart-lisp-shell-server (&key rebuild)
  (when rebuild
@@ -617,6 +622,7 @@
 
 (defun-export
   sudo::rewifi (&key (interface "wlan0") restart (dhcp t) dhcp-resolv-conf
+                     router-resolv-conf (no-dhcp-resolv t)
                      reload-module no-dns-forward)
   (ask-with-auth
     (:presence "Reconnect to WiFi")
@@ -624,8 +630,11 @@
     (if dhcp-resolv-conf `(progn) `(local-resolv-conf))
     `(ensure-wifi ,interface ,(when restart "restart") ,(unless dhcp "no-dhcp")
                   ,(when dhcp-resolv-conf "use-dhcp-resolv-conf")
+                  ,(when no-dhcp-resolv "no-resolv")
+                  ,(when router-resolv-conf "use-router-resolv-conf")
                   ,(when reload-module "reload-module"))
-    `(reconfigure-bind "restart" ,@(when no-dns-forward `("empty"))))
+    `(reconfigure-bind "restart" 
+                       ,@(when (or no-dns-forward no-dhcp-resolv) `("empty"))))
   (! proxy-restart (format nil "~a/src/rc/squid/direct.squid" ($ :home))))
 
 (defun grab-fuse (&optional name)
