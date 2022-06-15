@@ -162,7 +162,7 @@
   (uiop:run-program
     (list "ip" "link" "set" interface "down")))
 
-(defun run-link-dhclient (interface &key no-resolv)
+(defun run-link-dhclient (interface &key no-resolv once)
   (run-program-return-success
     (uiop:run-program
       (list "dhcpcd" "-x" interface)))
@@ -171,7 +171,11 @@
       (list "cp" "/etc/resolv.conf" "/etc/resolv.conf.dhclient")))
   (run-program-return-success
     (uiop:run-program
-      `("dhcpcd" "-p" interface ,@(when no-resolv `("-C" "resolv.conf")))))
+      `("dhcpcd"
+        "-p" ,interface 
+        ,@(when no-resolv `("-C" "resolv.conf"))
+        ,@(when once `("-1"))
+        )))
   (run-program-return-success
     (uiop:run-program
       (list "cp" "/etc/resolv.conf" "/etc/resolv.conf.dhclient-new")))

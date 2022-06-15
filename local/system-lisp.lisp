@@ -242,7 +242,7 @@
     (error "Stopping gpm failed")))
 
 (defun socket-command-server-commands::dhclient (context interface &optional 
-                                                         copy-resolv no-resolv router-resolv)
+                                                         copy-resolv no-resolv router-resolv once)
   (require-or
     "Owner access not confirmed"
     (require-root context)
@@ -250,7 +250,7 @@
   (require-presence context)
   (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient"))
   (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient-new"))
-  (run-link-dhclient interface :no-resolv no-resolv)
+  (run-link-dhclient interface :no-resolv no-resolv :once once)
   (when copy-resolv (dhcp-resolv-conf))
   (when router-resolv (router-resolv-conf)))
 
@@ -393,7 +393,8 @@
   (unless (find "no-dhcp" options :test 'equalp)
     (run-link-dhclient 
       interface 
-      :no-resolv (find "no-resolv" options :test 'equalp))
+      :no-resolv (find "no-resolv" options :test 'equalp)
+      :once (find "dhcp-once" options :test 'equalp))
     (when (find "use-dhcp-resolv-conf" options :test 'equalp)
       (dhcp-resolv-conf))
     (when (find "use-router-resolv-conf" options :test 'equalp)
