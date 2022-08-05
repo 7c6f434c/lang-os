@@ -428,6 +428,11 @@
   (assert (or (null family) (integerp family) (parse-integer family)))
   (flush-ip-addresses interface :family family))
 
+(defun socket-command-server-commands::make-interface-local
+  (context interface &optional (family 4))
+  (require-presence context)
+  (make-interface-local interface family))
+
 (defun socket-command-server-commands::local-resolv-conf (context)
   (require-or
     "User presence not confirmed"

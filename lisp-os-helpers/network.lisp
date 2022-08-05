@@ -19,6 +19,7 @@
     #:wpa-supplicant-wait-connection
     #:wpa-supplicant-running-p
     #:get-default-gateway
+    #:make-interface-local
     #:local-resolv-conf
     #:dhcp-resolv-conf
     #:router-resolv-conf
@@ -253,6 +254,10 @@
                 (cl-ppcre:regex-replace-all
                   "^.* via " first-line "") "")))
     via))
+
+(defun make-interface-local (interface family)
+  (uiop:run-program
+    `("ip" ,(format nil "-~d" family) "route" "delete" "default" "dev" ,interface)))
 
 (defun local-resolv-conf (&optional search)
   (with-open-file
