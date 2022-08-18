@@ -37,4 +37,7 @@ pkgs.lib.makeExtensible (self: with self; {
   cryptography = callPackage ./marionette-harness/cryptography.nix {};
   iso8601 = callPackage ./marionette-harness/iso8601.nix {};
   pyopenssl = callPackage ./marionette-harness/pyopenssl.nix {};
+
+  apipkg = callPackage ./marionette-harness/apipkg.nix {};
+  execnet = callPackage ./marionette-harness/execnet.nix {};
 })
