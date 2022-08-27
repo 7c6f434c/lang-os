@@ -685,16 +685,20 @@
 
 (defun email-fetchers-fast ()
   (email-fetcher "-main" 20)
+  (email-fetcher "-services" 20)
   (email-fetcher "" 60)
-  (email-fetcher "-qip" 300))
+  (email-fetcher "-qip" 300)
+  )
 
 (defun email-fetchers-slow ()
   (email-fetcher "-main" 60)
+  (email-fetcher "-services" 60)
   (email-fetcher "" 300)
   (email-fetcher "-qip" 1200))
 
 (defun email-fetchers-ultraslow ()
   (email-fetcher "-main" 900)
+  (email-fetcher "-services" 900)
   (email-fetcher "" 1800)
   (email-fetcher "-qip" 7200))
 
