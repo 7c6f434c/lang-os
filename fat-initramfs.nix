@@ -58,7 +58,7 @@ pkgs.lib.makeExtensible (self: with self; {
       (with pkgs; [
         (lowPrio busybox)
         kmod bashInteractive lvm2 cryptsetup coreutils
-        gnugrep gnused eudev strace utillinux e2fsprogs
+        gnugrep gnused eudev strace util-linux e2fsprogs
       ])
       ++ (maybeCall tools pkgs);
     ignoreCollisions = true;

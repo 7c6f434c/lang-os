@@ -45,7 +45,7 @@
 
   swPackages = super.swPackages ++ (with self.pkgs; [
     zsh python expect firmwareLinuxNonfree
-    alsaUtils alsaTools mplayer rxvt_unicode mlterm
+    alsa-utils alsa-tools mplayer rxvt-unicode mlterm
     androidenv.androidPkgs_9_0.platform-tools adb-sync
     powertop
     (self.pkgs.runCommand "local-keymap" {} ''

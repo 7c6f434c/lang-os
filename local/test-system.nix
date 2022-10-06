@@ -173,9 +173,14 @@ pkgs.lib.makeExtensible (self: with self; {
 
   stumpwmWithDeps =
   (self.pkgs.lib.overrideDerivation self.pkgs.lispPackages.stumpwm (x: {
+      src = /home/repos/stumpwm;
       linkedSystems = x.linkedSystems ++ ["clx-truetype" "xkeyboard" "xembed"];
+      asdFilesToKeep = ["stumpwm.asd" "dynamic-mixins/dynamic-mixins.asd"];
       buildInputs = x.buildInputs ++
         (with self.pkgs.lispPackages; [clx-truetype xkeyboard xembed]);
+      postInstall = (x.postInstall or "") + ''
+        rm -rf "$out"/lib/common-lisp/stumpwm/tests
+      '';
   }));
 
   swPackages = swPieces.corePackages ++ (with self.pkgs; [
@@ -289,7 +294,7 @@ pkgs.lib.makeExtensible (self: with self; {
         ${self.pkgs.nix}/bin/nix-daemon
       '';
       "dmesg-logger" = self.pkgs.writeScript "dmesg-logger" ''
-        ${self.pkgs.utillinux}/bin/dmesg -w
+        ${self.pkgs.util-linux}/bin/dmesg -w
       '';
       "language-daemon/system-lisp" = systemLisp;
       "language-daemon/system-gerbil" = systemGerbil;

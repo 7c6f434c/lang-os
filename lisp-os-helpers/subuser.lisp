@@ -294,11 +294,11 @@
 		      "/tmp/system-lisp/subuser-passwd/~a" uid)
 	      :direction :output :if-exists :supersede)
 	   (format f "root:x:0:0::/:/bin/sh~%")
-	   (when home
-             (format f ".~a:x:~a:~a::~a:/bin/sh~%" internal-uid internal-uid gid home))
            (loop for u in fake-usernames do
-                 (format f "~a:x:~a:~a::~a:/bin/sh~%" u internal-uid gid "/"))
-	   (format f ".~a:x:~a:~a::/:/bin/sh~%" 65534 65534 65534)
+                 (format f "~a:x:~a:~a::~a:/bin/sh~%" u internal-uid gid (or home "/")))
+	   (when (null fake-usernames)
+             (format f ".~a:x:~a:~a::~a:/bin/sh~%" internal-uid internal-uid gid (or home "/")))
+	   (format f ".~a:x:~a:~a::~a:/bin/sh~%" 65534 65534 65534 "/")
 	   )
 	 (list "-R" (format nil "/tmp/system-lisp/subuser-passwd/~a:/etc/passwd" uid)))
      ,@(when fake-groups

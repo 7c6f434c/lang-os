@@ -3,8 +3,8 @@
 }:
 {
   corePackages = with pkgs; [
-    coreutils utillinux grub2_efi bashInteractive nix shadow
-    iproute openssh curl procps gnugrep gnused gptfdisk
+    coreutils util-linux grub2_efi bashInteractive nix shadow
+    iproute2 openssh curl procps gnugrep gnused gptfdisk
     cpio dhcp dhcpcd less nettools iw wpa_supplicant findutils
     parted gzip bzip2 xz e2fsprogs dosfstools glibc gnutar 
     psmisc pam kbd lynx fuse fuse3 ncurses acl eudev kmod git

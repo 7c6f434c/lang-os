@@ -27,13 +27,13 @@ pkgs.runCommand "firefox-initialised-profile" environment ''
        ' > "prefs.js"
   
   DISPLAY=:7 \
-  "${pkgs.lib.getBin pkgs.utillinux}/bin/unshare" -U -r -m \
+  "${pkgs.lib.getBin pkgs.util-linux}/bin/unshare" -U -r -m \
   sh -c '
    id
    set -x
 
    mkdir new-etc
-   ${pkgs.lib.getBin pkgs.utillinux}/bin/mount --bind new-etc /etc
+   ${pkgs.lib.getBin pkgs.util-linux}/bin/mount --bind new-etc /etc
    echo 00000000000000000000000000000000 > /etc/machine-id
    mkdir /etc/fonts
    ln -s "${pkgs.makeFontsConf {fontDirectories = [];}}" /etc/fonts/fonts.conf
