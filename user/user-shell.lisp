@@ -708,6 +708,8 @@
     (cd (concatenate 'string ($ :home) "/src/rc"))
     (! mtn ci -m "Event flow"           remind-calendar-input)
     (! mtn ci -m "Event flow"           remind-labri-teaching)
+    (! mtn ci -m "Event flow"           remind-calendar-combalgo)
+    (! mtn ci -m "Event flow"           remind-calendar-m2f)
     (! mtn ci -m "SSL in the wild"      ssl-exceptions)
     (! mtn ci -m "Firefox prefs tuning" firefox-prefs.js)
     (cd cwd)))
