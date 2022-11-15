@@ -571,11 +571,12 @@
           )
         options)
       (when wait
-        (ignore-errors
-          (uiop:run-program
-            (list
-              "rm" "-rf" combined-profile)
-            :error-output t))
+        (unless profile-storage
+          (ignore-errors
+            (uiop:run-program
+              (list
+                "rm" "-rf" combined-profile)
+              :error-output t)))
         (when marionette-socket
           (ignore-errors
             (uiop:run-program
