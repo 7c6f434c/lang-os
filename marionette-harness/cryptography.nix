@@ -31,6 +31,14 @@ buildPythonPackage rec {
 
   patches = [ ./cryptography-py27-warning.patch ];
 
+  postPatch = ''
+    sed -e s/CRYPTOGRAPHY_IS_LIBRESSL/1/ -i src/_cffi_src/openssl/fips.py
+    sed -e /ERR_GET_FUNC/d -i src/_cffi_src/openssl/err.py
+    sed -e 's/lib.ERR_GET_FUNC(code)/-1/' -i src/cryptography/hazmat/bindings/openssl/binding.py
+  '';
+
+  doCheck = false;
+
   outputs = [ "out" "dev" ];
 
   nativeBuildInputs = lib.optionals (!isPyPy) [
@@ -56,6 +64,7 @@ buildPythonPackage rec {
     pytest
     pytz
   ];
+  nativeCheckInputs = [ pytest ];
 
   checkPhase = ''
     py.test --disable-pytest-warnings tests

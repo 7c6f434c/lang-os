@@ -30,6 +30,7 @@ buildPythonPackage rec {
   ] ++ lib.optional (!isPy3k) enum34;
 
   checkInputs = [ pytest pytest_xdist flaky mock pexpect ];
+  nativeCheckInputs = [pytest];
   inherit doCheck;
 
   checkPhase = ''

@@ -12,6 +12,7 @@ buildPythonPackage rec {
 
   nativeBuildInputs = [ setuptools-scm ];
   checkInputs = [ pytest ];
+  nativeCheckInputs = [ pytest ];
 
   # Fix pytest 4 support. See: https://github.com/pytest-dev/apipkg/issues/14
   postPatch = ''

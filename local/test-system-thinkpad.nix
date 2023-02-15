@@ -44,7 +44,7 @@
 
 
   swPackages = super.swPackages ++ (with self.pkgs; [
-    zsh python expect firmwareLinuxNonfree
+    zsh pypy27 expect firmwareLinuxNonfree
     alsa-utils alsa-tools mplayer rxvt-unicode mlterm
     androidenv.androidPkgs_9_0.platform-tools adb-sync
     powertop

@@ -4,10 +4,12 @@
   (
    ;; Apparently we need to make sure depedencies of dependencies are listed first
    :uiop
+   :asdf
    :alexandria
    :iolib.common-lisp
    :iolib.base
    :cffi
+   :cffi-grovel
    :uffi
    ;; The real dependencies
    :iolib :iolib/os :iolib/syscalls
