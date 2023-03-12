@@ -125,6 +125,7 @@
           :home home
           :tmp t
           :profile-storage (format nil "~a/firefox-profile" home)
+          :marionette-socket (format nil "~a/marionette-socket" home)
           :grant (list home))))))
 
 (defun subuser-riot-firefox ()
