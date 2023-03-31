@@ -263,9 +263,12 @@ pkgs.lib.makeExtensible (self: with self; {
       "from-nixos/cups" = fromNixOS.serviceScript "cups" {
          services.printing = {
            enable = true;
-	   gutenprint = true;
 	   drivers = with self.pkgs; [
 	     foo2zjs foomatic-filters ghostscript cups-filters samba
+             (gutenprint.overrideAttrs (x: {
+               doCheck = false;
+               nativeBuildInputs = x.nativeBuildInputs ++ [ perl ];
+             }))
              /* hplip */
 	   ];
          };
