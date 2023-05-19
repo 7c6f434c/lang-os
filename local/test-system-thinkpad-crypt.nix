@@ -12,7 +12,7 @@
       modprobe xhci-hcd
       modprobe ehci-hcd
       
-      sh ${./mount-partitions-thinkpad.sh}
+      sh ${./mount-partitions-thinkpad-crypt.sh}
     '';
     modprobeConfig = ''
       blacklist nouveau
@@ -31,7 +31,9 @@
     cp -r "${self.stumpwmContrib}" "contrib"
     chmod u+rwX -R contrib
     export HOME="$PWD"
-    ${self.stumpwmWithDeps}/bin/stumpwm-lisp-launcher.sh \
+    ${self.stumpwmWithDeps}/bin/sbcl \
+      --eval '(require :asdf)' \
+      --load ${self.stumpwmWithDeps}/dynamic-mixins/dynamic-mixins-swm.asd \
       --eval '(require :stumpwm)' --eval '(in-package :stumpwm)' \
       --eval '(defvar stumpwm::*local-module-dir* "'"$PWD"'/contrib/")' \
       --eval '(defvar stumpwm::*langos* "${self.stumpwmLangOS}/")' \
@@ -47,13 +49,12 @@
     zsh pypy27 expect firmwareLinuxNonfree
     alsa-utils alsa-tools mplayer rxvt-unicode mlterm
     androidenv.androidPkgs_9_0.platform-tools adb-sync
-    powertop
+    powertop cryptsetup
     (self.pkgs.runCommand "local-keymap" {} ''
       mkdir -p "$out/share/keymaps/local/"
       cp ${./ru-en.map} "$out/share/keymaps/local/ru-en.map"
     '')
-    /* self.stumpwmWithConfig */
-    self.stumpwmWithDeps
+    /* self.stumpwmWithConfig */ self.stumpwmWithDeps
   ]);
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;

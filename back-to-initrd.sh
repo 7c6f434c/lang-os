@@ -39,6 +39,12 @@ cat << EOF >> post-pivot
 
   mountpoint /new-root
 
+  vgchange -an
+  for i in /dev/mapper/*; do
+          cryptsetup close $i
+  done
+  vgchange -an
+
   test -n "$1" && /bin/sh "$(basename "$1")" < /dev/tty1 &> /dev/tty1
   test -e ./post-backpivot-command && ./post-backpivot-command < /dev/tty1 &> /dev/tty1
 

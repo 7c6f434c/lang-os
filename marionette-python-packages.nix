@@ -11,10 +11,12 @@ pkgs.lib.makeExtensible (self: with self; {
   inherit (pkgs.pypy27.pkgs) 
     python
     buildPythonPackage 
-    pytestCheckHook pipInstallHook setuptoolsBuildHook
+    pipInstallHook setuptoolsBuildHook
     pythonOlder pythonAtLeast
     bootstrapped-pip
+    makePythonHook
     ;
+  pythonCheckInterpreter = python.interpreter;
   isPy3k = false;
   isPyPy = true;
   isPy27 = true;
@@ -180,4 +182,5 @@ pkgs.lib.makeExtensible (self: with self; {
   itsdangerous = callPackage ./marionette-harness/itsdangerous.nix {};
   scandir = callPackage ./marionette-harness/scandir.nix {};
 
+  pytestCheckHook = callPackage ./marionette-harness/pytest-check-hook.nix {};
 })

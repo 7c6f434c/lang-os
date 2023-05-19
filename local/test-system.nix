@@ -171,17 +171,11 @@ pkgs.lib.makeExtensible (self: with self; {
       openglPackages32;
   };
 
-  stumpwmWithDeps =
-  (self.pkgs.lib.overrideDerivation self.pkgs.lispPackages.stumpwm (x: {
-      src = /home/repos/stumpwm;
-      linkedSystems = x.linkedSystems ++ ["clx-truetype" "xkeyboard" "xembed"];
-      asdFilesToKeep = ["stumpwm.asd" "dynamic-mixins/dynamic-mixins.asd"];
-      buildInputs = x.buildInputs ++
-        (with self.pkgs.lispPackages; [clx-truetype xkeyboard xembed]);
-      postInstall = (x.postInstall or "") + ''
-        rm -rf "$out"/lib/common-lisp/stumpwm/tests
-      '';
-  }));
+  stumpwmWithDeps = 
+  self.pkgs.stumpwm.overrideLispAttrs (x: {
+    lispLibs = x.lispLibs ++ 
+      (with self.pkgs.sbcl.pkgs; [ clx-truetype xkeyboard xembed ]);
+  });
 
   swPackages = swPieces.corePackages ++ (with self.pkgs; [
         (hiPrio glibcLocales)
@@ -253,7 +247,8 @@ pkgs.lib.makeExtensible (self: with self; {
         { services.postgresql.enable = true;
           services.postgresql.package = postgresql-package;
           services.postgresql.authentication = ''
-            local all all md5
+            local all all peer
+            host all all 127.0.0.1/32 md5
           '';
           services.postgresql.extraConfig = ''
             max_locks_per_transaction = 64
@@ -264,7 +259,8 @@ pkgs.lib.makeExtensible (self: with self; {
          services.printing = {
            enable = true;
 	   drivers = with self.pkgs; [
-	     foo2zjs foomatic-filters ghostscript cups-filters samba
+	     /* foo2zjs */ 
+             foomatic-filters ghostscript cups-filters samba
              (gutenprint.overrideAttrs (x: {
                doCheck = false;
                nativeBuildInputs = x.nativeBuildInputs ++ [ perl ];
