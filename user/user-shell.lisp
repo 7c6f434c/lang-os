@@ -791,6 +791,7 @@
   sudo::backup-to (target)
   (ask-with-auth
     ()
+    `(rescan-lvm)
     `(backup-to ,target)))
 
 (defun standby
@@ -1073,7 +1074,7 @@
               (ask-with-auth () `(chown-subuser ,file "" ,(or recursive ""))))
 
 (defun-export sudo::rescan-lvm ()
-              (ask-with-auth (:presence t) `(rescan-lvm)))
+              (ask-with-auth () `(rescan-lvm)))
 
 (defun firefox-profile-alive (path)
   (ignore-errors

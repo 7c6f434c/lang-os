@@ -711,12 +711,6 @@
     (quit)))
 
 (defun socket-command-server-commands::rescan-lvm (context)
-  (require-or
-    "Owner user presence not confirmed"
-    (require-root context)
-    (progn
-      (assert (gethash (list (context-uid context) :owner) *user-info*))
-      (require-presence context)))
   (uiop:run-program (list "vgchange" "-an") :output t :ignore-error-status t :wait t)
   (uiop:run-program (list "vgchange" "-ay") :output t :wait t))
 
