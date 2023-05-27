@@ -312,6 +312,23 @@
                        :extra-requests `((local-resolv-conf)))))
   (ensure-vps-socks))
 
+(defun enter-home-bordeaux-yser (&rest args)
+  (apply 'enter-location
+         (append args
+                 (list :location "home@Bordeaux"
+                       :brightness 45
+                       :skip-wifi t
+                       :extra-requests `((list
+                                           (dhclient "eth1" nil)
+                                           (reconfigure-bind "restart" "empty")
+                                           (local-resolv-conf))))))
+  (! xrandr --fb 4000x3000)
+  (sleep 0.1)
+  (! xrandr --output "VGA-1-2" --left-of "LVDS-1")
+  (sleep 0.1)
+  (! xrandr --fb 4000x3000)
+  )
+
 (defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min")
                         kill-matrixcli standby-options standby kill-mounts)
   (when kill-mounts

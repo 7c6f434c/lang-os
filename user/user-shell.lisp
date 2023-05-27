@@ -172,6 +172,7 @@
 	  "Activate network"
 	  `(progn
              (dhclient ,interface ,copy-resolv)
+             (reconfigure-bind "restart" "empty")
              ,@(unless copy-resolv `(local-resolv-conf))))))))
 
 (defun-export
@@ -895,9 +896,10 @@
     (& proxy-restart (format nil "~a/src/rc/squid/~a" ($ :home) proxy-config)))
   (enter-master-password)
   (email-fetchers-fast)
-  (im-online-here
+  (&&
+    (im-online-here
     :skip-ii (not ii)
-    :skip-mcabber (not mcabber))
+    :skip-mcabber (not mcabber)))
   (& x-daemons)
   (alexandria:write-string-into-file
     (format nil "~a" watchperiod)
