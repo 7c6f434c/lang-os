@@ -316,9 +316,11 @@
   (apply 'enter-location
          (append args
                  (list :location "home@Bordeaux"
-                       :brightness 45
+                       :brightness 400
                        :skip-wifi t
                        :extra-requests `((list
+                                           (set-brightness 45)
+                                           (set-brightness 400)
                                            (dhclient "eth1" nil)
                                            (reconfigure-bind "restart" "empty")
                                            (local-resolv-conf))))))
