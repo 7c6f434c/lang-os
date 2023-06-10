@@ -53,6 +53,7 @@
         nixpkgs-suffix source-expression 
 	import-arguments
         nix-args extra-env
+        drv-link
         )
   (let*
     ((nix-path-env (cl-ppcre:split ":" (uiop:getenv "NIX_PATH")))
@@ -72,7 +73,10 @@
          :source-expression source-expression
 	 :import-arguments import-arguments))
      (nix-command
-       `("nix-instantiate" "-E" ,expression ,@nix-args))
+       `("nix-instantiate" "-E" ,expression
+         ,@(when drv-link
+             `("--add-root" ,drv-link))
+         ,@nix-args))
      (command
        (if nix-new-path
          (add-command-env

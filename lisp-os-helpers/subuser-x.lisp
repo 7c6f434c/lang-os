@@ -116,7 +116,7 @@
         :verbose verbose-errors))))
 
 (defun reset-firefox-launcher (&key profile-contents nix-path nix-wrapper-file
-                                    out-link verbose fast)
+                                    out-link drv-link verbose fast)
   (setf *firefox-profile-contents* profile-contents)
   (let
     ((firefox-scripts 
@@ -133,6 +133,7 @@
                    "/$" (namestring (truename profile-contents)) ""))
                :nix-path nix-path
                :out-link out-link
+               :drv-link drv-link
                :verbose verbose))))))
     (setf *firefox-profile-combiner* 
           (format nil "~a/bin/~a" firefox-scripts "combine-firefox-profile"))
@@ -142,11 +143,14 @@
 (defun reset-bus-helpers
   (&key
     (nix-path (cl-ppcre:split ":" (uiop:getenv "NIX_PATH"))) nix-file
-    out-link fast)
+    out-link drv-link fast)
   (let (
         (dbus-out-link (when out-link (format nil "~a-dbus" out-link)))
         (pulseaudio-out-link (when out-link (format nil "~a-pa" out-link)))
         (owned-home-out-link (when out-link (format nil "~a-owned-home" out-link)))
+        (dbus-drv-link (when drv-link (format nil "~a-dbus" drv-link)))
+        (pulseaudio-drv-link (when drv-link (format nil "~a-pa" drv-link)))
+        (owned-home-drv-link (when drv-link (format nil "~a-owned-home" drv-link)))
         dbus-helper pulseaudio-helper owned-home-helper
         )
     (if (and fast out-link)
@@ -160,17 +164,23 @@
         (nix-build
           "withDBus" :nix-file nix-file
           :nix-path nix-path
-          :out-link dbus-out-link)
+          :out-link dbus-out-link
+          :drv-link dbus-drv-link
+          )
         pulseaudio-helper
         (nix-build
           "withPulseaudio" :nix-file nix-file
           :nix-path nix-path
-          :out-link pulseaudio-out-link)
+          :out-link pulseaudio-out-link
+          :drv-link pulseaudio-drv-link
+          )
         owned-home-helper
         (nix-build
           "withOwnedHome" :nix-file nix-file
           :nix-path nix-path
-          :out-link owned-home-out-link)
+          :out-link owned-home-out-link
+          :drv-link owned-home-drv-link
+          )
         )
       )
     (setf

@@ -47,7 +47,8 @@
 
   swPackages = super.swPackages ++ (with self.pkgs; [
     zsh pypy27 expect firmwareLinuxNonfree
-    alsa-utils alsa-tools mplayer rxvt-unicode mlterm
+    alsa-utils alsa-tools mplayer rxvt-unicode
+    (mlterm.override {enableFeatures = mlterm.enableFeatures // {ssh2 = false;};})
     androidenv.androidPkgs_9_0.platform-tools adb-sync
     powertop cryptsetup
     (self.pkgs.runCommand "local-keymap" {} ''
@@ -73,7 +74,7 @@
   nixOptions = super.nixOptions // {
     extraOptions = super.nixOptions.extraOptions or "" + ''
           gc-keep-outputs = true
-          gc-keep-derivations = true
+          gc-keep-derivations = false
           experimental-features = nix-command
     '';
   };

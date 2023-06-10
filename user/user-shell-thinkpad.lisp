@@ -326,7 +326,7 @@
                                            (local-resolv-conf))))))
   (! xrandr --fb 4000x3000)
   (sleep 0.1)
-  (! xrandr --output "VGA-1-2" --left-of "LVDS-1")
+  (! xrandr --output "VGA-1-2" --mode 1920x1080 --left-of "LVDS-1")
   (sleep 0.1)
   (! xrandr --fb 4000x3000)
   )
