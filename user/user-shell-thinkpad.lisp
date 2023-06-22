@@ -232,17 +232,6 @@
           :profile-storage (format nil "~a/firefox-profile" home)
           :grant (list home))))))
 
-(defun enter-labri (&rest args &key (brightness 400) (extra-ips `())
-                          (location "LaBRI.fr")
-                          &allow-other-keys)
-  (apply
-    'enter-location
-    :brightness brightness
-    :extra-ips extra-ips
-    :location location
-    args)
-  (! x-options))
-
 (defun enter-ratmino (&rest args &key (brightness 20) (extra-ips `())
                           (location "ratmino")
                           &allow-other-keys)
@@ -327,6 +316,25 @@
   (! xrandr --fb 4000x3000)
   (sleep 0.1)
   (! xrandr --output "VGA-1-2" --mode 1920x1080 --left-of "LVDS-1")
+  (sleep 0.1)
+  (! xrandr --fb 4000x3000)
+  )
+
+(defun enter-labri (&rest args)
+  (apply 'enter-location
+         (append args
+                 (list :location "LaBRI.fr"
+                       :brightness 400
+                       :skip-wifi t
+                       :extra-requests `((list
+                                           (set-brightness 45)
+                                           (set-brightness 400)
+                                           (dhclient "eth1" nil)
+                                           (reconfigure-bind "restart" "empty")
+                                           (local-resolv-conf))))))
+  (! xrandr --fb 4000x3000)
+  (sleep 0.1)
+  (! xrandr --output "VGA-1-2" --mode 1920x1080 --right-of "LVDS-1")
   (sleep 0.1)
   (! xrandr --fb 4000x3000)
   )
