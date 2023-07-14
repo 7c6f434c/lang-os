@@ -307,7 +307,14 @@ pkgs.lib.makeExtensible (self: with self; {
     kernelParameters = ["intel_pstate=disable"];
   };
 
-  etcPieces = import ../system-etc-pieces.nix { inherit (self) pkgs nixos; };
+  extraHostsEntries = {
+    "${builtins.replaceStrings ["\n"] [""] (builtins.readFile ./vps-ip.private)}" = ["my-vm.local" "my-vm"];
+  };
+
+  etcPieces = (import ../system-etc-pieces.nix { inherit (self) pkgs nixos; }).extend (
+  self_ep: super_ep: {
+    inherit (self) extraHostsEntries;
+  });
 
   inherit (etcPieces) fromNixOS;
 

@@ -174,6 +174,7 @@
     (uiop:run-program
       `("dhcpcd"
         "-p" ,interface 
+        "-f" "/var/current-system/sw/etc/dhcpcd.conf"
         ,@(when no-resolv `("-C" "resolv.conf"))
         ,@(when once `("-1"))
         )))
@@ -283,6 +284,13 @@
     (when search
       (format f "search ~a~%" search))
     (format f "nameserver ~a~%" (get-default-gateway))))
+
+(defun nameservers-resolv-conf (nameservers &optional search)
+  (with-open-file
+    (f "/var/etc/resolv.conf" :direction :output :if-exists :supersede)
+    (when search
+      (format f "search ~a~%" search))
+    (format f "~{nameserver ~a~%~}" nameservers)))
 
 (defun local-port-open-p (port &optional (protocol :tcp) (interface "*"))
   (uiop:run-program

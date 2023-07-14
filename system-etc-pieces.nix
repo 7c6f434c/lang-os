@@ -1,5 +1,5 @@
 { pkgs ? import <nixpkgs> {}, nixos ? import <nixpkgs/nixos>}:
-rec {
+pkgs.lib.makeExtensible (self: with self; {
   fromNixOS = import ./use-from-nixos.nix {inherit pkgs nixos;};
 
   deeplinkAttrset = name: entries: (pkgs.runCommand name {} ''
@@ -94,13 +94,17 @@ rec {
           user_allow_other
         '';
       };
+  extraHostsEntries = {
+  };
   namesEtc = hostname: deeplinkAttrset "names-etc" (
      (fromNixOS.etcSelectComponents
              ["hostname" "hosts" "nsswitch.conf"]
              {
                networking.hostName="localhost";
-               networking.hosts."127.0.0.1" = ["localhost4" "localhost" "localhost4.local"];
-               networking.hosts."::1" = ["localhost6" "localhost6.local"];
+               networking.hosts= { 
+                  "127.0.0.1" = ["localhost4" "localhost" "localhost4.local"];
+                  "::1" = ["localhost6" "localhost6.local"];
+               } // extraHostsEntries;
              })
      // resolvEtc.entries // ianaEtc.entries //
      { "machine-id" = "/var/etc/machine-id"; }
@@ -112,4 +116,4 @@ rec {
         ["login.defs" "profile" "bashrc"] config) //
       {}
   );
-}
+})

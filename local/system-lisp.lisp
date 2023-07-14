@@ -135,7 +135,7 @@
         (port-open-p 631)
         (system-service "" "from-nixos/cups"))
 
-      (unless
+      (unless t
         (port-open-p 53)
         (system-service "" "from-nixos/bind"))
 
@@ -438,6 +438,9 @@
     "User presence not confirmed"
     (require-root context)
     (require-presence context))
+  (unless
+    (port-open-p 53)
+    (system-service "" "from-nixos/bind"))
   (local-resolv-conf)
   "OK")
 
