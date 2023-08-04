@@ -181,7 +181,8 @@ pkgs.lib.makeExtensible (self: with self; {
         (hiPrio glibcLocales)
         vim monotone screen xterm xorg.xprop
         sbcl lispPackages.clwrapper lispPackages.uiop asdf
-        gerbil guile
+        #gerbil
+        guile
 	postgresql-package
         (lib.overrideDerivation nsjail (x: {
           postPatch = ''
@@ -214,7 +215,7 @@ pkgs.lib.makeExtensible (self: with self; {
       initScript = ''
         ls -ld /nix/store
         ${loopStarter "/run/current-system/services/language-daemon/system-lisp"} &
-        ${loopStarter "/run/current-system/services/language-daemon/system-gerbil"} &
+        #${loopStarter "/run/current-system/services/language-daemon/system-gerbil"} &
         ${loopStarter "/run/current-system/services/language-daemon/system-guile"} &
         chvt 2
       '';
@@ -296,7 +297,7 @@ pkgs.lib.makeExtensible (self: with self; {
         ${self.pkgs.util-linux}/bin/dmesg -w
       '';
       "language-daemon/system-lisp" = systemLisp;
-      "language-daemon/system-gerbil" = systemGerbil;
+      #"language-daemon/system-gerbil" = systemGerbil;
       "language-daemon/system-guile" = systemGuile;
     };
   };

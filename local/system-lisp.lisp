@@ -508,6 +508,10 @@
     (require-root context)
     (require-presence context))
   (uiop:run-program (list "vgchange" "-an") :ignore-error-status t)
+  (loop for pn in (uiop:directory-files "/dev/mapper/")
+        for ns := (namestring pn)
+        for bn := (cl-ppcre:regex-replace ".*/" ns "")
+        do (uiop:run-program (list "cryptsetup" "close" bn) :ignore-error-status t))
   (uiop:run-program (list "wpa_cli" "suspend") :ignore-error-status t)
   (power-state (intern (string-upcase state) :keyword))
   (uiop:run-program (list "wpa_cli" "resume") :ignore-error-status t))
@@ -715,7 +719,18 @@
 
 (defun socket-command-server-commands::rescan-lvm (context)
   (uiop:run-program (list "vgchange" "-an") :output t :ignore-error-status t :wait t)
-  (uiop:run-program (list "vgchange" "-ay") :output t :wait t))
+  (loop for pn in (uiop:directory-files "/var/db/luks/")
+        for ns := (namestring pn)
+        for bn := (cl-ppcre:regex-replace ".*/" ns "")
+        do (uiop:run-program
+             `("cryptsetup" "open"
+               "--allow-discards"
+               "--key-file" ,ns
+               ,(format nil "/dev/disk/by-partlabel/~a" bn)
+               ,(format nil "~a-Content" bn))
+             :ignore-error-status t))
+  (uiop:run-program (list "vgchange" "-ay") :output t :wait t)
+  )
 
 (defun socket-command-server-commands::uinput-modules (context)
   (declare (ignorable context))

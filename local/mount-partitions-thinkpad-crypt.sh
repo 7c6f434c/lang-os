@@ -1,6 +1,6 @@
 set -x
 
-cryptsetup open /dev/disk/by-partlabel/ThinkPad-Main-Crypt ThinkPad-Main-CryptVolume
+cryptsetup open --allow-discards /dev/disk/by-partlabel/ThinkPad-Main-Crypt ThinkPad-Main-CryptVolume
 
     udevadm trigger --action=add
     udevadm settle
