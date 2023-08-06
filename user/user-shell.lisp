@@ -792,10 +792,14 @@
 
 (defun-export
   sudo::backup-to (target)
-  (ask-with-auth
-    ()
-    `(rescan-lvm)
-    `(backup-to ,target)))
+  (let 
+    ((target 
+       (cl-ppcre:regex-replace
+         "^/dev/" target "")))
+    (ask-with-auth
+      ()
+      `(rescan-lvm)
+      `(backup-to ,target))))
 
 (defun standby
   (&key (state "mem") (sync t) (forget-secrets t) im-offline (re-wifi t) (randr t) kill-my-x x-lock)

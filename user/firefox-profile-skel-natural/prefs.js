@@ -163,6 +163,7 @@ user_pref("network.trr.mode", 0);
 user_pref("pdfjs.previousHandler.alwaysAskBeforeHandling", true);
 user_pref("pdfjs.previousHandler.preferredAction", 4);
 user_pref("pdfjs.enableScripting", false);
+user_pref("pdfjs.sidebarViewOnLoad", 0);
 user_pref("places.history.expiration.transient_current_max_pages", 122334);
 user_pref("plugin.disable_full_page_plugin_for_types", "application/pdf");
 user_pref("privacy.clearOnShutdown.offlineApps", true);
