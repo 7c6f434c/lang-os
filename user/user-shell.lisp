@@ -657,9 +657,9 @@
               :terpri t))
   (wait (:timeout 300 :sleep 1)
         (probe-file
-          (~ "queries/p-store/zsh@consistency")))
+          (~ "queries/a-p-store/flat-entries/zsh@consistency@old-plain-p-store")))
   (alexandria:read-file-into-string
-    (~ "queries/p-store/zsh@consistency")))
+    (~ "queries/a-p-store/flat-entries/zsh@consistency@old-plain-p-store")))
 
 (defmacro
   email-fetcher (suffix period)
