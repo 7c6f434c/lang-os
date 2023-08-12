@@ -192,6 +192,7 @@ pkgs.lib.makeExtensible (self: with self; {
         stumpwmWithDeps
         unionfs-fuse
         xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host iotop syslogng
+        btrfs-progs
         sway swaybg tunctl
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
         (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
