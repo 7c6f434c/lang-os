@@ -20,6 +20,8 @@
       
       ${builtins.readFile ./modprobe.conf}
     '';
+    
+   tools = pkgs: with pkgs; [ btrfs-progs ];
   });
 
   stumpwmConfigDir = /home/raskin/src/lsp/stumpwm-config;

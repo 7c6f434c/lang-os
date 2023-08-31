@@ -27,7 +27,7 @@ pkgs.lib.makeExtensible (self: with self; {
     ln -s /var/etc/resolv.conf.dhclient-new "$out"
   '';
 
-  removeSystemdRun = package: pkgs.runCommand "${package.name}-udev-rules" {} ''
+  cleanLVM2udev = package: pkgs.runCommand "${package.name}-udev-rules" {} ''
     mkdir -p "$out/lib/udev/rules.d"
     cp -rTf "${package}/lib/udev/rules.d" "$out/lib/udev/rules.d"
     chmod u+rwX -R "$out"
@@ -35,6 +35,8 @@ pkgs.lib.makeExtensible (self: with self; {
       tee /dev/stderr |
       xargs sed -i -re 's@([ 	"'"'"'=]|^)(/[-_/.a-z0-9]+/)?systemd-run\>@@'
     if grep '\<systemd-run' -r "$out/lib/udev/rules.d"; then exit 1; fi
+
+    sed -e 's/^ENV[{].*[}]==".*[*].*", .*//' -i $out/lib/udev/rules.d/69-*
   '';
 
   udevConf = {packages ? [], extraRules ? ""}: {
@@ -42,10 +44,10 @@ pkgs.lib.makeExtensible (self: with self; {
     services.udev = {
       packages = pkgs.lib.mkForce
       ([pkgs.fuse pkgs.libinput pkgs.android-udev-rules
-        (removeSystemdRun pkgs.lvm2)
+        (cleanLVM2udev pkgs.lvm2)
         (pkgs.runCommand "eudev-lib-rules" {} ''
           mkdir -p "$out/etc/udev/rules.d/"
-          cp -r "${pkgs.eudev}/var/lib/udev/rules.d"/{50-udev-default.rules,60-persistent-storage.rules} "$out/etc/udev/rules.d/"
+          cp -r "${pkgs.eudev}/var/lib/udev/rules.d"/{50-udev-default.rules,60-block.rules,60-persistent-storage.rules} "$out/etc/udev/rules.d/"
           cp -r "${pkgs.eudev}/var/lib/udev/hwdb.d" "$out/etc/udev/"
           chmod -R u+rw "$out/etc/udev"
           sed -e 's@''${exec_prefix}@${pkgs.udev}@' -i "$out"/etc/udev/rules.d/*.rules
