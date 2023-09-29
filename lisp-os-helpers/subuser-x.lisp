@@ -254,7 +254,7 @@
     mount-sys keep-namespaces
     dns http-proxy socks-proxy with-dbus with-pulseaudio with-owned-home
     x-optional skip-nsjail masking-mounts clear-env
-    (proc-rw t) (no-proc nil))
+    (proc-rw t) (no-proc nil) (pass-input-config t))
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
      (uid 
@@ -412,6 +412,15 @@
                     ("SOCKS_VERSION" "5")
                     ))
               ,@(when inner-home `(("HOME" ,inner-home)))
+              ,@(when pass-input-config
+                  `(
+                    ("GTK_IM_MODULE" ,(or (uiop:getenv "GTK_IM_MODULE") ""))
+                    ("QT_IM_MODULE" ,(or (uiop:getenv "QT_IM_MODULE") ""))
+                    ))
+              ,@(when (and pass-input-config (> (length (uiop:getenv "XCOMPOSEFILE")) 0))
+                  `(
+                    ("XCOMPOSEFILE" "/_xcomposefile" )
+                    ))
               ("PATH" ,path)
               ("LANG" ,(or locale (uiop:getenv "LANG") "en_US.UTF-8"))
               ("LOCALE_ARCHIVE"
@@ -440,6 +449,7 @@
                  ,@(when (or mount-sys grab-dri) `(("-B" "/sys")))
                  ,@(when tmp `(("-B" ,tmp "/tmp")))
                  ,@(when home `(("-B" ,home ,inner-home)("-B" ,home ,home)))
+                 ,@(when (and pass-input-config (> (length (uiop:getenv "XCOMPOSEFILE")) 0)) `(("-R" ,(uiop:getenv "XCOMPOSEFILE") "/_xcomposefile")))
                  ,@ mounts))
                ,@(when verbose-nsjail `("verbose"))
                ,@(when keep-namespaces
