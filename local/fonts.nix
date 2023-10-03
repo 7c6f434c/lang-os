@@ -36,14 +36,20 @@
       pkgs.mph_2b_damase
 
       pkgs.noto-fonts
-      pkgs.noto-fonts-cjk
-      pkgs.noto-fonts-emoji
+      pkgs.noto-fonts-lgc-plus
+      pkgs.noto-fonts-cjk-sans
+      pkgs.noto-fonts-cjk-serif
+      pkgs.noto-fonts-color-emoji
+      pkgs.noto-fonts-emoji-blob-bin
+      pkgs.noto-fonts-monochrome-emoji
 
       pkgs.paratype-pt-mono
       pkgs.paratype-pt-sans
       pkgs.paratype-pt-serif
 
       pkgs.dejavu_fonts
+
+      pkgs.emojione
     ]);
 
     enableCoreFonts = false;
