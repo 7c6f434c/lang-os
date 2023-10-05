@@ -231,3 +231,4 @@ user_pref("dom.max_script_run_time", 0);
 user_pref("dom.max_ext_content_script_run_time", 0);
 user_pref("privacy.spoof_english", 1);
 user_pref("xpinstall.signatures.required", false);
+user_pref("browser.translations.automaticallyPopup", false);

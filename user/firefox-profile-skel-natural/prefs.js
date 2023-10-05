@@ -232,3 +232,5 @@ user_pref("clipboard.plainTextOnly", true);
 user_pref("browser.contentblocking.enabled", true);
 user_pref("browser.contentblocking.introCount", 30);
 user_pref("xpinstall.signatures.required", false);
+
+user_pref("browser.translations.automaticallyPopup", false);
