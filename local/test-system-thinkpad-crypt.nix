@@ -62,7 +62,8 @@
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;
 
-  fontconfigConfPackages = [ (self.pkgs.hiPrio (self.pkgs.runCommand
+  fontconfigConfPackages = super.fontconfigConfPackages ++ 
+  [ (self.pkgs.hiPrio (self.pkgs.runCommand
     "fontconfig-kill-conf" {} ''
       mkdir -p "$out/etc/fonts/conf.d"
       mkdir -p "$out/etc/fonts/2.11/conf.d"
@@ -71,7 +72,27 @@
           touch "$d/$f.conf"
         done
       done
-    '')) ];
+    '')) 
+  ]
+  ;
+
+  fontConfigQuasiFonts = super.fontConfigQuasiFonts // {
+    "DejaFallSans" = [
+      "DejaVu Sans"
+      "Free Sans"
+      "Noto Sans"
+    ];
+    "DejaFallSerif" = [
+      "DejaVu Serif"
+      "Free Serif"
+      "Noto Serif"
+    ];
+    "DejaFallMono" = [
+      "DejaVu Sans Mono"
+      "Free Sans Mono"
+      "Noto Sans Mono"
+    ];
+  };
 
   nixOptions = super.nixOptions // {
     extraOptions = super.nixOptions.extraOptions or "" + ''

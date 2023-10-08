@@ -322,7 +322,32 @@ pkgs.lib.makeExtensible (self: with self; {
 
   sessionVariables = {};
 
-  fontconfigConfPackages = [];
+  fontConfigQuasiFonts = {};
+
+  fontConfigQuasiFontPackage = pkgs.runCommand "fontconfig-quasifont-conf" {} ''
+    mkdir -p "$out/etc/fonts/conf.d"
+    ${
+    pkgs.lib.concatStringsSep "\n"
+    (pkgs.lib.mapAttrsToList
+       (name: options: ''
+         echo "<?xml version='1.0'?>
+          <!DOCTYPE fontconfig SYSTEM 'urn:fontconfig:fonts.dtd'>
+          <fontconfig> 
+            <alias>
+              <family>${name}</family>
+              <prefer>
+                ${pkgs.lib.concatMapStringsSep "\n" (f: "<family>${f}</family>") options}
+              </prefer>
+            </alias>
+          </fontconfig>
+         " >> "$out/etc/fonts/conf.d/00-quasifont-${name}.conf"
+       '')
+       fontConfigQuasiFonts
+    )
+    }
+  '';
+
+  fontconfigConfPackages = [ fontConfigQuasiFontPackage ];
 
   nixOptions = {
     useSandbox = true;
