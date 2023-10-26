@@ -336,8 +336,11 @@ pkgs.lib.makeExtensible (self: with self; {
             <alias>
               <family>${name}</family>
               <prefer>
-                ${pkgs.lib.concatMapStringsSep "\n" (f: "<family>${f}</family>") options}
+                <family>${(builtins.head options)}</family>
               </prefer>
+              <accept>
+                ${pkgs.lib.concatMapStringsSep "\n" (f: "<family>${f}</family>") (builtins.tail options)}
+              </accept>
             </alias>
           </fontconfig>
          " >> "$out/etc/fonts/conf.d/00-quasifont-${name}.conf"

@@ -81,16 +81,22 @@
       "DejaVu Sans"
       "Free Sans"
       "Noto Sans"
+      "emoji"
+      "Noto Color Emoji"
     ];
     "DejaFallSerif" = [
       "DejaVu Serif"
       "Free Serif"
       "Noto Serif"
+      "emoji"
+      "Noto Color Emoji"
     ];
     "DejaFallMono" = [
       "DejaVu Sans Mono"
       "Free Sans Mono"
       "Noto Sans Mono"
+      "emoji"
+      "Noto Color Emoji"
     ];
   };
 
