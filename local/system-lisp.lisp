@@ -664,7 +664,10 @@
        (equal choice "intel")
        (equal choice ""))
       (modprobe "snd-hda-intel")
-      (modprobe "snd-usb-audio")))
+      (modprobe "snd-usb-audio"))
+    ((equal choice "dummy")
+     (modprobe "snd-dummy"))
+    )
   (or choice "OK"))
 
 (defun socket-command-server-commands::storage-modules (context)
