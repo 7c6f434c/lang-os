@@ -355,6 +355,8 @@
         '(
           "/tmp/ff.~a/"
           "/tmp/subuser-homes-~a/"
+          "/tmp/subhomes-~a/"
+          "/tmp/subtmps~a/"
           )
         collect (format nil x user)))
 

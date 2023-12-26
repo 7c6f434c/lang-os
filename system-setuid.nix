@@ -1,14 +1,23 @@
 {
   pkgs ? import <nixpkgs> {}, setuidPrograms
 }:
-let proglist = (if builtins.isFunction setuidPrograms then (setuidPrograms pkgs) else setuidPrograms); in
+let proglist = (if builtins.isFunction setuidPrograms then (setuidPrograms pkgs) else setuidPrograms); 
+    unsecvars = pkgs.lib.overrideDerivation (pkgs.srcOnly pkgs.glibc)
+      ({ name, ... }: {
+        name = "${name}-unsecvars";
+        installPhase = ''
+          mkdir $out
+          cp sysdeps/generic/unsecvars.h $out
+        '';
+      });
+in
 pkgs.runCommand "setuid-set" {} ''
     mkdir "$out"
     wrapper_dir="/var/setuid-wrapper-storage/$(basename "$out")"
 
     ${ pkgs.lib.concatMapStrings (x:
     ''
-    ${pkgs.gcc}/bin/gcc -Wall -O2 -DWRAPPER_DIR="\"$wrapper_dir\"" -DSOURCE_PROG="\"${x.src}\"" ${<nixpkgs> + "/nixos/modules/security/wrappers/wrapper.c"} -o "$out/${x.name}" -L${pkgs.libcap.lib}/lib -I${pkgs.libcap.dev}/include -L${pkgs.libcap_ng}/lib -I${pkgs.libcap_ng}/include -lcap -lcap-ng
+    ${pkgs.gcc}/bin/gcc -Wall -O2 -DWRAPPER_DIR="\"$wrapper_dir\"" -DSOURCE_PROG="\"${x.src}\"" ${<nixpkgs> + "/nixos/modules/security/wrappers/wrapper.c"} -o "$out/${x.name}" -L${pkgs.libcap.lib}/lib -I${pkgs.libcap.dev}/include -L${pkgs.libcap_ng}/lib -I${pkgs.libcap_ng}/include -lcap -lcap-ng -I${unsecvars}
     ''
     ) proglist}
 

@@ -1105,6 +1105,95 @@
       (uiop:run-program (list "rm" "-r" "-f" (namestring path)))
       path)))
 
+(defun subuser-data-from-hostname (hostname)
+  (let*
+    (
+     (home 
+       (ignore-errors
+         (namestring
+           (first
+             (directory (format nil "/tmp/subhomes-~a/*-~a-????????"
+                                (get-current-user-name)
+                                hostname))))))
+     (tmp 
+       (ignore-errors
+         (namestring
+           (first
+             (directory (format nil "/tmp/subtmps-~a/*-~a-????????"
+                                (get-current-user-name)
+                                hostname))))))
+     (uid
+       (loop for l in 
+             (uiop:run-program
+               `("getfacl" ,home)
+               :output `(:lines))
+             when (cl-ppcre:scan "^user:[0-9]" l)
+             return 
+             (parse-integer (cl-ppcre:regex-replace "user:([0-9]+):.*" l "\\1"))))
+     (suffix
+       (subseq
+         (first 
+           (take-reply-value
+             (ask-with-auth () `(select-subuser-by-uid ,uid))))
+         (1+ (length (get-current-user-name)))))
+     )
+    `(
+      :home ,home
+      :tmp ,tmp
+      :uid ,uid
+      :suffix ,suffix
+      )))
+
+(defun subuser-data-for-frame-window (f)
+  (subuser-data-from-hostname
+    (stumpwm-eval `(frame-window-hostname ,f))))
+
+(defun run-with-subuser-frame-window (f cmd &rest args)
+  (let*
+    ((data (subuser-data-for-frame-window f)))
+    (apply
+      'subuser-nsjail-x-application
+      cmd
+      :home (getf data :home)
+      :tmp (getf data :tmp)
+      :name (getf data :suffix)
+      :slay nil
+      :environment (append 
+                     `(
+                       ("HOME" ,(getf data :home))
+                       )
+                     (getf args :environment))
+      args)))
+
+(defun frame-window-subuser-terminal (f cmd &rest args)
+  (let*
+    ((data (subuser-data-for-frame-window f)))
+    (apply
+      'subuser-nsjail-x-application
+      (cons
+        (namestring (truename (which (first cmd))))
+        (rest cmd))
+      :home (getf data :home)
+      :tmp (getf data :tmp)
+      :name (getf data :suffix)
+      :slay nil
+      :full-dev t
+      :mounts (append
+                (getf args :mounts)
+                `(
+                  (:b "/nix/var/")
+                  (:r "/home/repos/nixpkgs/")
+                  )
+                )
+      :environment (append 
+                     (getf args :environment)
+                     `(
+                       ("HOME" ,(getf data :home))
+                       ("NIX_PATH" "nixpkgs=/home/repos/nixpkgs/")
+                       )
+                     )
+      args)))
+
 (defvar *shell-init-hooks* nil)
 (defun lisp-shell-init () (mapcar 'funcall *shell-init-hooks*))
 (push (lambda () (update-firefox-variants :fast t)) *shell-init-hooks*)

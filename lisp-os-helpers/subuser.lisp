@@ -251,7 +251,7 @@
                (when (equal dev-log-socket "")
                  (let* ((tmpdir
                           (uiop:run-program
-                            "mktemp -d -p /tmp/subuser-homes/"
+                            "mktemp -d -p /tmp/subhomes/"
                             :output '(:string :stripped t)))
                         (socket (format nil "~a/log-socket" tmpdir)))
                    (uiop:run-program
@@ -392,10 +392,10 @@
                                   hostname verbose
                                   (proc-rw t)
                                   (proc t))
-  (ensure-directories-exist "/tmp/subuser-homes/")
+  (ensure-directories-exist "/tmp/subhomes/")
   (let* 
     ((*print-right-margin* (expt 10 9))
-     (tmpdir (uiop:run-program "mktemp -d -p /tmp/subuser-homes/"
+     (tmpdir (uiop:run-program "mktemp -d -p /tmp/subhomes/"
                                :output '(:string :stripped t)))
      (mkdir-command (list "mkdir" "-p" tmpdir))
      (clean-dir-command (list "rm" "-rf" tmpdir))

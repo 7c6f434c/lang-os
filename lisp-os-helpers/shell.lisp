@@ -186,14 +186,20 @@
 
 (defun masked-username (&rest additions)
   (subseq
-    (cl-ppcre:regex-replace
-      " .*"
-      (with-output-to-string (hash)
-        (with-input-from-string
-          (data (format nil "~a:~a~{::~a~}"
-                        *machine-id* (get-current-user-name)
-                        (remove nil additions)))
-          (uiop:run-program (list "sha256sum") :input data :output hash)))
-      "")
-    0 32))
+    (format
+      nil
+      "~36r"
+      (parse-integer
+        (string-upcase
+          (cl-ppcre:regex-replace
+            " .*"
+            (with-output-to-string (hash)
+              (with-input-from-string
+                (data (format nil "~a:~a~{::~a~}"
+                              *machine-id* (get-current-user-name)
+                              (remove nil additions)))
+                (uiop:run-program (list "sha256sum") :input data :output hash)))
+            ""))
+        :radix 16))
+    0 16))
 

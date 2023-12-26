@@ -281,9 +281,10 @@
                                 (masked-username 
                                   name hostname-hidden-suffix)
                                 (or hostname-suffix "")))))))
+     (setup-timestamp (timestamp-usec-recent-base36))
      (home (if (eq home t)
              (let* ((containing-directory
-                      (format nil "/tmp/subuser-homes-~a/"
+                      (format nil "/tmp/subhomes-~a/"
                               (get-current-user-name)))
                     (home
                       (progn
@@ -291,7 +292,7 @@
                         (uiop:run-program
                           (list "mktemp" "-d" "-p" containing-directory
                                 (concatenate 'string 
-                                             (timestamp-usec-recent-base36) 
+                                             setup-timestamp 
                                              "-" hostname "-XXXXXXXX"))
                           :output (list :string :stripped t)))))
                (uiop:run-program
@@ -302,14 +303,15 @@
      (directory (if (and inner-home cd-home (not directory)) inner-home directory))
      (tmp (if (eq tmp t)
             (let* ((containing-directory
-                     (format nil "/tmp/subuser-tmps-~a/"
+                     (format nil "/tmp/subtmps-~a/"
                              (get-current-user-name)))
                    (tmp
                      (progn
                        (ensure-directories-exist containing-directory)
                        (uiop:run-program
                          (list "mktemp" "-d" "-p" containing-directory
-                               (concatenate 'string hostname "-XXXXXXXX"))
+                               (concatenate 'string setup-timestamp 
+                                            "-" hostname "-XXXXXXXX"))
                          :output (list :string :stripped t)))))
               (uiop:run-program
                 (list "setfacl" "-m" (format nil "u:~a:rwx" uid) tmp))

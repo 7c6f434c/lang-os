@@ -3,9 +3,15 @@
 }:
 pkgs.lib.makeExtensible (self: with self; {
   withDBus = pkgs.writeScriptBin "with-dbus" ''
-    mytmp="''${TMPDIR:-/tmp}/temporary-bus-$(id -u)/"
+    mytmp=
+    test -z "$TMPDIR" && test -n "$HOME" && 
+      test "$HOME" != "/homeless-shelter" && test "$HOME" != "/homeless-shelter/" &&
+      test "$HOME" != "/var/empty" && test "$HOME" != "/var/empty/" &&
+      test "$HOME" != "/" &&
+    mytmp="$HOME/tmp/bus/";
+    test -z "$mytmp" && mytmp="''${TMPDIR:-/tmp}/temporary-bus-$(id -u)/"
     mkdir -p "$mytmp"
-    dbusdir="$(mktemp -d -p "$mytmp")"
+    dbusdir="$(mktemp -d -p "$mytmp" XXXXXX)"
     echo "$dbusdir" >&2
     cat "${pkgs.dbus}/share/dbus-1/system.conf" | grep -v '[<]user[>]messagebus' > "$dbusdir/system.conf"
     "${pkgs.dbus}"/bin/dbus-daemon --nopidfile --nofork --config-file "${pkgs.dbus}"/share/dbus-1/session.conf --address "unix:path=$dbusdir/session"  >&2 &
@@ -25,10 +31,17 @@ pkgs.lib.makeExtensible (self: with self; {
   '';
 
   withPulseaudio = pkgs.writeScriptBin "with-pulseaudio" ''
+    mytmp=
+    test -z "$TMPDIR" && test -n "$HOME" && 
+      test "$HOME" != "/homeless-shelter" && test "$HOME" != "/homeless-shelter/" &&
+      test "$HOME" != "/var/empty" && test "$HOME" != "/var/empty/" &&
+      test "$HOME" != "/" &&
+    mytmp="$HOME/tmp/bus/";
+    test -z "$mytmp" && mytmp="''${TMPDIR:-/tmp}/temporary-bus-$(id -u)/"
+
     test -n "$DBUS_SESSION_BUS_ADDRESS" || exec "${withDBus}/bin/with-dbus" "$0" "$@"
 
-    mytmp="''${TMPDIR:-/tmp}/temporary-bus-$(id -u)/"
-    padir="$(mktemp -d -p "$mytmp")"
+    padir="$(mktemp -d -p "$mytmp" XXXXXX)"
 
     ( test -n "$HOME" && test -d "$HOME" && test -w "$HOME" ) || export HOME="$padir"
 
@@ -40,6 +53,7 @@ pkgs.lib.makeExtensible (self: with self; {
 
     "${pkgs.pulseaudio}"/bin/pulseaudio --exit-idle-time=999999 -F "$padir"/default.pa &
     export LD_LIBRARY_PATH="''${LD_LIBRARY_PATH}''${LD_LIBRARY_PATH:+:}${pkgs.pulseaudio}/lib"
+    test -n "$WITH_PULSEAUDIO_PAVUCONTROL" && "${pkgs.pavucontrol}"/bin/pavucontrol &
     "$@"
 
     code=$?
