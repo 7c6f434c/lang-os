@@ -1,6 +1,6 @@
 {pkgs ? import <nixpkgs> {}, nixos ? import <nixpkgs/nixos>}:
 rec {
-  nixosFun = config: (nixos {configuration = config;});
+  nixosFun = config: (nixos {configuration = config // { system = {stateVersion = "99.99"; }//(config.system or {}); };});
 
   serviceScript = name: config:
     (builtins.getAttr name (nixosFun config).config.systemd.services).runner;

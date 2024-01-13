@@ -124,7 +124,7 @@
     });
   };
   
-  openglPackages = with self.pkgs; [ beignet vaapiIntel libvdpau-va-gl vaapiVdpau ];
+  openglPackages = with self.pkgs; [ vaapiIntel libvdpau-va-gl vaapiVdpau ];
 
   # pkgs = super.pkgs // {
   #   xorg = super.pkgs.xorg // {
