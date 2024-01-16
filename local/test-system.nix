@@ -184,10 +184,11 @@ pkgs.lib.makeExtensible (self: with self; {
         #gerbil
         guile
 	postgresql-package
-        (lib.overrideDerivation nsjail (x: {
-          postPatch = ''
+        (nsjail.overrideAttrs (x: {
+          postPatch = (x.postPatch or "") + ''
             sed -e s/YYUSE/YY_USE/g -i kafel/src/*.y
           '';
+          NIX_CFLAGS_COMPILE = (x.NIX_CFLAGS_COMPILE or "") + " -Wno-error ";
         }))
         stumpwmWithDeps
         unionfs-fuse
