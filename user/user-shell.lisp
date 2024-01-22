@@ -1018,10 +1018,11 @@
                       finally (return res)))
      (alive-users (alive-users))
      (users (set-difference acl-users alive-users :test 'equal))
-     (to-ungrab (atmost users n))
+     (to-ungrab (atmost (alexandria:shuffle users) n))
      (suffixes (subuser-suffixes to-ungrab)))
     (format t "~a stale user(s) out of ~a listed given ~a alive~%"
             (length users) (length acl-users) (length alive-users))
+    (format t "Suffixes to clean: ~s~%" suffixes)
     (loop for s in suffixes
           for uid in to-ungrab
           do
