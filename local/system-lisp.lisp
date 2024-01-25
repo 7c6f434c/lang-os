@@ -737,6 +737,17 @@
   (uiop:run-program (list "vgchange" "-ay") :output t :wait t)
   )
 
+(defun socket-command-server-commands::dmsetup-minimise (context)
+  (require-presence context)
+  (loop for pn in (directory "/dev/mapper/*")
+        for ns := (namestring pn)
+        for bn := (cl-ppcre:regex-replace ".*/" ns "")
+        unless (equal bn "control")
+        do
+        (uiop:run-program
+          `("dmsetup" "remove" ,ns)
+          :ignore-error-status t)))
+
 (defun socket-command-server-commands::uinput-modules (context)
   (declare (ignorable context))
   (modprobe "uinput"))
