@@ -128,7 +128,7 @@
           :marionette-socket (format nil "~a/marionette-socket/socket" home)
           :grant (list home))))))
 
-(defun subuser-riot-firefox ()
+(defun subuser-riot-firefox (&key (socks-proxy 1080))
   (let* ((home (format nil "~a/.local/share/riot-home"
                        (uiop:getenv "HOME"))))
     (ignore-errors
@@ -143,7 +143,7 @@
       :no-close t 
       :stumpwm-tags "cat/e-im im riot matrix no-auto-tags dev.mccme.ru"
       :javascript t
-      :socks-proxy 1080
+      :socks-proxy socks-proxy
       :name "riot-sandbox"
       :home home
       :profile-storage (format nil "~a/firefox-profile" home)

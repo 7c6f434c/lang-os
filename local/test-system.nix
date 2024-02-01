@@ -184,12 +184,7 @@ pkgs.lib.makeExtensible (self: with self; {
         #gerbil
         guile
 	postgresql-package
-        (nsjail.overrideAttrs (x: {
-          postPatch = (x.postPatch or "") + ''
-            sed -e s/YYUSE/YY_USE/g -i kafel/src/*.y
-          '';
-          NIX_CFLAGS_COMPILE = (x.NIX_CFLAGS_COMPILE or "") + " -Wno-error ";
-        }))
+        nsjail
         stumpwmWithDeps
         unionfs-fuse
         xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host iotop syslogng
