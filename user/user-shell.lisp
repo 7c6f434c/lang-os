@@ -733,6 +733,23 @@
 (defun grab-sound (&optional name)
   (sudo::grab-devices `("/dev/snd/*") name))
 
+(defun regrab-sound ()
+  (let* ((acls (uiop:run-program 
+                 `("getfacl" "/dev/snd/timer") 
+                 :output :lines))
+         (uids
+           (loop for l in acls
+                 when (cl-ppcre:scan "^user:[0-9]" l)
+                 collect (parse-integer (second (cl-ppcre:split ":" l)))))
+         (names (loop for uid in uids
+                      for name := 
+                      (ask-with-auth () `(select-subuser-by-uid ,uid))
+                      when (equal (first name) "value")
+                      collect (first (second name))))
+         (suffixes (loop for n in names collect
+                         (subseq n (1+ (length (get-current-user-name)))))))
+    (loop for s in suffixes do (grab-sound s))))
+
 (defun grab-video (&optional name)
   (sudo::grab-devices `("/dev/video*") name))
 
