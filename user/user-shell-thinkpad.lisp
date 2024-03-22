@@ -330,11 +330,27 @@
                                            (set-brightness 400)
                                            (dhclient "eth1" t)
                                            (dhcp-resolv-conf))))))
+  (unless
+    (let ((address 
+            (getf
+              (find
+                "inet"
+                (getf
+                  (first
+                    (lisp-os-helpers/network::parsed-ip-address-show
+                      "eth1"))
+                  :addresses)
+                :test 'equalp 
+                :key (lambda (x) (getf x :address-type)))
+              :address)))
+      (and address (not (cl-ppcre:scan "^169[.]254[.]" address))))
+    (sudo::dhclient "eth1" t))
   (! xrandr --fb 4000x3000)
   (sleep 0.1)
   (! xrandr --output "VGA-1-2" --mode 1920x1080 --right-of "LVDS-1")
   (sleep 0.1)
   (! xrandr --fb 4000x3000)
+  (! keymap-more-symbols)
   )
 
 (defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min")
