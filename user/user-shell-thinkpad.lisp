@@ -330,6 +330,7 @@
                                            (set-brightness 400)
                                            (dhclient "eth1" t)
                                            (dhcp-resolv-conf))))))
+  (format *trace-output* "enter-labri has called enter-location~%")
   (unless
     (let ((address 
             (getf
@@ -343,14 +344,20 @@
                 :test 'equalp 
                 :key (lambda (x) (getf x :address-type)))
               :address)))
+      (format *trace-output* "ip address on eth1: ~s~%" address)
       (and address (not (cl-ppcre:scan "^169[.]254[.]" address))))
+    (format *trace-output* "enter-labri calling dhclient on eth1~%")
     (sudo::dhclient "eth1" t))
+  (format *trace-output* "enter-labri network done~%")
   (! xrandr --fb 4000x3000)
   (sleep 0.1)
   (! xrandr --output "VGA-1-2" --mode 1920x1080 --right-of "LVDS-1")
   (sleep 0.1)
   (! xrandr --fb 4000x3000)
+  (format *trace-output* "enter-labri screen done~%")
   (! keymap-more-symbols)
+  (format *trace-output* "enter-labri keyboard done~%")
+  (format *trace-output* "enter-labri done~%")
   )
 
 (defun disconnect (&key kill-ssh kill-wifi kill-bg (brightness 1) (cpu-frequency "min")
