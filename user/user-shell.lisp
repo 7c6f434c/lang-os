@@ -51,8 +51,7 @@
 	  (with-presence-auth
 	    "X11 session"
 	    `(list
-               ,@(unless (probe-file "/dev/dri/card1")
-                   `((reload-video-modules)))
+               (reload-video-modules)
                (restart-udevd)
                (start-x ,display))))))
     (when command
