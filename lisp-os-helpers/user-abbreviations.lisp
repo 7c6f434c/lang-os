@@ -144,7 +144,12 @@
     `(uiop:launch-program (list ,@command) ,@arguments)))
 
 (defmacro !! (&rest data)
-  `(! screen -^X screen ,@data :&> nil :< nil))
+  `(cond
+     ((> (length (uiop:getenv "TMUX")) 0)
+      (! tmux new-window  ,@data :&> nil :< nil))
+     ((> (length (uiop:getenv "STY")) 0)
+      (! screen -^X screen ,@data :&> nil :< nil))
+     (t (error "Terminal multiplexer absent or not known"))))
 
 (defmacro
   >>-impl (bangs &key stream)

@@ -163,11 +163,18 @@
             fd (escape-for-shell fifo)
             (collapse-command command))))
 
+(defun multiplexer-spawn-command (command)
+  (cond
+    ((> (length (uiop:getenv "TMUX")) 0)
+     `("tmux" "new-window" ,@command))
+    ((> (length (uiop:getenv "STY")) 0)
+     `("screen" "-X" "screen" ,@command))
+    (t (error "Terminal multiplexer absent or not known"))))
+
 (defun wait-on-shell-command (command
                                &key
                                (runner (lambda (command)
-                                         `("screen" "-X" "screen"
-                                           ,@command)))
+                                         (multiplexer-spawn-command command)))
                                run-options)
   (let*
     ((fifo (make-temporary-fifo))
