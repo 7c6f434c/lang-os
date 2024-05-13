@@ -1,28 +1,15 @@
 {
   pkgs, src, deps
 }:
-pkgs.lispPackages.buildLispPackage {
-    inherit (pkgs) stdenv;
-    inherit (pkgs.lispPackages) clwrapper;
+pkgs.sbcl.buildASDFSystem {
+    pname = "lisp-os-helpers";
+    version = "0.0-unstable";
 
-    inherit src deps;
+    inherit src;
 
-    baseName = "lisp-os-helpers";
-    buildSystems = ["lisp-os-helpers"];
+    lispLibs = deps;
+
     description = "Local library for defining and interacting with Common Lisp system daemon";
 
-    overrides = x: {
-      postInstall = ''
-        NIX_LISP_PRELAUNCH_HOOK='nix_lisp_run_single_form "(progn (asdf:perform (quote asdf:load-op) :lisp-os-helpers)
-                                                                  (asdf:perform (quote asdf:compile-op) :lisp-os-helpers)
-                                                                  (asdf:perform (quote asdf:monolithic-compile-bundle-op) :lisp-os-helpers))
-                                                          "' "$out"/bin/*-lisp-launcher.sh ""
-        NIX_LISP_EARLY_OPTIONS="--non-interactive" \
-        NIX_LISP_PRELAUNCH_HOOK="nix_lisp_build_system \
-          lisp-os-helpers '(function lisp-os-helpers/read-eval-print-once:read-eval-print)'" \
-          "$out"/bin/*-lisp-launcher.sh
-        mv "$out/lib/common-lisp/lisp-os-helpers/lisp-os-helpers" "$out/bin/lisp-os-helpers-eval-form"
-      '';
-    };
   }
 

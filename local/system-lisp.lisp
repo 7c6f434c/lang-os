@@ -9,13 +9,7 @@
         *socket-main-thread-preexisting*
         *lisp-os-helpers-package*)
 
-(unless
-  (ignore-errors
-    (with-open-file (*error-output* "/dev/null" :direction :output :if-exists :overwrite)
-      (with-open-file (*trace-output* "/dev/null" :direction :output :if-exists :overwrite)
-        (load (format nil "~a/lib/common-lisp/lisp-os-helpers/lisp-os-helpers--all-systems.fasl" *lisp-os-helpers-package*))))
-    t)
-  (load (format nil "~a/lib/common-lisp/lisp-os-helpers/lisp-os-helpers--all-systems.fasl" *lisp-os-helpers-package*)))
+(asdf:load-system :lisp-os-helpers)
 
 (use-package :lisp-os-helpers/shell)
 (use-package :lisp-os-helpers/network)

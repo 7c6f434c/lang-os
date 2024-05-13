@@ -23,7 +23,7 @@ pkgs.lib.makeExtensible (self: with self; {
   lispOsHelpers = import ../lisp-os-helpers.nix {
     inherit (self) pkgs;
     src = "" + ../lisp-os-helpers;
-    deps = with self.pkgs.lispPackages; [
+    deps = with self.pkgs.sbcl.pkgs; [
       alexandria
       iolib iterate local-time cl-ppcre bordeaux-threads alexandria trivial-backtrace
       clsql clsql-sqlite3 parenscript drakma cl-html-parse
@@ -33,7 +33,7 @@ pkgs.lib.makeExtensible (self: with self; {
   systemLispSettings = "/dev/null";
 
   systemLisp = import ../system-lisp.nix { 
-          deps = with self.pkgs.lispPackages; [
+          deps = with self.pkgs.sbcl.pkgs; [
             lispOsHelpers
           ];
           code = ''(defvar *lisp-os-helpers-package* "${lispOsHelpers}")
@@ -180,7 +180,7 @@ pkgs.lib.makeExtensible (self: with self; {
   swPackages = swPieces.corePackages ++ (with self.pkgs; [
         (hiPrio glibcLocales) xorg.libX11
         vim monotone screen xterm xorg.xprop
-        sbcl lispPackages.clwrapper lispPackages.uiop asdf
+        sbcl asdf
         #gerbil
         guile
 	postgresql-package

@@ -11,9 +11,7 @@
 
     src = src;
 
-    propagatedBuildInputs = [ system.lispOsHelpers 
-      pkgs.lispPackages.clwrapper pkgs.lispPackages.clwrapper.lisp 
-      pkgs.lispPackages.clwrapper.asdf ];
+    propagatedBuildInputs = [ system.lispOsHelpers ];
 
     dontBuild = true;
     dontStrip = true;
@@ -23,7 +21,7 @@
 
     installPhase = ''
       mkdir -p "$out/bin"
-      common-lisp.sh --eval '(progn
+      ${pkgs.sbcl.withPackages (p: with p; [system.lispOsHelpers])}/bin/sbcl --eval '(require :asdf)' --eval '(progn
         (asdf:load-system :lisp-os-helpers)
         ${loadrc src}
         (funcall (find-symbol "BUILD-SHELL"
