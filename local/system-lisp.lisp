@@ -712,6 +712,7 @@
   (unless
     (ignore-errors
       (with-open-file (f "/dev/null"))
+      (with-open-file (f "/dev/urandom"))
       (lisp-os-helpers/subuser:subuser-uid "root")
       t)
     (quit)))
