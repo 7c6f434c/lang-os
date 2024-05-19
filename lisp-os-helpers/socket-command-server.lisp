@@ -250,6 +250,14 @@
 		 (peer peer))
 	    (bordeaux-threads:make-thread
 	      (lambda ()
+                (unless
+                  (ignore-errors
+                    (with-open-file (f "/dev/null")
+                      (with-open-file (f "/dev/null")
+                        (with-open-file (f "/dev/null")
+                          (with-open-file (f "/dev/null")))))
+                    t)
+                  (uiop:quit))
                 (ignore-errors
                   (unwind-protect
                     (eval-socket-connection-handler accepted-socket peer)
