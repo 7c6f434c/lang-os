@@ -680,6 +680,24 @@
   (modprobe "cdc-ether")
   (modprobe "rndis-host"))
 
+(defun socket-command-server-commands::usb-eth-reload-modules (context)
+  (require-or
+    "Owner user presence not confirmed"
+    (require-root context)
+    (progn
+      (assert (gethash (list (context-uid context) :owner) *user-info*))
+      (require-presence context)))
+  (loop for i in 
+        (list
+          "asix"
+          "ax88179_178a"
+          "smsc75xx"
+          "cdc-ether"
+          "rndis-host")
+        do
+        (module-remove i)
+        (modprobe i)))
+
 (defun socket-command-server-commands::usb-hid-modules (context)
   (declare (ignorable context))
   (modprobe "usbhid")
