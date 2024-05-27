@@ -240,8 +240,11 @@
 	(format t "Starting to listen on the system socket ~s~%" socket)
 	(loop
 	  for connection :=
-	  (multiple-value-list
-	    (iolib:accept-connection socket :wait 1 :external-format :utf-8))
+	  (or
+            (ignore-errors
+            (multiple-value-list
+              (iolib:accept-connection socket :wait 1 :external-format :utf-8)))
+            (uiop:quit))
 	  for accepted-socket := (car connection)
 	  for peer := (cdr connection)
 	  when accepted-socket
