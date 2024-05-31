@@ -287,3 +287,7 @@
           :output (list :string :stripped t)
           :ignore-error-status t))
       :test 'equal)))
+
+(defun socket-command-server-commands::sleep (context n)
+  (declare (ignorable context))
+  (sleep n))

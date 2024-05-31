@@ -692,10 +692,11 @@
           "asix"
           "ax88179_178a"
           "smsc75xx"
+          "rndis-host"
           "cdc-ether"
-          "rndis-host")
+          )
         do
-        (module-remove i)
+        (ignore-errors (module-remove-recursive i))
         (modprobe i)))
 
 (defun socket-command-server-commands::usb-hid-modules (context)

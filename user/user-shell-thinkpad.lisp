@@ -347,7 +347,13 @@
       (format *trace-output* "ip address on eth1: ~s~%" address)
       (and address (not (cl-ppcre:scan "^169[.]254[.]" address))))
     (format *trace-output* "enter-labri calling dhclient on eth1~%")
-    (sudo::dhclient "eth1" t))
+    (ask-with-auth
+      (:presence t)
+      `(list
+         (usb-eth-reload-modules)
+         (sleep 1.5)
+         (dhclient "eth1" t)
+         )))
   (format *trace-output* "enter-labri network done~%")
   (! xrandr --fb 4000x3000)
   (sleep 0.1)
