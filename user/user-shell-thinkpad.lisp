@@ -124,6 +124,7 @@
           :name "telegram-sandbox"
           :home home
           :tmp t
+          :slay nil
           :profile-storage (format nil "~a/firefox-profile" home)
           :marionette-socket (format nil "~a/marionette-socket/socket" home)
           :grant (list home))))))
