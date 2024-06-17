@@ -43,17 +43,17 @@
   (let*
     ((display
        (or
-	 display
-	 (ignore-errors
-	   (parse-integer
-	     (subseq (uiop:getenv "DISPLAY") 1)))
-	 0))
+         display
+         (ignore-errors
+           (parse-integer
+             (subseq (uiop:getenv "DISPLAY") 1)))
+         0))
      (name (or name (timestamp-usec-recent-base36)))
      (uid 
        (take-reply-value 
-	 (with-system-socket
-	   ()
-	   (ask-server (with-uid-auth `(subuser-uid ,name))))))
+         (with-system-socket
+           ()
+           (ask-server (with-uid-auth `(subuser-uid ,name))))))
      (x-socket (format nil "/tmp/.X11-unix/X~a" display))
      (x-socket (unless
                  (or x-forbidden
@@ -66,28 +66,28 @@
               x-socket)))
     (when setup
       (funcall
-	setup
-	:allow-other-keys t
-	:name name :uid uid :options options :environment environment
-	:display display :x-socket x-socket :system-socket system-socket))
+        setup
+        :allow-other-keys t
+        :name name :uid uid :options options :environment environment
+        :display display :x-socket x-socket :system-socket system-socket))
     (with-system-socket
       (system-socket)
       (take-reply-value
-	(ask-server
-	  (with-uid-auth
-	    `(run-as-subuser
-	       ,name
-	       ,(absolutise-command command)
-	       (,@environment
-		 ("DISPLAY" ,(format nil ":~a" display)))
-	       ,(loop
-		  for o in options
-		  collect
-		  (cond
-		    ((and (listp o) (equalp (string (first o)) "nsjail"))
-		     (append
-		       (list "nsjail")
-		       (loop
+        (ask-server
+          (with-uid-auth
+            `(run-as-subuser
+               ,name
+               ,(absolutise-command command)
+               (,@environment
+                 ("DISPLAY" ,(format nil ":~a" display)))
+               ,(loop
+                  for o in options
+                  collect
+                  (cond
+                    ((and (listp o) (equalp (string (first o)) "nsjail"))
+                     (append
+                       (list "nsjail")
+                       (loop
                          with result := nil
                          with mounts-seen := nil
                          for oo in (rest o)
@@ -108,11 +108,11 @@
                          finally
                          (progn
                            (unless (or mounts-seen (not x-socket))
-			     (push (list "mounts"
-					 (list (list "-B" x-socket x-socket)))
-				   result))
+                             (push (list "mounts"
+                                         (list (list "-B" x-socket x-socket)))
+                                   result))
                            (return (reverse result))))))
-		    (t o))))))
+                    (t o))))))
         :verbose verbose-errors))))
 
 (defun reset-firefox-launcher (&key profile-contents nix-path nix-wrapper-file
@@ -217,14 +217,14 @@
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
      (uid (take-reply-value
-	    (with-system-socket
-	      ()
-	      (ask-server
-		(with-uid-auth
-		  `(subuser-uid ,name))))))
+            (with-system-socket
+              ()
+              (ask-server
+                (with-uid-auth
+                  `(subuser-uid ,name))))))
      (marionette-socket
        (format nil "/tmp/ff.~a/sockets/~a/marionette-socket"
-	       (get-current-user-name)
+               (get-current-user-name)
                (masked-username name hostname-hidden-suffix))))
     (ensure-directories-exist marionette-socket)
     (iolib/syscalls:chmod 
@@ -232,7 +232,7 @@
       #o0700)
     (uiop:run-program
       (list "setfacl" "-m" (format nil "u:~a:rwx" uid)
-	    (directory-namestring marionette-socket)))
+            (directory-namestring marionette-socket)))
     `(:name ,name :uid ,uid :marionette-socket ,marionette-socket)))
 
 (defun subuser-nsjail-x-application
@@ -243,7 +243,9 @@
     network-ports network-ports-in
     netns-tuntap-devices
     grant grant-read grant-single grant-read-single
-    pass-stderr pass-stdout pass-stdin full-dev dev-log-socket
+    pass-stderr pass-stdout pass-stdin 
+    full-dev fhs-current-system fhs-from
+    dev-log-socket
     newprivs
     grab-dri launcher-wrappers
     mounts system-socket setup directory cd-home
@@ -437,6 +439,8 @@
               ,@(when wait `("wait"))
               ,@(unless skip-nsjail `(("nsjail" "network"
                ,@(when (or with-pulseaudio full-dev) `("full-dev"))
+               ,@(when fhs-current-system `("fhs-current-system"))
+               ,@(when fhs-from `(("fhs-from" ,fhs-from)))
                ,@(when (or dev-log-socket) `(("dev-log-socket" ,dev-log-socket)))
                ,@(when (or with-pulseaudio fake-passwd) `("fake-passwd"))
                ,@(when fake-groups `(("fake-groups" ,fake-groups)))

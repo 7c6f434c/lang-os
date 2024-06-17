@@ -219,6 +219,8 @@
            (directory "/")
            (resolv-conf "/etc/resolv.conf")
            (machine-id "/etc/machine-id")
+           (fhs-current-system nil)
+           (fhs-from nil)
 	   )
   `(,*nsjail-helper*
      ,@(unless verbose `("-q"))
@@ -272,7 +274,24 @@
 		 "-B" "/dev/random" "-B" "/dev/urandom"
 		 "-B" "/dev/shm"
 		 ))
-	   "-R" "/bin" "-R" "/usr" "-R" "/nix/store"
+	   ,@(cond
+               (fhs-current-system
+                 `(
+                   "-R" "/var/current-system/sw/bin/:/bin/"
+                   "-R" "/var/current-system/sw/lib/:/lib/"
+                   "-R" "/var/current-system/sw/lib/:/lib64/"
+                   "-R" "/var/current-system/sw/:/usr/"
+                   ))
+               (fhs-from
+                 `(
+                   "-R" ,(format nil "~a/bin/:/bin/" fhs-from)
+                   "-R" ,(format nil "~a/lib/:/lib/" fhs-from)
+                   "-R" ,(format nil "~a/lib/:/lib64/" fhs-from)
+                   "-R" ,(format nil "~a/:/usr/" fhs-from)
+                   ))
+               (t
+                 `("-R" "/bin" "-R" "/usr")))
+           "-R" "/nix/store"
 	   "-R" "/var/current-system" "-R" "/run/current-system"
 	   "-R" "/etc/fonts"
            "-T" ,(format nil "/run/user/~a/" internal-uid)
