@@ -753,14 +753,15 @@
 
 (defun socket-command-server-commands::dmsetup-minimise (context)
   (require-presence context)
-  (loop for pn in (directory "/dev/mapper/*")
-        for ns := (namestring pn)
-        for bn := (cl-ppcre:regex-replace ".*/" ns "")
-        unless (equal bn "control")
-        do
-        (uiop:run-program
-          `("dmsetup" "remove" ,ns)
-          :ignore-error-status t)))
+  (loop for pass := 1 to 5
+        (loop for pn in (directory "/dev/mapper/*")
+              for ns := (namestring pn)
+              for bn := (cl-ppcre:regex-replace ".*/" ns "")
+              unless (equal bn "control")
+              do
+              (uiop:run-program
+                `("dmsetup" "remove" ,ns)
+                :ignore-error-status t))))
 
 (defun socket-command-server-commands::uinput-modules (context)
   (declare (ignorable context))
