@@ -51,7 +51,8 @@
     zsh pypy27 expect firmwareLinuxNonfree
     alsa-utils alsa-tools mplayer rxvt-unicode
     (mlterm.override {enableFeatures = mlterm.enableFeatures // {ssh2 = false;};})
-    androidenv.androidPkgs_9_0.platform-tools adb-sync
+    androidenv.androidPkgs.platform-tools
+    adb-sync
     powertop cryptsetup
     (self.pkgs.runCommand "local-keymap" {} ''
       mkdir -p "$out/share/keymaps/local/"
