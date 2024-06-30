@@ -753,7 +753,8 @@
 
 (defun socket-command-server-commands::dmsetup-minimise (context)
   (require-presence context)
-  (loop for pass := 1 to 5
+  (loop for pass from 1 to 5
+        do
         (loop for pn in (directory "/dev/mapper/*")
               for ns := (namestring pn)
               for bn := (cl-ppcre:regex-replace ".*/" ns "")
