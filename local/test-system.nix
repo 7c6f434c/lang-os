@@ -171,10 +171,11 @@ pkgs.lib.makeExtensible (self: with self; {
       openglPackages32;
   };
 
+  sbcl-for-stumpwm = self.pkgs.sbcl_2_4_6;
   stumpwmWithDeps = 
-  self.pkgs.stumpwm.overrideLispAttrs (x: {
+  self.sbcl-for-stumpwm.pkgs.stumpwm.overrideLispAttrs (x: {
     lispLibs = x.lispLibs ++ 
-      (with self.pkgs.sbcl.pkgs; [ clx-truetype xkeyboard xembed ]);
+      (with self.sbcl-for-stumpwm.pkgs; [ clx-truetype xkeyboard xembed ]);
   });
 
   swPackages = swPieces.corePackages ++ (with self.pkgs; [
