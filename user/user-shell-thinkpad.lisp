@@ -37,7 +37,7 @@
 (defun mccme-webmail-firefox ()
   (firefox (list "https://email.mccme.ru/")
            :pass-stderr nil :pass-stdout nil :wait nil
-           :no-close t :stumpwm-tags "cat/em-email email mail mccme no-auto-tags"
+           :no-close t :stumpwm-tags "cat/em-email email mail mccme no-auto-tags mccme-webmail"
            :data "/home/raskin/fallout/"
            :javascript t
            :home t
@@ -47,7 +47,7 @@
   (firefox `("https://github.com/notifications?query=is%3Aunread+reason%3Aparticipating"
              ,@(when nixos-discourse `("https://discourse.nixos.org/")))
            :pass-stderr nil :pass-stdout nil :wait nil
-           :no-close t :stumpwm-tags "cat/em-email email mail github no-auto-tags"
+           :no-close t :stumpwm-tags "cat/em-email email mail github no-auto-tags github-web"
            :javascript t
            :socks-proxy 1080))
 
@@ -118,7 +118,7 @@
           :pass-stdout nil
           :wait nil
           :no-close t 
-          :stumpwm-tags "cat/e-im im telegram no-auto-tags"
+          :stumpwm-tags "cat/e-im im telegram no-auto-tags telegram-web"
           :javascript t
           :socks-proxy 1080
           :name "telegram-sandbox"
@@ -142,7 +142,7 @@
       :pass-stdout nil
       :wait nil
       :no-close t 
-      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags dev.mccme.ru"
+      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags dev.mccme.ru mccme-riot"
       :javascript t
       :socks-proxy socks-proxy
       :name "riot-sandbox"
@@ -163,7 +163,7 @@
       :pass-stdout nil
       :wait nil
       :no-close t 
-      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags nix"
+      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags nix nix-riot"
       :javascript t
       :socks-proxy 1080
       :name "nix-riot-sandbox"
@@ -413,3 +413,71 @@
 
 (defun webrtc-chromium (url &rest args)
   (apply 'subuser-nsjail-x-application (list (truename "/home/raskin/.nix-personal/hydra-grab/chromium/bin/chromium") "--no-sandbox" url) :grab-sound t :netns nil :pass-stderr t :grab-dri t :grab-camera t :home t :tmp t  :full-dev t :fake-groups `("audio" "video") :with-dbus t :fake-passwd t args))
+
+(defun comm-browsers (&key (intra-sleep 5) (post-sleep 60))
+  (loop for arglist in
+        `(
+          ("my-vps-ssh" vps-term)
+          ("telegram-web" subuser-telegram-firefox)
+          ("mccme-riot" subuser-riot-firefox)
+          ("nix-riot" subuser-nix-riot-firefox)
+          ("github-web" github-notifications-firefox)
+          ("ub-webmail" firefox (
+                                 "https://webmel.u-bordeaux.fr/"
+                                 "https://celcat.u-bordeaux.fr/"
+                                 "https://moodle.u-bordeaux.fr/"
+                                 "https://gitlab.emi.u-bordeaux.fr"
+                                 "https://cas.u-bordeaux.fr/"
+                                 )
+           :prefs (("browser.urlbar.suggest.bookmark" t))
+           :bookmarks (
+                       "https://ent.u-bordeaux.fr"
+                       ("https://diff.u-bordeaux.fr/sympa/" "Mailing list management for UBx")
+                       ("https://gds.labri.fr/index.php" "Room reservations at LaBRI")
+                       "https://www.labri.fr/intranet"
+                       "https://hyperplanning.iut.u-bordeaux.fr/"
+                       "https://gitlab.emi.u-bordeaux.fr/pt2/teams/"
+                       "https://sgse.u-bordeaux.fr/sgseub/"
+                       "https://algodist.labri.fr/index.php/Main/GT"
+                       ("https://applis.u-bordeaux.fr/ent/annuaire/diffusion.php" 
+                        "Mailing lists e.g. student groups")
+                       "https://www.u-bordeaux.fr/annuaire"
+                       "https://www.labri.fr/presentation/annuaire"
+                       "https://chat.u-bordeaux.fr/"
+                       )
+           :javascript t :tmp t :hostname-suffix "ub" :home t
+           :no-close t 
+           :wait nil
+           :pass-stderr nil :pass-stdout nil
+           :stumpwm-tags 
+           "cat/em-email|email|webmail|u-bordeaux|chat|im|webchat|ub-chat|ub-mail|ub-email|ub-msg|ub-messaging|no-auto-tags|ub-webmail")
+          ("mccme-webmail" mccme-webmail-firefox)
+          ("nixpkgs-zulip" firefox
+           ("https://nixpkgs.zulipchat.com/") 
+           :javascript t 
+           :stumpwm-tags "nixpkgs-zulip im webchat cat/e-im" 
+           :no-close t
+           :pass-stderr nil :pass-stdout nil
+           :wait nil)
+          ("ub-discord" firefox 
+           ("https://discordapp.com/") 
+           :javascript t :marionette-socket nil :tmp t :home t 
+           :hostname-suffix "ub-discord" 
+           :wait nil
+           :pass-stderr nil :pass-stdout nil
+           :stumpwm-tags 
+           "no-auto-tags|ub|u-bordeaux|discord|ub-discord|im|webchat|cat/e-im")
+          )
+        do
+        (let ((arglist arglist))
+          (unless
+            (stumpwm-eval
+              `(act-on-matching-windows
+                 (w :screen)
+                 (tagged-p w ,(string-upcase (first arglist)))
+                 (list (window-id w) (window-title w))))
+            (ignore-errors
+              (apply 'funcall (rest arglist))
+              t)
+            (sleep intra-sleep))))
+  (sleep post-sleep))

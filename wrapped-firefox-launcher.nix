@@ -21,8 +21,18 @@ rec {
     from marionette_driver.addons import Addons;
     import os;
     import sys;
-    session = Marionette(host="127.0.0.1",port=os.getenv("MARIONETTE_PORT") or 2828,bin=False,socket_timeout=3600,startup_timeout=1);
-    session.start_session(timeout=1) or exit()
+    retry=10
+    while retry > 0:
+      try:
+        session = Marionette(host="127.0.0.1",port=os.getenv("MARIONETTE_PORT") or 2828,bin=False,socket_timeout=3600,startup_timeout=1);
+        if session.start_session(timeout=3):
+          retry = -1
+      except Exception:
+        retry = retry-1
+        os.sleep(0.5)
+    if retry==0:
+      print("Could not connect")
+      exit()
     while True:
       try:
         code = sys.stdin.readline()

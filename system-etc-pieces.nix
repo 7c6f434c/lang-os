@@ -102,10 +102,10 @@ pkgs.lib.makeExtensible (self: with self; {
      (fromNixOS.etcSelectComponents
              ["hostname" "hosts" "nsswitch.conf"]
              {
-               networking.hostName="localhost";
+               networking.hostName="401a0bf1";
                networking.hosts= { 
-                  "127.0.0.1" = ["localhost4" "localhost" "localhost4.local"];
-                  "::1" = ["localhost6" "localhost6.local"];
+                  "127.0.0.1" = ["401a0bf1" "localhost4" "localhost" "localhost4.local"];
+                  "::1" = ["401a0bf1" "localhost6" "localhost6.local"];
                } // extraHostsEntries;
              })
      // resolvEtc.entries // ianaEtc.entries //

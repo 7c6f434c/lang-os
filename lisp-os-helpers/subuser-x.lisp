@@ -502,7 +502,8 @@
     environment marionette-socket profile-storage name
     (firefox-launcher *firefox-launcher*) (slay t) (wait t)
     mounts (hostname-suffix "") hostname-hidden-suffix certificate-overrides socks-proxy
-    network-ports keep-namespaces)
+    network-ports keep-namespaces
+    bookmarks)
   (declare (ignorable options network-ports))
   (let*
     (
@@ -538,6 +539,20 @@
         (alexandria:read-file-into-string certificate-overrides)
         (format nil "~a/cert_override.txt" combined-profile)
         :if-exists :append :if-does-not-exist :create))
+    (when bookmarks
+      (uiop:run-program
+        (list "rm" "-f" (format nil "~a/places.sqlite" 
+                                combined-profile)))
+      (let* ((bookmarks
+               (loop for b in bookmarks
+                     collect
+                     (if (listp b) b 
+                       (list b b)))))
+        (alexandria:write-string-into-file
+          (format nil "~{~{<a href=\"~a\">~a</a>~}~%~}"
+                  bookmarks)
+          (format nil "~a/bookmarks.html" combined-profile)
+          :if-exists :supersede :if-does-not-exist :create)))
     (uiop:run-program
       (list "setfacl" "-R" "-m" (format nil "u:~a:rwX" uid) combined-profile)
       :error-output t)

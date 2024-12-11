@@ -28,6 +28,13 @@
 (unless *socket-main-thread-preexisting*
   (format t "Starting the Common Lisp system daemon at ~a~%" (local-time:now)))
 
+(uiop:run-program 
+  (list "hostname"
+        (string-trim
+          `(#\Space #\Newline #\Return #\Tab)
+          (alexandria:read-file-into-string 
+            "/var/current-system/global/etc/hostname"))))
+
 (defvar *vt-spawners* (make-array 12 :initial-element nil))
 
 (loop
@@ -236,7 +243,8 @@
     (error "Stopping gpm failed")))
 
 (defun socket-command-server-commands::dhclient (context interface &optional 
-                                                         copy-resolv no-resolv router-resolv once)
+                                                         copy-resolv no-resolv router-resolv once
+                                                         hostname)
   (require-or
     "Owner access not confirmed"
     (require-root context)
@@ -246,7 +254,8 @@
   (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient-new"))
   (run-link-dhclient interface :no-resolv no-resolv :once once)
   (when copy-resolv (dhcp-resolv-conf))
-  (when router-resolv (router-resolv-conf)))
+  (when router-resolv (router-resolv-conf))
+  (when hostname (uiop:run-program (list "hostname" hostname))))
 
 (defun socket-command-server-commands::add-ip-address (context interface address &optional (netmask-length 24))
   (require-or
