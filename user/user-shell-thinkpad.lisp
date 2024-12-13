@@ -481,3 +481,23 @@
               t)
             (sleep intra-sleep))))
   (sleep post-sleep))
+
+(defun comm-browsers-number-tags ()
+  (loop for role in 
+        `(
+          ("my-vps-ssh" 8)
+          ("telegram-web" 0)
+          ("mccme-riot" 1)
+          ("nix-riot" 2)
+          ("github-web" 3)
+          ("ub-webmail" 4)
+          ("mccme-webmail" 5)
+          ("nixpkgs-zulip"7)
+          ("ub-discord" 9)
+          )
+        do
+        (stumpwm-eval
+          `(act-on-matching-windows
+             (w :screen)
+             (tagged-p w ,(string-upcase (first role)))
+             (tag-window ,(format nil "~a" (second role)) w)))))
