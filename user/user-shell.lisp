@@ -716,6 +716,7 @@
     (! mtn ci -m "Event flow"           remind-calendar-combalgo)
     (! mtn ci -m "Event flow"           remind-calendar-m2f)
     (! mtn ci -m "Event flow"           remind-calendar-algodist)
+    (! mtn ci -m "Event flow"           remind-temporary-links)
     (! mtn ci -m "SSL in the wild"      ssl-exceptions)
     (! mtn ci -m "Firefox prefs tuning" firefox-prefs.js)
     (cd cwd)))

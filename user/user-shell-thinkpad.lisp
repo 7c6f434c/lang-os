@@ -446,7 +446,7 @@
                        "https://chat.u-bordeaux.fr/"
                        ("https://services.emi.u-bordeaux.fr/edt/" "CREMI room use schedule")
                        )
-           :javascript t :tmp t :hostname-suffix "ub" :home t
+           :javascript t :tmp t :hostname-suffix "ub." :home t
            :no-close t 
            :wait nil
            :pass-stderr nil :pass-stdout nil
@@ -463,7 +463,7 @@
           ("ub-discord" firefox 
            ("https://discordapp.com/") 
            :javascript t :marionette-socket nil :tmp t :home t 
-           :hostname-suffix "ub-discord" 
+           :hostname-suffix "ub-discord." 
            :wait nil
            :pass-stderr nil :pass-stdout nil
            :stumpwm-tags 
