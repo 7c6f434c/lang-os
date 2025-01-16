@@ -171,7 +171,7 @@ pkgs.lib.makeExtensible (self: with self; {
       openglPackages32;
   };
 
-  sbcl-for-stumpwm = self.pkgs.sbcl_2_4_6;
+  sbcl-for-stumpwm = self.pkgs.sbcl;
   stumpwmWithDeps = 
   self.sbcl-for-stumpwm.pkgs.stumpwm.overrideLispAttrs (x: {
     lispLibs = x.lispLibs ++ 
