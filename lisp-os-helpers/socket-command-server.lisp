@@ -211,19 +211,27 @@
       (context :peer peer)
       (context :connection stream)
       (loop
-	with context := (function context)
-	while (context :continue)
-	for input := (multiple-value-list (ignore-errors (safe-read stream nil)))
-	for value :=
-	(if (second input)
-	  (list "error" (format nil "~a" (second input)))
-	  (eval-command-form (first input) context))
-	do (format stream "~s~%" value)
-	do (finish-output stream)
-	when (equal (first value) "error")
-	do (format *error-output* "Error in connection handler for peer ~a:~%~a~%"
-		   peer (second value))
-	finally (close-received-fds context)))))
+        with context := (function context)
+        while (context :continue)
+        for input := (multiple-value-list (ignore-errors (safe-read stream nil)))
+        for value :=
+        (if (second input)
+          (list "error" (format nil "~a" (second input)))
+          (eval-command-form (first input) context))
+        do (format stream "~s~%" value)
+        do (finish-output stream)
+        when (equal (first value) "error")
+        do (format *error-output* "Error in connection handler for peer ~a:~%~a~%Input:~%~s~%"
+                   peer (second value) input)
+        when (second input) 
+        do (progn
+             (format t "Context:continue: ~s~%" (context :continue))
+             (context :continue nil)
+             (format t "Context:continue: ~s~%" (context :continue)))
+        finally (progn
+                  (format t "Finishing with ~s for ~s~%"
+                          stream peer)
+                  (close-received-fds context))))))
 
 (defun eval-socket-runner (name)
   (ignore-errors (delete-file name))
@@ -248,11 +256,13 @@
 	  for accepted-socket := (car connection)
 	  for peer := (cdr connection)
 	  when accepted-socket
-	  do 
+          do 
 	  (let* ((accepted-socket accepted-socket)
-		 (peer peer))
-	    (bordeaux-threads:make-thread
-	      (lambda ()
+                 (peer peer))
+            (format t "Handling accepted-socket ~s [~s]~%"
+                    accepted-socket (iolib:socket-os-fd accepted-socket))
+            (bordeaux-threads:make-thread
+              (lambda ()
                 (unless
                   (ignore-errors
                     (with-open-file (f "/dev/null")
@@ -265,7 +275,7 @@
                   (unwind-protect
                     (eval-socket-connection-handler accepted-socket peer)
                     (ignore-errors (close accepted-socket)))))
-	      :name (format nil "Connection handler for ~a" peer)))))
+              :name (format nil "Connection handler for ~a" peer)))))
       (close socket))))
 
 (defun require-presence (context)

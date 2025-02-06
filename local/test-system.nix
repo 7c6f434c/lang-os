@@ -177,6 +177,13 @@ pkgs.lib.makeExtensible (self: with self; {
     lispLibs = x.lispLibs ++ 
       (with self.sbcl-for-stumpwm.pkgs; [ clx-truetype xkeyboard xembed ]);
   });
+  stumpwmWithDepsRunnable = self.pkgs.runCommand "stuumpwm-with-deps-runnable" {
+    buildInputs = [ (self.sbcl-for-stumpwm.withPackages (p: [self.stumpwmWithDeps])) ];
+  } ''
+      mkdir -p "$out/bin" "$out/lib"
+      ln -s "${stumpwmWithDeps}" "$out/lib/stumpwm"
+      sbcl --eval '(require :asdf)' --eval '(require :stumpwm)' --eval "(sb-ext:save-lisp-and-die \"$out/bin/stumpwm\" :executable t)"
+    '';
 
   swPackages = swPieces.corePackages ++ (with self.pkgs; [
         (hiPrio glibcLocales) xorg.libX11
@@ -186,7 +193,7 @@ pkgs.lib.makeExtensible (self: with self; {
         guile
 	postgresql-package
         nsjail
-        stumpwmWithDeps
+        stumpwmWithDepsRunnable
         unionfs-fuse
         xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host iotop syslogng
         btrfs-progs

@@ -917,6 +917,8 @@
 	(uiop:run-program
 	  (list "setfacl" "-m" (second x) (first x)))))
 
+(ignore-errors (uiop:run-program (list "/var/run/current-system/sw/bin/vtlock" "0")))
+
 (unless
   *socket-main-thread-preexisting*
   (ignore-errors (uiop:run-program (list "/var/current-system/sw/bin/vtlock" "0")))

@@ -58,7 +58,7 @@
       mkdir -p "$out/share/keymaps/local/"
       cp ${./ru-en.map} "$out/share/keymaps/local/ru-en.map"
     '')
-    /* self.stumpwmWithConfig */ self.stumpwmWithDeps
+    /* self.stumpwmWithConfig */ self.stumpwmWithDepsRunnable
   ]);
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;
