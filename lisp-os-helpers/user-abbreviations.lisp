@@ -299,7 +299,7 @@
          (,@(if presence `(with-presence-auth ,presence) `(identity))
            (,@(if password `(with-password-auth ,password) `(identity))
              (,@(if root `(with-password-auth ,root) `(identity))
-               (list 'list ,@(remove nil code))
+               (list 'list ,@(remove nil (append code `((list "FINISH")))))
                ,@(if root `(:user "root")))))))))
 
 (defmacro defun-export (name args &rest code)

@@ -478,13 +478,15 @@
       (bordeaux-threads:make-thread
         (lambda ()
           (when
-            (wait (:timeout 30 :sleep 0.3)
-                  (ignore-errors
-                    (and
-                      (probe-file marionette-socket)
-                      (with-marionette
-                        (marionette-socket)
-                        (ask-marionette-parenscript '(ps-js:return "1"))))))
+            (and marionette-socket
+                 (wait (:timeout 30 :sleep 0.3)
+                       (ignore-errors
+                         (and
+                           (probe-file marionette-socket)
+                           (with-marionette
+                             (marionette-socket)
+                             (ask-marionette-parenscript 
+                               '(ps-js:return "1")))))))
             (format *trace-output* "Marionette socket ~s responds~%"
                     marionette-socket)
             (with-marionette
@@ -545,6 +547,24 @@
                              (or hostname-suffix ""))))))
               )))
           :name "Marionette command feeder"))
+    (when
+      (and stumpwm-tags
+           (not marionette-socket))
+      (funcall
+        (stumpwm-app-tagger
+          (if (stringp stumpwm-tags)
+            (cl-ppcre:split "[| ]" stumpwm-tags)
+            stumpwm-tags)
+          :keep nil :wait t :forever nil :now nil)
+        :options
+        `(("nsjail" 
+           ("hostname" 
+            ,(format nil
+                     "~a~a~a"
+                     (masked-username
+                       name hostname-hidden-suffix)
+                     (if hostname-suffix "." "")
+                     (or hostname-suffix "")))))))
     (apply 'subuser-firefox
            `(,@ff-args 
               ,@(when file

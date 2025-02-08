@@ -445,6 +445,7 @@
                        "https://www.labri.fr/presentation/annuaire"
                        "https://chat.u-bordeaux.fr/"
                        ("https://services.emi.u-bordeaux.fr/edt/" "CREMI room use schedule")
+                       ("https://apogee.u-bordeaux.fr/snw/" "Grade submission online")
                        )
            :javascript t :tmp t :hostname-suffix "ub." :home t
            :no-close t 
