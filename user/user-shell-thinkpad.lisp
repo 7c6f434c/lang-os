@@ -20,20 +20,6 @@
 (load *common-rc*)
 (defun edrc-common () (ed *common-rc*))
 
-(defun im-browsers ()
-  (firefox (list "http://chat-judge.in.tum.de"
-                 "https://judge.in.tum.de/conpra/jury/clarifications.php"
-                 "https://judge.in.tum.de/discuss/c/conpra/"
-                 "https://judge.in.tum.de/conpra/jury/submissions.php"
-                 "https://judge.in.tum.de/conpra/jury/scoreboard.php"
-                 "https://git-judge.in.tum.de/conpra/conpra/wikis/themenliste"
-                 "https://git-judge.in.tum.de/problemsetters/problems/merge_requests"
-                 "https://www7.in.tum.de/um/courses/praktika/conpra/WS19/"
-                 )
-           :pass-stderr nil :pass-stdout nil :wait nil
-           :no-close t :javascript t :socks-proxy 1080
-           :stumpwm-tags "cat/e-im|chat|im|tum|mattermost|conpra|no-auto-tags"))
-
 (defun mccme-webmail-firefox ()
   (firefox (list "https://email.mccme.ru/")
            :pass-stderr nil :pass-stdout nil :wait nil
@@ -446,6 +432,7 @@
                        "https://chat.u-bordeaux.fr/"
                        ("https://services.emi.u-bordeaux.fr/edt/" "CREMI room use schedule")
                        ("https://apogee.u-bordeaux.fr/snw/" "Grade submission online")
+                       "https://evento.renater.fr/"
                        )
            :javascript t :tmp t :hostname-suffix "ub." :home t
            :no-close t 
