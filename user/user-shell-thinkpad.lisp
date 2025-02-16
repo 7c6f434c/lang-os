@@ -433,6 +433,7 @@
                        ("https://services.emi.u-bordeaux.fr/edt/" "CREMI room use schedule")
                        ("https://apogee.u-bordeaux.fr/snw/" "Grade submission online")
                        "https://evento.renater.fr/"
+                       ("https://apogee.u-bordeaux.fr/trombi/" "Student photos")
                        )
            :javascript t :tmp t :hostname-suffix "ub." :home t
            :no-close t 
