@@ -442,6 +442,14 @@
            :stumpwm-tags 
            "cat/em-email|email|webmail|u-bordeaux|chat|im|webchat|ub-chat|ub-mail|ub-email|ub-msg|ub-messaging|no-auto-tags|ub-webmail")
           ("mccme-webmail" mccme-webmail-firefox)
+          ("acx-discord" firefox 
+           ("https://discordapp.com/") 
+           :javascript t :marionette-socket nil :tmp t :home t 
+           :hostname-suffix "acx-discord." 
+           :wait nil
+           :pass-stderr nil :pass-stdout nil
+           :stumpwm-tags 
+           "no-auto-tags|discord|acx-discord|im|webchat|cat/e-im")
           ("nixpkgs-zulip" firefox
            ("https://nixpkgs.zulipchat.com/") 
            :javascript t 
