@@ -11,7 +11,7 @@
       (pkgs.dejavu_fonts + "/share/fonts/truetype/")
       pkgs.libertine
       pkgs.liberation_ttf
-      pkgs.unifont
+      (pkgs.unifont // {bdf = null;})
       pkgs.unifont_upper
       pkgs.freefont_ttf
       pkgs.clearlyU

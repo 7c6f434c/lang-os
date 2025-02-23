@@ -1,5 +1,5 @@
 #! /bin/sh
-if which rlwrap &> /dev/null; then
+if test -z "$NO_RLWRAP" && which rlwrap &> /dev/null; then
         touch ~/.user-lisp-shell_history
         history="$(mktemp ~/.user-lisp-shell_history.XXXXXXXX)"
         cat ~/.user-lisp-shell_history > "$history"

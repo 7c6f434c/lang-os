@@ -178,19 +178,6 @@
       :profile-storage (format nil "~a/firefox-profile" home)
       :grant (list home))))
 
-(defun im-windows ()
-  (im-browsers)
-  (subuser-telegram-firefox)
-  (subuser-riot-firefox)
-  (&& (subuser-signal))
-  )
-
-(defun communication-windows ()
-  (ensure-vps-socks)
-  ;(matrix-term)
-  (im-windows)
-  (email-browsers))
-
 (defun subuser-midpass-firefox (&rest overrides)
   (let* ((home (format nil "~a/.local/share/midpass-home"
                        (uiop:getenv "HOME"))))
