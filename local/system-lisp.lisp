@@ -334,6 +334,7 @@
       (or
         (alexandria:starts-with-subseq "/home/" from)
         (alexandria:starts-with-subseq "/tmp/" from)
+        (alexandria:starts-with-subseq "/nix/store/" from)
         )
       (or
         (alexandria:starts-with-subseq "/home/" to)
