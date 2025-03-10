@@ -421,6 +421,8 @@
                        ("https://apogee.u-bordeaux.fr/snw/" "Grade submission online")
                        "https://evento.renater.fr/"
                        ("https://apogee.u-bordeaux.fr/trombi/" "Student photos")
+                       "https://apps-ent.u-bordeaux.fr/annuaire/v2/index.php"
+                       "https://nuxeo.u-bordeaux.fr/"
                        )
            :javascript t :tmp t :hostname-suffix "ub." :home t
            :no-close t 
