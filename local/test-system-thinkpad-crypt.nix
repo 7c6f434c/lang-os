@@ -33,9 +33,8 @@
     cp -r "${self.stumpwmContrib}" "contrib"
     chmod u+rwX -R contrib
     export HOME="$PWD"
-    ${self.stumpwmWithDeps}/bin/sbcl \
+    ${self.sbcl-for-stumpwm.withPackages (x: [self.stumpwmWithDeps])}/bin/sbcl \
       --eval '(require :asdf)' \
-      --load ${self.stumpwmWithDeps}/dynamic-mixins/dynamic-mixins-swm.asd \
       --eval '(require :stumpwm)' --eval '(in-package :stumpwm)' \
       --eval '(defvar stumpwm::*local-module-dir* "'"$PWD"'/contrib/")' \
       --eval '(defvar stumpwm::*langos* "${self.stumpwmLangOS}/")' \
