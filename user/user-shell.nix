@@ -21,9 +21,10 @@
 
     installPhase = ''
       mkdir -p "$out/bin"
-      ${pkgs.sbcl.withPackages (p: with p; [system.lispOsHelpers])}/bin/sbcl --eval '(require :asdf)' --eval '(progn
+      ${pkgs.sbcl.withPackages (p: with p; [system.lispOsHelpers])}/bin/sbcl --eval '(require :asdf)' --eval '(ignore-errors
         (asdf:load-system :lisp-os-helpers)
         ${loadrc src}
+        (format *error-output* "~s~%" (list *package* `lisp-shell-init))
         (funcall (find-symbol "BUILD-SHELL"
                     (find-package "LISP-OS-HELPERS/USER-ABBREVIATIONS")) 
             "'"$out"'/bin/user-lisp-shell")

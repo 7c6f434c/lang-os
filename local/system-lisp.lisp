@@ -244,7 +244,7 @@
 
 (defun socket-command-server-commands::dhclient (context interface &optional 
                                                          copy-resolv no-resolv router-resolv once
-                                                         hostname)
+                                                         hostname send-hostname)
   (require-or
     "Owner access not confirmed"
     (require-root context)
@@ -252,7 +252,8 @@
   (require-presence context)
   (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient"))
   (uiop:run-program (list "truncate" "--size" "0" "/etc/resolv.conf.dhclient-new"))
-  (run-link-dhclient interface :no-resolv no-resolv :once once)
+  (run-link-dhclient interface :no-resolv no-resolv :once once 
+                     :hostname (when send-hostname hostname))
   (when copy-resolv (dhcp-resolv-conf))
   (when router-resolv (router-resolv-conf))
   (when hostname (uiop:run-program (list "hostname" hostname))))
@@ -882,6 +883,7 @@
 
 (defvar *auto-wifi* nil)
 (defvar *auto-interfaces* nil)
+(defvar *dhcp-hostname-interfaces* nil)
 (defvar *auto-ip-addresses* nil)
 (defvar *auto-modules* nil)
 (defvar *auto-acls* nil)
@@ -905,7 +907,12 @@
       (let ((iface iface))
 	(bordeaux-threads:make-thread
 	  (lambda ()
-	    (run-link-dhclient iface)
+	    (apply 'run-link-dhclient iface
+                   (append
+                     (when (find iface *dhcp-hostname-interfaces* :test 'equal)
+                       (list :hostname (string-trim (list #\Newline)
+                                                    (alexandria:read-file-into-string 
+                                                      "/etc/hostname"))))))
 	    (loop for x in
 		  (remove-if-not 
 		    (lambda (x) (equal (first x) iface))
@@ -917,6 +924,13 @@
       (run-program-return-success
 	(uiop:run-program
 	  (list "setfacl" "-m" (second x) (first x)))))
+
+(uiop:run-program 
+  (list "hostname"
+        (string-trim
+          `(#\Space #\Newline #\Return #\Tab)
+          (alexandria:read-file-into-string 
+            "/var/current-system/global/etc/hostname"))))
 
 (ignore-errors (uiop:run-program (list "/var/run/current-system/sw/bin/vtlock" "0")))
 

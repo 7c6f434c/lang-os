@@ -284,7 +284,7 @@
                        :extra-requests `((list
                                            (set-brightness 45)
                                            (set-brightness 400)
-                                           (dhclient "eth1" t)
+                                           (dhclient "eth1" t t)
                                            (dhcp-resolv-conf))))))
   (! xrandr --fb 4000x3000)
   (sleep 0.1)

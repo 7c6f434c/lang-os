@@ -163,7 +163,7 @@
   (uiop:run-program
     (list "ip" "link" "set" interface "down")))
 
-(defun run-link-dhclient (interface &key no-resolv once)
+(defun run-link-dhclient (interface &key no-resolv once hostname)
   (run-program-return-success
     (uiop:run-program
       (list "dhcpcd" "-x" interface)))
@@ -177,6 +177,7 @@
         "-f" "/var/current-system/sw/etc/dhcpcd.conf"
         ,@(when no-resolv `("-C" "resolv.conf"))
         ,@(when once `("-1"))
+        ,@(when hostname `("--hostname" ,hostname))
         )))
   (run-program-return-success
     (uiop:run-program

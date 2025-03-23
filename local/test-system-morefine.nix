@@ -13,7 +13,7 @@
       modprobe usb-storage
       modprobe uas
       
-      sh ${./mount-partitions-usb-1.sh}
+      sh ${./mount-partitions-morefine.sh}
     '';
     modprobeConfig = ''
       blacklist nouveau
@@ -37,6 +37,7 @@
     androidenv.androidPkgs.platform-tools
     adb-sync
     powertop
+    man
   ]);
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;
@@ -69,5 +70,21 @@
   };
   
   openglPackages = with self.pkgs; [ vaapiIntel libvdpau-va-gl vaapiVdpau ];
+
+  systemLispSettings = ./system-lisp-settings-morefine.lisp;
+
+  hostname = "morefine";
+
+  nixOptions = super.nixOptions // {
+    extraOptions = super.nixOptions.extraOptions or "" + ''
+          gc-keep-outputs = true
+
+          build-max-jobs = 16
+          build-cores = 16
+          max-jobs = 16
+          cores = 16
+    '';
+  };
+
 })
 

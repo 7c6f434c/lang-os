@@ -106,8 +106,10 @@
           gc-keep-derivations = false
           experimental-features = nix-command
     '';
+    settings.trusted-public-keys = [ "buildbox-morefine-s500plus-20250322:VYZrnhIxa7NvILYl2Lme0NfKbJrthYyhtGk5/D+O0LA=" ];
   };
 
+  hostname = "401a0bf1";
   systemEtc = super.systemEtc.override (x: {
     paths = x.paths ++ [
       (super.etcPieces.deeplinkAttrset "etc-lvm" {

@@ -385,11 +385,12 @@ pkgs.lib.makeExtensible (self: with self; {
     tr '\n' : | sed -e 's/:$//' > "$out/gd-font-path.conf"
   '';
 
+  hostname = "localhost";
   systemEtc = self.pkgs.buildEnv {
     name = "system-etc";
     paths = [
       (etcPieces.timeEtc "UTC")
-      (etcPieces.namesEtc "localhost")
+      (etcPieces.namesEtc hostname)
       (etcPieces.authEtc {
         security.pam.services = {
           sshd = {};

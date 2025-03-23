@@ -162,7 +162,9 @@
 	`(chvt ,vtn)))))
 
 (defun-export
-  sudo::dhclient (interface &optional copy-resolv)
+  sudo::dhclient (interface &optional copy-resolv send-hostname)
+  (let* ((hostname (first (uiop:run-program 
+                            (list "hostname") :output :lines))))
   (with-system-socket
     ()
     (ask-server
@@ -170,11 +172,12 @@
 	(with-presence-auth
 	  "Activate network"
 	  `(progn
-             (dhclient ,interface ,copy-resolv)
+             (dhclient ,interface ,copy-resolv
+                       nil nil nil
+                       ,hostname ,send-hostname)
              (reconfigure-bind "restart" "empty")
              ,@(unless copy-resolv `(local-resolv-conf))
-             (hostname ,(first (uiop:run-program 
-                                 (list "hostname") :output :lines)))))))))
+             )))))))
 
 (defun-export
   sudo::passwd (&optional password)
@@ -297,7 +300,7 @@
         :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
                                   ($ :home))
         :out-link (~ ".nix-personal" (concatenate 'string "firefox-launcher" variant-string))
-        :drv-link (~ ".nix-personal-drvs" (concatenate 'string "firefox-launcher" variant-string))
+        :drv-link (~ ".nix-personal/derivations" (concatenate 'string "firefox-launcher" variant-string))
         :fast fast
         :profile-contents
         (format nil "~a/src/nix/lang-os/user/firefox-profile-skel~a/"
@@ -316,7 +319,7 @@
         :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
         :nix-file (~ "src/nix/lang-os/bus-wrappers.nix")
         :out-link (~ ".nix-personal/bus-wrapper")
-        :drv-link (~ ".nix-personal-drvs/bus-wrapper")
+        :drv-link (~ ".nix-personal/derivations/bus-wrapper")
         :fast fast))
     (unless variant
       (let ((pack (gethash nil *firefox-variants*)))
@@ -580,7 +583,7 @@
           (list
             (true-executable "my-screen")
             (format nil "for-su-from-~a" (get-current-user-name))
-            "bash")))
+            (true-executable "bash"))))
   (&&
     (sudo::run
       "su" "root" "-l" "-c"
