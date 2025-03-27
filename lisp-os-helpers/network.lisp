@@ -179,6 +179,7 @@
         ,@(when once `("-1"))
         ,@(when hostname `("--hostname" ,hostname))
         )))
+  (sleep 1)
   (run-program-return-success
     (uiop:run-program
       (list "cp" "/etc/resolv.conf" "/etc/resolv.conf.dhclient-new")))

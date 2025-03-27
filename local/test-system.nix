@@ -215,6 +215,7 @@ pkgs.lib.makeExtensible (self: with self; {
       ]) ++ (with stage1; [firmwareSet] ++ _kernelModulePackages)
       ++ systemFonts;
 
+  grubTimeout = 15;
   systemParts = {
     bin = import ../system-bin.nix {
       initScript = ''
@@ -229,6 +230,7 @@ pkgs.lib.makeExtensible (self: with self; {
         mkdir -p /var/lib/cups /var/lib/ssh /var/lib/bind /var/empty
         ln -sf "/etc/ssh-config/sshd_config" /var/lib/ssh/
       '';
+      grubTimeout = grubTimeout;
     };
     global = import ../system-global.nix {inherit systemEtc;};
     setuid = import ../system-setuid.nix {

@@ -1238,6 +1238,17 @@
                      )
       args)))
 
+(defun weighted-average (entries)
+  (let*
+    ((tw (apply '+ (mapcar 'second entries)))
+     (we (mapcar '*
+                 (mapcar 'first entries)
+                 (mapcar 'second entries)))
+     (ws (apply '+ we))
+     (wa (/ ws tw))
+     (waf (* 1.0 wa)))
+    waf))
+
 (defvar *shell-init-hooks* nil)
 (defun lisp-shell-init () (mapcar 'funcall *shell-init-hooks*))
 (push (lambda () (update-firefox-variants :fast t)) *shell-init-hooks*)

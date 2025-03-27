@@ -27,5 +27,5 @@ if loadfont (\$drive1)//grub/fonts/unicode.pf2; then
 fi
 
 set default=0 
-set timeout=15
+set timeout=${grub_timeout:-15}
 ";

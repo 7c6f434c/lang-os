@@ -4,6 +4,7 @@
                       {inherit pkgs; inherit(pkgs) lib; config={}; modulesPath = null;}).config.system.build
   , systemName ? "layered-system"
   , grub_efi ? pkgs.grub2_efi
+  , grubTimeout ? 15
   , setupScript ? ""
   , initScript ? "while true; do /bin/sh -i; done"
 }:
@@ -34,7 +35,7 @@ pkgs.runCommand "system-bin" {} ''
   script activate '"$basedir/setup"'
   script switch '"$basedir/set-as-current"' '"$basedir/activate"' '"$basedir/boot"'
   script boot '"$basedir"/set-as-current' '"$basedir/assemble-grub-config" "$@"'
-  script grub-print-header '"${./grub-print-header.sh}" "$@"'
+  script grub-print-header 'export grub_timeout=${builtins.toString grubTimeout}' '"${./grub-print-header.sh}" "$@"'
   script assemble-grub-config 'export grub_print_header="$basedir/grub-print-header"' '"${./assemble-grub-config.sh}" "$@"'
   script install-efi-grub 'target="''${1:-/boot}"; shift' \
     '"${grub_efi}/bin/grub-install" --efi-directory="$target" --target=x86_64-efi "$@"' \

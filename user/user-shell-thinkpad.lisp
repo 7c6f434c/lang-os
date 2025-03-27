@@ -284,8 +284,8 @@
                        :extra-requests `((list
                                            (set-brightness 45)
                                            (set-brightness 400)
-                                           (dhclient "eth1" t t)
-                                           (dhcp-resolv-conf))))))
+                                           (empty-resolv-conf)
+                                           (dhclient "eth1" t t))))))
   (! xrandr --fb 4000x3000)
   (sleep 0.1)
   (! xrandr --output "VGA-1-2" --mode 1920x1080 --left-of "LVDS-1")

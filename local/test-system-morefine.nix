@@ -18,6 +18,7 @@
     modprobeConfig = ''
       blacklist nouveau
       blacklist iwlwifi
+      blacklist mt7921e
       
       ${builtins.readFile ./modprobe.conf}
     '';
@@ -25,7 +26,7 @@
 
   swPackages = super.swPackages ++ (with self.pkgs; [
     zsh pypy2 pypy3 expect firmwareLinuxNonfree
-    alsa-utils alsa-tools mplayer rxvt-unicode
+    alsa-utils alsa-tools rxvt-unicode
     (mlterm.override (x: { enableGuis = { 
                  fb = true; 
                  xlib = true;
@@ -34,8 +35,6 @@
                  quartz = false;
                }; }))
     kdePackages.konsole
-    androidenv.androidPkgs.platform-tools
-    adb-sync
     powertop
     man
   ]);
@@ -64,8 +63,7 @@
   systemParts = super.systemParts // {
     services = self.etcPieces.deeplinkAttrset "systemServices"
     (super.systemParts.services.entries // {
-      "from-nixos/gpm" = self.fromNixOS.serviceScript "gpm"
-          { services.gpm.enable = true; services.gpm.protocol = "imps2"; };
+      "from-nixos/cups" = null;
     });
   };
   
@@ -77,14 +75,20 @@
 
   nixOptions = super.nixOptions // {
     extraOptions = super.nixOptions.extraOptions or "" + ''
-          gc-keep-outputs = true
+          gc-keep-outputs = false
+          gc-keep-derivations = false
 
           build-max-jobs = 16
           build-cores = 16
           max-jobs = 16
           cores = 16
+
+          secret-key-files = /nix/var/nix/cache-key.private
     '';
+    settings.trusted-users = ["nix-builder"];
+    settings.trusted-public-keys = [ "buildbox-morefine-s500plus-20250322:VYZrnhIxa7NvILYl2Lme0NfKbJrthYyhtGk5/D+O0LA=" "raskin-thinkpad-20250322:+rGdt5KlHiDySpO3fwuJtr3+MBw/C7QYvgcQrTA+1rY=" ];
   };
 
+  grubTimeout = 3;
 })
 

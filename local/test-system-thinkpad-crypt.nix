@@ -105,8 +105,11 @@
           gc-keep-outputs = true
           gc-keep-derivations = false
           experimental-features = nix-command
+
+          secret-key-files = /nix/var/nix/cache-key.secret
     '';
-    settings.trusted-public-keys = [ "buildbox-morefine-s500plus-20250322:VYZrnhIxa7NvILYl2Lme0NfKbJrthYyhtGk5/D+O0LA=" ];
+    settings.trusted-substituters = [ "http://morefine:8008/" "ssh-ng://morefine" ];
+    settings.trusted-public-keys = [ "buildbox-morefine-s500plus-20250322:VYZrnhIxa7NvILYl2Lme0NfKbJrthYyhtGk5/D+O0LA=" "raskin-thinkpad-20250322:+rGdt5KlHiDySpO3fwuJtr3+MBw/C7QYvgcQrTA+1rY=" ];
   };
 
   hostname = "401a0bf1";

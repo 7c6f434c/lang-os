@@ -6,10 +6,10 @@ pkgs.lib.makeExtensible (self: with self; {
     mkdir -p "$out"
     cd "$out"
     ${
-    pkgs.lib.concatStrings (pkgs.lib.mapAttrsToList (k: v: ''mkdir -p "$(dirname "./${k}")"; '') entries)
+    pkgs.lib.concatStrings (pkgs.lib.mapAttrsToList (k: v: if v != null then ''mkdir -p "$(dirname "./${k}")"; '' else "") entries)
     }
     ${
-    pkgs.lib.concatStrings (pkgs.lib.mapAttrsToList (k: v: ''ln -sT "${v}" "./${k}"; '') entries)
+    pkgs.lib.concatStrings (pkgs.lib.mapAttrsToList (k: v: if v != null then ''ln -sT "${v}" "./${k}"; '' else "") entries)
     }
   '') // { inherit entries; };
 

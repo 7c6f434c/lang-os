@@ -459,6 +459,17 @@
   (router-resolv-conf)
   "OK")
 
+(defun socket-command-server-commands::empty-resolv-conf (context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
+  (uiop:run-program (list "truncate" "--size" "0"
+                          "/etc/resolv.conf"
+                          "/etc/resolv.conf.dhclient"
+                          "/etc/resolv.conf.dhclient-new"))
+  "OK")
+
 (defun socket-command-server-commands::configure-unscoped-ptrace
   (context &optional allowed)
   (require-or
