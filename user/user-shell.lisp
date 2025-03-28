@@ -847,7 +847,7 @@
       `(backup-to ,target))))
 
 (defun standby
-  (&key (state "mem") (sync t) (forget-secrets t) im-offline (re-wifi t) (randr t) kill-my-x x-lock)
+  (&key (state "mem") (sync t) (forget-secrets t) im-offline (re-wifi t) (randr t) kill-my-x x-lock kill-wifi)
   (loop for d in (directory (~ "mnt/*/")) do
         (& fusermount -u (namestring d)))
   (when randr (! := (:display (or ($ :display) ":0")) x-randr-options))
@@ -859,7 +859,12 @@
   (when forget-secrets (! forget-secrets))
   (when kill-my-x (! pkill "Xorg"))
   (when sync (! sync))
-  (ignore-errors (ask-with-auth (:presence t) `(power-state ,state)))
+  (ignore-errors 
+    (ask-with-auth (:presence t) 
+                   `(progn
+                      ,@(when kill-wifi 
+                          `((kill-wifi "wlan0")))
+                      (power-state ,state))))
   (sleep 5)
   (when randr (& := (:display (or ($ :display) ":0")) x-randr-options))
   (when re-wifi (sudo::rewifi)))
