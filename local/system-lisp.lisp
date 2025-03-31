@@ -470,6 +470,17 @@
                           "/etc/resolv.conf.dhclient-new"))
   "OK")
 
+(defun socket-command-server-commands::u-bordeaux-resolv-conf (context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
+  (with-open-file
+    (f "/var/etc/resolv.conf" :direction :output :if-exists :supersede)
+    (when search
+      (format f "search ~a~%" search))
+    (format f "nameserver ~a~%" "147.210.215.200")))
+
 (defun socket-command-server-commands::configure-unscoped-ptrace
   (context &optional allowed)
   (require-or

@@ -481,6 +481,7 @@
           ("mccme-webmail" 5)
           ("nixpkgs-zulip"7)
           ("ub-discord" 9)
+          ("acx-discord" 6)
           )
         do
         (stumpwm-eval
