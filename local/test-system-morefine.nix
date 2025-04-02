@@ -27,13 +27,18 @@
   swPackages = super.swPackages ++ (with self.pkgs; [
     zsh pypy2 pypy3 expect firmwareLinuxNonfree
     alsa-utils alsa-tools rxvt-unicode
-    (mlterm.override (x: { enableGuis = { 
-                 fb = true; 
-                 xlib = true;
-                 wayland = true;
-                 sdl2 = true;
-                 quartz = false;
-               }; }))
+    mlterm-wayland mlterm
+    (mlterm.override 
+     (x: {
+      enableGuis = { 
+      fb = true; 
+      xlib = false;
+      wayland = false;
+      sdl2 = false;
+      quartz = false;
+      }; 
+      desktopBinary = "true";
+      }))
     kdePackages.konsole
     powertop
     man
