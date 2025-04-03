@@ -14,7 +14,7 @@ mount /dev/mapper/BuildBox--NVMe--Main-Var /new-root/var
 mount /dev/mapper/BuildBox--NVMe--Main-VarDb /new-root/var/db
 mount /dev/mapper/BuildBox--NVMe--Main-VarLog /new-root/var/log
 
-mount /dev/mapper/BuildBox--HDD--Aux-ExperimentsData /media/ExperimentsData/
+mount /dev/mapper/BuildBox--HDD--Aux-ExperimentsData /new-root/media/ExperimentsData/
 
 yes y | mkfs.ext4 /dev/mapper/BuildBox--NVMe--Main-Tmp
 
