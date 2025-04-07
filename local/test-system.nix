@@ -162,7 +162,7 @@ pkgs.lib.makeExtensible (self: with self; {
   openglPackages32 = [];
   openglDriver = self.pkgs.buildEnv {
     name = "opengl-driver";
-    paths = [ NixOSWithX.config.hardware.opengl.package ] ++
+    paths = [ NixOSWithX.config.hardware.graphics.package ] ++
       openglPackages;
   };
   openglDriver32 = self.pkgs.buildEnv {
@@ -216,6 +216,11 @@ pkgs.lib.makeExtensible (self: with self; {
       ++ systemFonts;
 
   grubTimeout = 15;
+  setupScript = ''
+    targetSystem="$1"
+    mkdir -p /var/lib/cups /var/lib/ssh /var/lib/bind /var/empty
+    ln -sf "/etc/ssh-config/sshd_config" /var/lib/ssh/
+  '';
   systemParts = {
     bin = import ../system-bin.nix {
       initScript = ''
@@ -225,11 +230,7 @@ pkgs.lib.makeExtensible (self: with self; {
         ${loopStarter "/run/current-system/services/language-daemon/system-guile"} &
         chvt 2
       '';
-      setupScript = ''
-        targetSystem="$1"
-        mkdir -p /var/lib/cups /var/lib/ssh /var/lib/bind /var/empty
-        ln -sf "/etc/ssh-config/sshd_config" /var/lib/ssh/
-      '';
+      inherit (self) setupScript;
       grubTimeout = grubTimeout;
     };
     global = import ../system-global.nix {inherit systemEtc;};
@@ -307,12 +308,20 @@ pkgs.lib.makeExtensible (self: with self; {
       #"language-daemon/system-gerbil" = systemGerbil;
       "language-daemon/system-guile" = systemGuile;
     };
+    graphics-drivers = self.pkgs.runCommand "graphics-drivers" {} ''
+      mkdir "$out"
+      ln -Tfs "${openglDriver}" "$out"/opengl-driver
+      ln -Tfs "${openglDriver32}" "$out"/opengl-driver-32
+      ln -Tfs "${self.pkgs.libglvnd}" "$out"/libglvnd
+      ln -Tfs "${self.pkgs.pkgsi686Linux.libglvnd}" "$out"/libglvnd-32
+    '';
   };
+  kernelParameters = ["intel_pstate=disable"];
   systemInstance = import ../system-instance.nix {
     inherit (self) pkgs;
-    inherit stage1;
-    inherit systemParts;
-    kernelParameters = ["intel_pstate=disable"];
+    inherit (self) stage1;
+    inherit (self) systemParts;
+    inherit (self) kernelParameters;
   };
 
   extraHostsEntries = {

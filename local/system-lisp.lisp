@@ -307,7 +307,10 @@
 
 (defun start-x-allowed-p (context display)
   display
-  (require-presence context) t)
+  (require-or
+    "Starting X not allowed"
+    (require-root context)
+    (require-presence context)) t)
 
 (defun grab-device-allowed-p (user subuser device)
   subuser

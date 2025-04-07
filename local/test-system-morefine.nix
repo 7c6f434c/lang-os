@@ -22,6 +22,8 @@
       
       ${builtins.readFile ./modprobe.conf}
     '';
+
+    firmwarePackages = p: [ p.firmwareLinuxNonfree ];
   });
 
   swPackages = super.swPackages ++ (with self.pkgs; [
@@ -42,6 +44,7 @@
     kdePackages.konsole
     powertop
     man
+    vulkan-tools clinfo
   ]);
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;
@@ -72,7 +75,10 @@
     });
   };
   
-  openglPackages = with self.pkgs; [ vaapiIntel libvdpau-va-gl vaapiVdpau ];
+  openglPackages = with self.pkgs; [ 
+    vaapiIntel libvdpau-va-gl vaapiVdpau
+    mesa.opencl amdvlk
+  ];
 
   systemLispSettings = ./system-lisp-settings-morefine.lisp;
 
@@ -95,5 +101,11 @@
   };
 
   grubTimeout = 3;
+
+  kernelParameters = [ "amdgpu.gttsize=57344" ];
+
+  setupScript = super.setupScript + ''
+    ln -sf /var/current-system/graphics-drivers/* /run/
+  '';
 })
 
