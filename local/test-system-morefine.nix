@@ -102,7 +102,7 @@
 
   grubTimeout = 3;
 
-  kernelParameters = [ "amdgpu.gttsize=57344" ];
+  kernelParameters = [ "amdgpu.gttsize=63488" "amdgpu.gartsize=63488" ];
 
   setupScript = super.setupScript + ''
     ln -sf /var/current-system/graphics-drivers/* /run/
