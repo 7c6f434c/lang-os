@@ -473,7 +473,7 @@
                           "/etc/resolv.conf.dhclient-new"))
   "OK")
 
-(defun socket-command-server-commands::u-bordeaux-resolv-conf (context)
+(defun socket-command-server-commands::u-bordeaux-resolv-conf (context &optional search)
   (require-or
     "User presence not confirmed"
     (require-root context)

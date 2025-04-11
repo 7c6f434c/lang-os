@@ -281,11 +281,16 @@
                  (list :location "home@Bordeaux"
                        :brightness 400
                        :skip-wifi t
-                       :extra-requests `((list
-                                           (set-brightness 45)
-                                           (set-brightness 400)
-                                           (empty-resolv-conf)
-                                           (dhclient "eth1" t t))))))
+                       :extra-requests `(
+                                         (set-brightness 45)
+                                         (set-brightness 400)
+                                         (empty-resolv-conf)
+                                         (sleep 1)
+                                         (dhclient "eth1" t nil nil nil 
+                                                   ,(first (uiop:run-program 
+                                                             (list "hostname") 
+                                                             :output :lines))
+                                                   t)))))
   (! xrandr --fb 4000x3000)
   (sleep 0.1)
   (! xrandr --output "VGA-1-2" --mode 1920x1080 --left-of "LVDS-1")
