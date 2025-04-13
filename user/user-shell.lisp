@@ -869,13 +869,19 @@
   (when randr (& := (:display (or ($ :display) ":0")) x-randr-options))
   (when re-wifi (sudo::rewifi)))
 
-(defun boot-login-init (&key (wifi "wlan0") (sound "usb"))
+(defun boot-login-init (&key (wifi nil) (sound "usb") (eth nil))
   (ask-with-auth (:presence t)
                  `(list
                     ,(if wifi
                        `(background-thread
                           (ensure-wifi
                             ,(if (stringp wifi) wifi "wlan0")))
+                       `(list))
+                    ,(if eth
+                       `(background-thread
+                          (dhclient 
+                            ,(if (eq eth t) "eth1" eth)
+                            t nil ))
                        `(list))
                     (load-sound ,sound)
                     (storage-modules) (usb-hid-modules)
@@ -886,8 +892,7 @@
   (! queryfs-session-run detach)
   (& cleanup-loops)
   (grab-kvm) (grab-fuse)
-  (sudo::grab-devices `("/dev/fb*"))
-  (restart-lisp-shell-server))
+  (sudo::grab-devices `("/dev/fb*")))
 
 (defun gvim-plus-zathura (file &key compiler)
   (with-open-file (f file :if-does-not-exist :create))

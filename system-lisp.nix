@@ -6,7 +6,7 @@
 }:
 pkgs.writeScript "system-lisp-launcher" ''
     (
-      export LANG=en_US.UTF-8
+      export LANG=C.UTF-8
       export LOCALE_ARCHIVE=/var/current-system/sw/lib/locale/locale-archive
       ulimit -n 4096
       ulimit -n 65536

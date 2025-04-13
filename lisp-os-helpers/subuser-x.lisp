@@ -426,7 +426,7 @@
                     ("XCOMPOSEFILE" "/_xcomposefile" )
                     ))
               ("PATH" ,path)
-              ("LANG" ,(or locale (uiop:getenv "LANG") "en_US.UTF-8"))
+              ("LANG" ,(or locale (uiop:getenv "LANG") "C.UTF-8"))
               ("LOCALE_ARCHIVE"
                ,(or
                   locale-archive
