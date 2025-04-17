@@ -428,6 +428,10 @@
                        ("https://apogee.u-bordeaux.fr/trombi/" "Student photos")
                        "https://apps-ent.u-bordeaux.fr/annuaire/v2/index.php"
                        "https://nuxeo.u-bordeaux.fr/"
+                       "https://celcat.u-bordeaux.fr/"
+                       "https://moodle.u-bordeaux.fr/"
+                       "https://gitlab.emi.u-bordeaux.fr"
+                       "https://webmel.u-bordeaux.fr/"
                        )
            :javascript t :tmp t :hostname-suffix "ub." :home t
            :no-close t 
