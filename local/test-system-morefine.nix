@@ -45,6 +45,8 @@
     powertop
     man
     vulkan-tools clinfo
+    libcap
+    xorg.xauth xorg.xhost
   ]);
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;
@@ -77,7 +79,7 @@
   
   openglPackages = with self.pkgs; [ 
     vaapiIntel libvdpau-va-gl vaapiVdpau
-    mesa.opencl amdvlk
+    mesa.opencl amdvlk vulkan-loader libcap.lib
   ];
 
   systemLispSettings = ./system-lisp-settings-morefine.lisp;

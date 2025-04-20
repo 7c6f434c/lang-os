@@ -20,7 +20,7 @@
       pkgs.junicode
       pkgs.lmodern
       pkgs.arkpandora_ttf
-      pkgs.andagii
+      /*pkgs.andagii*/
       pkgs.anonymousPro
       pkgs.inconsolata
       pkgs.theano
