@@ -27,7 +27,9 @@
            :data "/home/raskin/fallout/"
            :javascript t
            :home t
-           :socks-proxy 1080))
+           :socks-proxy 1080
+           :prefs `(("layout.css.devPixelsPerPx" "0.5"))
+           ))
 
 (defun github-notifications-firefox (&key (nixos-discourse t))
   (firefox `("https://github.com/notifications?query=is%3Aunread+reason%3Aparticipating"
@@ -35,7 +37,9 @@
            :pass-stderr nil :pass-stdout nil :wait nil
            :no-close t :stumpwm-tags "cat/em-email email mail github no-auto-tags github-web"
            :javascript t
-           :socks-proxy 1080))
+           :socks-proxy 1080
+           :prefs `(("layout.css.devPixelsPerPx" "0.6"))
+           ))
 
 (defun email-browsers ()
   (mccme-webmail-firefox)
@@ -407,7 +411,10 @@
                                  "https://gitlab.emi.u-bordeaux.fr"
                                  "https://cas.u-bordeaux.fr/"
                                  )
-           :prefs (("browser.urlbar.suggest.bookmark" t))
+           :prefs (
+                   ("browser.urlbar.suggest.bookmark" t)
+                   ("layout.css.devPixelsPerPx" "0.4")
+                   )
            :bookmarks (
                        "https://ent.u-bordeaux.fr"
                        ("https://diff.u-bordeaux.fr/sympa/" "Mailing list management for UBx")
@@ -448,14 +455,18 @@
            :wait nil
            :pass-stderr nil :pass-stdout nil
            :stumpwm-tags 
-           "no-auto-tags|discord|acx-discord|im|webchat|cat/e-im")
+           "no-auto-tags|discord|acx-discord|im|webchat|cat/e-im"
+           :prefs (("layout.css.devPixelsPerPx" "0.7"))
+           )
           ("nixpkgs-zulip" firefox
            ("https://nixpkgs.zulipchat.com/") 
            :javascript t 
            :stumpwm-tags "nixpkgs-zulip im webchat cat/e-im" 
            :no-close t
            :pass-stderr nil :pass-stdout nil
-           :wait nil)
+           :wait nil
+           :prefs (("layout.css.devPixelsPerPx" "0.64"))
+           )
           ("ub-discord" firefox 
            ("https://discordapp.com/") 
            :javascript t :marionette-socket nil :tmp t :home t 
@@ -463,10 +474,14 @@
            :wait nil
            :pass-stderr nil :pass-stdout nil
            :stumpwm-tags 
-           "no-auto-tags|ub|u-bordeaux|discord|ub-discord|im|webchat|cat/e-im")
+           "no-auto-tags|ub|u-bordeaux|discord|ub-discord|im|webchat|cat/e-im"
+           :prefs (("layout.css.devPixelsPerPx" "0.7"))
+           )
           )
         do
         (let ((arglist arglist))
+          (format *trace-output* "Comm browser window: ~a~%"
+                  (first arglist))
           (unless
             (stumpwm-eval
               `(act-on-matching-windows
