@@ -404,9 +404,10 @@ pkgs.lib.makeExtensible (self: with self; {
       (etcPieces.namesEtc hostname)
       (etcPieces.authEtc {
         security.pam.services = {
-          sshd = {};
-          cupsd = {};
-          cups = {};
+          sshd = { enable = true; };
+          cupsd = { enable = true; };
+          cups = { enable = true; };
+          xscreensaver = { enable = true; };
         };
         environment.sessionVariables = sessionVariables;
       })
