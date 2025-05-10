@@ -52,6 +52,8 @@
       pkgs.emojione
 
       pkgs.fira
+      pkgs.fira-mono
+      pkgs.nerd-fonts
     ]);
 
     enableCoreFonts = false;
