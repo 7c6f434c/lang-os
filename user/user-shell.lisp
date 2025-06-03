@@ -58,6 +58,8 @@
       (uiop:run-program
 	(add-command-env
 	  command `((:display ,(format nil ":~a" display))
+                    (:NO_RLWRAP "")
+                    (:LISP_SHELL_EARLY_OPTIONS "")
                     (:ld_library_path "/run/opengl-driver/lib")))))))
 
 (defun-export
