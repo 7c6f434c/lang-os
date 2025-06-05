@@ -440,6 +440,7 @@
                        "https://gitlab.emi.u-bordeaux.fr"
                        "https://webmel.u-bordeaux.fr/"
                        "https://gitub.u-bordeaux.fr/"
+                       "https://formations.u-bordeaux.fr/"
                        )
            :javascript t :tmp t :hostname-suffix "ub." :home t
            :no-close t 
