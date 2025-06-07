@@ -53,8 +53,10 @@
 
       pkgs.fira
       pkgs.fira-mono
-      pkgs.nerd-fonts
-    ]);
+    ])
+    ++ (pkgs.lib.filter pkgs.lib.isDerivation
+          (pkgs.lib.mapAttrsToList (k: v: v) pkgs.nerd-fonts))
+    ;
 
     enableCoreFonts = false;
   }
