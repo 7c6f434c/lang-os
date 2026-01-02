@@ -35,7 +35,7 @@
    (:file "nix" :depends-on ("shell" "util"))
    (:file "unix-users")
    (:file "socket-command-server" :depends-on ("safe-read" "references" "auth-data" "fbterm-requests" "util"))
-   (:file "subuser" :depends-on ("shell" "timestamp" "global-sqlite" "util"))
+   (:file "subuser" :depends-on ("shell" "timestamp" "global-sqlite" "util" "unix-users"))
    (:file "socket-command-client" :depends-on ("safe-read" "socket-command-server" "util"))
    (:file "read-eval-print-once")
    (:file "ffi" :depends-on ())

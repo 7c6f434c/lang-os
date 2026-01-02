@@ -47,11 +47,12 @@
 
 
   swPackages = super.swPackages ++ (with self.pkgs; [
-    zsh pypy27 expect firmwareLinuxNonfree
+    zsh
+    (import ../marionette-python-packages.nix { inherit(self) pkgs; }).pypy27
+    pypy3
+    expect linux-firmware
     alsa-utils alsa-tools mplayer rxvt-unicode
     (mlterm.override {enableFeatures = mlterm.enableFeatures // {ssh2 = false;};})
-    android-tools
-    (adb-sync.override {platform-tools = android-tools;})
     powertop cryptsetup
     (self.pkgs.runCommand "local-keymap" {} ''
       mkdir -p "$out/share/keymaps/local/"
@@ -63,7 +64,7 @@
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;
 
   fontconfigConfPackages = super.fontconfigConfPackages ++ 
-  [ (self.pkgs.hiPrio (self.pkgs.runCommand
+  [ (self.pkgs.lib.hiPrio (self.pkgs.runCommand
     "fontconfig-kill-conf" {} ''
       mkdir -p "$out/etc/fonts/conf.d"
       mkdir -p "$out/etc/fonts/2.11/conf.d"
@@ -129,7 +130,7 @@
     });
   };
   
-  openglPackages = with self.pkgs; [ vaapiIntel libvdpau-va-gl vaapiVdpau ];
+  openglPackages = with self.pkgs; [ intel-vaapi-driver libvdpau-va-gl libva-vdpau-driver ];
 
   # pkgs = super.pkgs // {
   #   xorg = super.pkgs.xorg // {

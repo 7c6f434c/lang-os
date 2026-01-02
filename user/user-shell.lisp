@@ -293,14 +293,14 @@
   `(with-firefox-launcher-packed 
      ((gethash ,(string-downcase variant) *firefox-variants*)) ,@body))
 
-(defun update-firefox-launcher (&key variant fast) 
+(defun update-firefox-launcher (&key variant fast (browser "firefox") set-default)
   (let ((variant-string (if variant (string-downcase (format nil "-~a" variant)) "")))
     (with-firefox-launcher
       (nil nil nil)
       (reset-firefox-launcher
         :nix-path (append (cl-ppcre:split ":" ($ :nix_path)) (list ($ :home) "/home/repos"))
-        :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-firefox-launcher.nix"
-                                  ($ :home))
+        :nix-wrapper-file (format nil "~a/src/nix/lang-os/wrapped-~a-launcher.nix"
+                                  ($ :home) browser)
         :out-link (~ ".nix-personal" (concatenate 'string "firefox-launcher" variant-string))
         :drv-link (~ ".nix-personal/derivations" (concatenate 'string "firefox-launcher" variant-string))
         :fast fast
@@ -323,16 +323,19 @@
         :out-link (~ ".nix-personal/bus-wrapper")
         :drv-link (~ ".nix-personal/derivations/bus-wrapper")
         :fast fast))
-    (unless variant
-      (let ((pack (gethash nil *firefox-variants*)))
+    (when (or (null variant) set-default)
+      (let ((pack (gethash (string-downcase variant) *firefox-variants*)))
+        (setf (gethash "nil" *firefox-variants*) pack)
         (setf *firefox-profile-contents* (first pack)
               *firefox-profile-combiner* (second pack)
               *firefox-launcher* (third pack))))))
 
 (defun update-firefox-variants (&key fast)
-  (update-firefox-launcher :fast fast)
-  (update-firefox-launcher :variant 'natural :fast fast)
-  (update-firefox-launcher :variant 'noconfig :fast fast))
+  (update-firefox-launcher :variant 'librewolf :fast fast :browser "librewolf" :set-default t)
+  (update-firefox-launcher :variant 'ffde :fast fast :browser "ffde" :set-default t)
+  (update-firefox-launcher :variant 'ffesr :fast fast :browser "ffesr" :set-default nil)
+  (update-firefox-launcher :variant 'firefox :fast fast)
+  )
 
 (unless lisp-os-helpers/subuser-x:*firefox-launcher*
   (when (probe-file (~ "src/nix/lang-os"))
@@ -396,6 +399,7 @@
 
 (defun firefox (ff-args &rest args &key
                         (pass-stderr t) (pass-stdout t)
+                        (grab-dri nil)
                         (no-netns nil no-netns-p)
                         (netns t) mounts prefs
                         (socks-proxy nil)
@@ -413,6 +417,8 @@
                         hostname-hidden-suffix hostname-suffix
                         grab-sound grab-camera grab-devices
                         extra-urls keep-namespaces
+                        bookmarks 
+                        (drop-extensions (list "socket-control@localhost.senebofo"))
                         &allow-other-keys)
   (let*
     ((name (or name (timestamp-usec-recent-base36)))
@@ -442,6 +448,7 @@
          (list         
            :pass-stderr pass-stderr
            :pass-stdout pass-stdout
+           :drop-extensions drop-extensions
            :certificate-overrides certificate-overrides
            :prefs `(
                     ,(if javascript 
@@ -450,7 +457,14 @@
                     ,@(when autorefresh
                         `(("accessibility.blockautorefresh" nil)))
                     ,@prefs )
-           :environment environment
+           :environment (append 
+                          `(
+                            ("LD_LIBRARY_PATH"
+                             ,(namestring
+                                (truename
+                                  (~ ".nix-personal" "firefox-graphics-drivers" "lib"))))
+                            )
+                          environment)
            :dns dns
            :http-proxy http-proxy
            :socks-proxy socks-proxy
@@ -471,6 +485,18 @@
              ,@ grab-devices
              )
            :keep-namespaces keep-namespaces
+           :bookmarks (append
+                        bookmarks
+                        `(
+                          "about:config?/*|javascript.enabled$"
+                          "about:config?/*|layout.css.devPixelsPerPx$"
+                          "about:config?/*|accessibility.blockautorefresh$"
+                          "about:config?/*|privacy.resistFingerprinting$"
+                          "about:config?/*|dom.security.https_only_mode$"
+                          "about:config?/*|privacy.resistFingerprinting.letterboxing$"
+                          "about:debugging#/runtime/this-firefox"
+                          ))
+           :grab-dri grab-dri
            :allow-other-keys t)
          (when no-netns-p `(:netns nil))
          args)))
@@ -554,7 +580,7 @@
           :name "Marionette command feeder"))
     (when
       (and stumpwm-tags
-           (not marionette-socket))
+           )
       (funcall
         (stumpwm-app-tagger
           (if (stringp stumpwm-tags)
@@ -592,8 +618,29 @@
       (collapse-command
         `("env" "--" 
           ,(format nil "DISPLAY=:~a" display)
-          "MY_SCREEN_TITLE=su screen"
-          ,(true-executable "urxvt") "-e" ,@ command)))))
+          ,(true-executable "urxvt") "-e" 
+          ,(true-executable "in-titled-term") "≝🔐su screen"
+          ,(true-executable "sleep-then") "5"
+          ,@ command)))))
+
+(defun-export
+  sudo::root-konsole
+  (&key (display 0)
+        (command
+          (list
+            (true-executable "my-screen")
+            (format nil "for-su-from-~a" (get-current-user-name))
+            (true-executable "bash"))))
+  (&&
+    (sudo::run
+      "su" "root" "-l" "-c"
+      (collapse-command
+        `("env" "--" 
+          ,(format nil "DISPLAY=:~a" display)
+          ,(true-executable "konsole-launcher") "-e" 
+          ,(true-executable "in-titled-term") "≝🔐su screen"
+          ,(true-executable "sleep-then") "5"
+          ,@ command)))))
 
 (defun-export
   sudo::wifi (interface &optional 
@@ -635,7 +682,7 @@
   (sudo::restart-system-lisp)
   (load-helpers)
   (loadrc)
-  (update-firefox-launcher))
+  (update-firefox-variants))
 
 (defun-export
   sudo::add-ip-address (interface address &optional netmask-length)
@@ -865,7 +912,8 @@
     (ask-with-auth (:presence t) 
                    `(progn
                       ,@(when kill-wifi 
-                          `((kill-wifi "wlan0")))
+                          `((ignore-errors
+                              (kill-wifi "wlan0"))))
                       (power-state ,state))))
   (sleep 5)
   (when randr (& := (:display (or ($ :display) ":0")) x-randr-options))
@@ -1128,12 +1176,13 @@
               (ask-with-auth (:presence t)
                              `(nix-collect-garbage)))
 
-(defun-export sudo::fuser (file)
+(defun-export sudo::fuser (file &key lazy pids)
   (first
     (second
       (ask-with-auth
         ()
-        `(fuser ,(namestring (truename file)))))))
+        `(fuser ,(namestring (truename file))
+                ,lazy ,pids)))))
 
 (defun-export sudo::reclaim-file (file &key recursive)
               (ask-with-auth () `(chown-subuser ,file "" ,(or recursive ""))))
@@ -1144,7 +1193,8 @@
 (defun firefox-profile-alive (path)
   (ignore-errors
     (sudo::fuser
-      (format nil "~a/cert9.db" (namestring path)))))
+      (format nil "~a/cert9.db" (namestring path))
+      :lazy t)))
 
 (defun firefox-profile-p (path)
   (ignore-errors

@@ -298,6 +298,8 @@
                                              "-" hostname "-XXXXXXXX"))
                           :output (list :string :stripped t)))))
                (uiop:run-program
+                 (list "chmod" "og-rwx" home))
+               (uiop:run-program
                  (list "setfacl" "-m" (format nil "u:~a:rwx" uid) home))
                home)
              home))
@@ -503,7 +505,7 @@
     (firefox-launcher *firefox-launcher*) (slay t) (wait t)
     mounts (hostname-suffix "") hostname-hidden-suffix certificate-overrides socks-proxy
     network-ports keep-namespaces
-    bookmarks)
+    bookmarks drop-extensions)
   (declare (ignorable options network-ports))
   (let*
     (
@@ -541,8 +543,119 @@
         :if-exists :append :if-does-not-exist :create))
     (when bookmarks
       (uiop:run-program
-        (list "rm" "-f" (format nil "~a/places.sqlite" 
-                                combined-profile)))
+        (list "chmod" "-f" "u+rwX"
+              combined-profile
+              (format nil "~a/places.sqlite"
+                      combined-profile)
+              (format nil "~a/places.sqlite-wal"
+                      combined-profile)
+              (format nil "~a/places.sqlite-shm"
+                      combined-profile)
+              )
+        :ignore-error-status t)
+      (clsql:with-database 
+        (clsql:*default-database* 
+          (list (format nil "~a/places.sqlite"
+                        combined-profile))
+          :database-type :sqlite3)
+        (clsql:with-transaction 
+          ()
+          (labels
+            (
+             (sql-attr (x) (clsql:sql-expression :attribute x))
+             (sql-tab (x) (clsql:sql-expression :table x))
+             (sql-pair (k v) (list (sql-attr k) v))
+             (sql-= (x y) (clsql:sql-operation '= x y))
+             (sql-and (&rest xs) (apply 'clsql:sql-operation 'and xs))
+             )
+            (loop for b in bookmarks
+                  for url := (if (listp b) (first b) b)
+                  for title := (if (listp b) (second b) b)
+                  for keyword := (when (listp b) (third b))
+                  for prefix := (cl-ppcre:regex-replace ":.*$" url ":")
+                  for host := (cl-ppcre:regex-replace 
+                                "^[^:]*:/*([^/]*)(/.*)?$" url "\\1")
+                  for moz-origins := (sql-tab "moz_origins")
+                  for origin-id :=
+                  (progn
+                    (unless
+                      (clsql:select
+                        (sql-attr "id")
+                        :from
+                        moz-origins
+                        :where 
+                        (sql-and
+                          (sql-= (sql-attr "prefix") prefix)
+                          (sql-= (sql-attr "host") host)))
+                      (clsql:insert-records 
+                        :into moz-origins
+                        :av-pairs (list
+                                    (sql-pair "prefix" prefix) 
+                                    (sql-pair "host" host) 
+                                    (sql-pair "frecency" 0))))
+                    (caar
+                      (clsql:select
+                        (sql-attr "id")
+                        :from
+                        moz-origins
+                        :where 
+                        (sql-and
+                          (sql-= (sql-attr "prefix") prefix)
+                          (sql-= (sql-attr "host") host)))))
+                  for moz-places := (sql-tab "moz_places")
+                  for place-id := 
+                  (progn
+                    (ignore-errors
+                      (clsql:insert-records 
+                        :into moz-places
+                        :av-pairs (list 
+                                    (sql-pair "url" url) 
+                                    (sql-pair "title" title) 
+                                    (sql-pair "rev_host" (reverse host)) 
+                                    (sql-pair "origin_id" origin-id))))
+                    (caar
+                      (clsql:select 
+                        (sql-attr "id")
+                        :from 
+                        moz-places
+                        :where
+                        (sql-= (sql-attr "url") url))))
+                  for moz-keywords := (sql-tab "moz_keywords")
+                  for keyword-id :=
+                  (when keyword
+                    (ignore-errors
+                      (clsql:insert-records
+                        :into moz-keywords
+                        :av-pairs (list
+                                    (sql-pair "keyword" keyword)
+                                    (sql-pair "place_id" place-id))))
+                    (caar
+                      (clsql:select
+                        (sql-attr "id")
+                        :from moz-keywords
+                        :where 
+                        (sql-= (sql-attr "keyword") keyword))))
+                  for moz-bookmarks := (sql-tab "moz_bookmarks")
+                  for bookmark-id :=
+                  (progn
+                    (ignore-errors
+                      (clsql:insert-records 
+                        :into moz-bookmarks
+                        :av-pairs (list 
+                                    (sql-pair "type" 1)
+                                    (sql-pair "fk" place-id) 
+                                    (sql-pair "title" title) 
+                                    (sql-pair "keyword_id" keyword-id) )))
+                    (caar 
+                      (clsql:select
+                        (sql-attr "id")
+                        :from
+                        moz-bookmarks
+                        :where 
+                        (sql-= (sql-attr "fk") place-id))))
+                  do
+                  (format *trace-output* "Added bookmark: ~s : ~s~%" 
+                          b (list origin-id place-id bookmark-id))))))
       (let* ((bookmarks
                (loop for b in bookmarks
                      collect
@@ -558,6 +671,11 @@
       :error-output t)
     (uiop:run-program
       (list "chmod" "-R" "u=rwX" combined-profile) :error-output t)
+    (loop for e in drop-extensions do
+          (uiop:run-program
+            (list "rm" "-f" 
+                  (format nil "~a/extensions/~a.xpi" 
+                          combined-profile e))))
     (alexandria:write-string-into-file
       (format
         nil "~{user_pref(\"~a\",~a);~%~}"

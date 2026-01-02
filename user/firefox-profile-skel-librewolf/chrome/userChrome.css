@@ -1,0 +1,29 @@
+@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+
+toolbox#navigator-toolbox:not(:hover):not(:has(:hover)):not(:focus-within):not(:has(#TabsToolbar[customizing])) {
+  background-color: magenta !important;
+  height: 3px !important;
+  min-height: 3px !important;
+  max-height: 3px !important;
+  overflow: hidden !important;
+  #urlbar-container {
+    position: absolute !important;
+    top: -1000000px !important;
+  }
+}
+.urlbar-input-container{
+  padding: 0px 1px !important;
+  height: initial !important; 
+}
+#urlbar[breakout][breakout-extend] {
+    margin-left: 0 !important;
+    width: var(--urlbar-width) !important;
+    margin-top: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2) !important;
+}
+.urlbarView-row-inner{
+  padding-inline-start: 4px !important;
+}
+.urlbarView{
+  margin-inline: 0 !important;
+  width: auto !important;
+}

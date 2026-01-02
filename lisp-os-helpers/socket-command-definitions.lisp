@@ -271,7 +271,7 @@
     (require-presence context))
   (set-brightness n))
 
-(defun socket-command-server-commands::fuser (context filename)
+(defun socket-command-server-commands::fuser (context filename &optional lazy pids)
   (let* ((user (context-uid context))
          (owner (file-owner-uid filename))
          (owner-name (iolib/syscalls:getpwuid owner)))
@@ -281,15 +281,17 @@
             nil
             "File owned by ~a / ~a instead of ~a"
             owner owner-name user)
-    (remove
-      ""
-      (cl-ppcre:split
-        " "
-        (uiop:run-program
-          (list "fuser" filename)
-          :output (list :string :stripped t)
-          :ignore-error-status t))
-      :test 'equal)))
+    (cond
+      (pids
+        (loop for p in pids
+              for pn :=
+              (if (numberp p) (truncate p)
+                (ignore-errors (parse-integer p)))
+              when (and pn 
+                        (file-used-by-pid filename pn))
+              collect pn))
+      (lazy (file-still-used filename))
+      (t (file-used-by filename)))))
 
 (defun socket-command-server-commands::sleep (context n)
   (declare (ignorable context))

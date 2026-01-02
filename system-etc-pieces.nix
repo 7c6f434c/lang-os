@@ -43,7 +43,7 @@ pkgs.lib.makeExtensible (self: with self; {
     systemd.package = pkgs.eudev;
     services.udev = {
       packages = pkgs.lib.mkForce
-      ([pkgs.fuse pkgs.libinput pkgs.android-udev-rules
+      ([pkgs.fuse pkgs.libinput
         (cleanLVM2udev pkgs.lvm2)
         (pkgs.runCommand "eudev-lib-rules" {} ''
           mkdir -p "$out/etc/udev/rules.d/"

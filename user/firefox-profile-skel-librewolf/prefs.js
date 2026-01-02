@@ -1,0 +1,16 @@
+user_pref("browser.quitShortcut.disabled", true);
+user_pref("privacy.resistFingerprinting.letterboxing", true);
+user_pref("security.OCSP.require", false);
+user_pref("browser.aboutConfig.showWarning", false);
+user_pref("javascript.enabled", false);
+user_pref("accessibility.blockautorefresh", true);
+user_pref("browser.ctrlTab.recentlyUsedOrder", false);
+user_pref("browser.toolbars.bookmarks.visibility", "never");
+user_pref("browser.translations.automaticallyPopup", false);
+user_pref("startup.homepage_override_url", "about:blank");
+user_pref("browser.places.importBookmarksHTML", true);
+user_pref("browser.bookmarks.restore_default_bookmarks", false);
+user_pref("distribution.nixos.bookmarksProcessed", false);
+user_pref("extensions.update.enabled", false);
+user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
+user_pref("media.videocontrols.picture-in-picture.video-toggle.enabled", false);

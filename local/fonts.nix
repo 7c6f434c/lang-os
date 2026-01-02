@@ -49,8 +49,6 @@
 
       pkgs.dejavu_fonts
 
-      pkgs.emojione
-
       pkgs.fira
       pkgs.fira-mono
     ])

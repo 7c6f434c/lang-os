@@ -2,6 +2,9 @@
   (:use :common-lisp :lisp-os-helpers/shell :lisp-os-helpers/timestamp)
   (:export
     #:file-used
+    #:file-used-by
+    #:file-used-by-pid
+    #:file-still-used
     #:console-used
     #:periodically
     #:daemon-with-logging
@@ -17,8 +20,43 @@
   (run-program-return-success
     (uiop:run-program (list "fuser" filename))))
 
+(defun file-used-by (filename)
+  (mapcar
+    'parse-integer
+    (remove 
+      ""
+      (cl-ppcre:split
+        " "
+        (uiop:run-program
+          (list "fuser" filename)
+          :output :string
+          :ignore-error-status t))
+      :test 'equal)))
+
+(defun file-used-by-pid (filename pid)
+  (member
+    filename
+    (mapcar
+      'namestring
+      (directory
+        (format nil "/proc/~a/fd/*" (or pid "self"))))
+    :test 'equal))
+
+(defparameter *file-use-cache* (make-hash-table :test 'equal))
+
+(defun file-still-used (filename)
+  (let*
+    ((still-used-pids
+       (loop for p in (gethash filename *file-use-cache*)
+             when (file-used-by-pid filename p)
+             collect p))
+     (use-pids (or still-used-pids
+                   (file-used-by filename))))
+    (setf (gethash filename *file-use-cache*) use-pids)
+    use-pids))
+
 (defun console-used (n)
-  (file-used (format nil "/dev/tty~d" n)))
+  (file-still-used (format nil "/dev/tty~d" n)))
 
 (defmacro periodically ((period &key silently) &body body)
   (let*

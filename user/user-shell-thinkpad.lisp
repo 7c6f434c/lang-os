@@ -117,7 +117,8 @@
           :slay nil
           :profile-storage (format nil "~a/firefox-profile" home)
           :marionette-socket (format nil "~a/marionette-socket/socket" home)
-          :grant (list home))))))
+          :grant (list home)
+          :drop-extensions nil)))))
 
 (defun subuser-riot-firefox (&key (socks-proxy 1080))
   (let* ((home (format nil "~a/.local/share/riot-home"
@@ -414,6 +415,7 @@
            :prefs (
                    ("browser.urlbar.suggest.bookmark" t)
                    ("layout.css.devPixelsPerPx" "0.4")
+                   ("privacy.resistFingerprinting" nil)
                    )
            :bookmarks (
                        "https://ent.u-bordeaux.fr"
@@ -433,6 +435,7 @@
                        ("https://apogee.u-bordeaux.fr/snw/" "Grade submission online")
                        "https://evento.renater.fr/"
                        ("https://apogee.u-bordeaux.fr/trombi/" "Student photos")
+                       "https://apogee.u-bordeaux.fr/listes/"
                        "https://apps-ent.u-bordeaux.fr/annuaire/v2/index.php"
                        "https://nuxeo.u-bordeaux.fr/"
                        "https://celcat.u-bordeaux.fr/"
@@ -441,7 +444,12 @@
                        "https://webmel.u-bordeaux.fr/"
                        "https://gitub.u-bordeaux.fr/"
                        "https://formations.u-bordeaux.fr/"
+                       ("https://mondossierweb.u-bordeaux.fr/" "Apogee student notes and results")
+                       ("https://apogee.u-bordeaux.fr/se-apogee/comp.php" "Apogee module structure")
+                       ("https://construction-odf.u-bordeaux.fr/" "GOF / Offre de formation / Course catalog")
                        )
+           :environment (("TZ" "Europe/Paris")
+                         ("TZDIR" ,(namestring (truename "/etc/zoneinfo"))))
            :javascript t :tmp t :hostname-suffix "ub." :home t
            :no-close t 
            :wait nil
@@ -451,7 +459,7 @@
           ("mccme-webmail" mccme-webmail-firefox)
           ("acx-discord" firefox 
            ("https://discordapp.com/") 
-           :javascript t :marionette-socket nil :tmp t :home t 
+           :javascript t :tmp t :home t 
            :hostname-suffix "acx-discord." 
            :wait nil
            :pass-stderr nil :pass-stdout nil
@@ -470,7 +478,7 @@
            )
           ("ub-discord" firefox 
            ("https://discordapp.com/") 
-           :javascript t :marionette-socket nil :tmp t :home t 
+           :javascript t :tmp t :home t 
            :hostname-suffix "ub-discord." 
            :wait nil
            :pass-stderr nil :pass-stdout nil

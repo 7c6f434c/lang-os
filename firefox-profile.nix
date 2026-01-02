@@ -2,6 +2,7 @@
   pkgs ? import <nixpkgs> {}, firefox ? p: p.firefox
   , initialContent ? null, finalContent ? null
   , environment ? {}
+  , firefoxName ? "firefox"
 }:
 let
   _firefox = if builtins.isFunction firefox then (firefox pkgs) else firefox;
@@ -61,7 +62,7 @@ pkgs.runCommand "firefox-initialised-profile" environment ''
    chmod u+rw -R "$out"
    cp -fT prefs.js "$out/prefs.js"
 
-   "${pkgs.lib.getBin _firefox}/bin/firefox" --profile "$out" --new-instance "file:///$PWD/close.html"
+   "${pkgs.lib.getBin _firefox}/bin/${firefoxName}" --profile "$out" --new-instance "file:///$PWD/close.html"
    echo "Firefox empty-run finished"
    ${pkgs.lib.getBin pkgs.procps}/bin/pkill xdummy
 

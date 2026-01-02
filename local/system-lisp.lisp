@@ -394,6 +394,11 @@
              (parsed-ip-address-show))
     (module-remove "iwlwifi"))
   (modprobe "iwlwifi")
+  (loop for x in (append
+                   (directory "/sys/class/rfkill/*/soft")
+                   )
+        do (with-open-file (f x :direction :output :if-exists :overwrite)
+             (format f "0~%")))
   (when (find "restart" options :test 'equalp)
     (stop-wpa-supplicant interface))
   (ensure-wpa-supplicant interface "/root/src/rc/wpa_supplicant.conf")
@@ -462,6 +467,14 @@
   (router-resolv-conf)
   "OK")
 
+(defun socket-command-server-commands::dhcp-resolv-conf (context)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
+  (dhcp-resolv-conf)
+  "OK")
+
 (defun socket-command-server-commands::empty-resolv-conf (context)
   (require-or
     "User presence not confirmed"
@@ -483,6 +496,19 @@
     (when search
       (format f "search ~a~%" search))
     (format f "nameserver ~a~%" "147.210.215.200")))
+
+(defun socket-command-server-commands::labri-resolv-conf (context &optional search)
+  (require-or
+    "User presence not confirmed"
+    (require-root context)
+    (require-presence context))
+  (with-open-file
+    (f "/var/etc/resolv.conf" :direction :output :if-exists :supersede)
+    (when search
+      (format f "search ~a~%" search))
+    (format f "nameserver ~a~%" "147.210.8.126")
+    (format f "nameserver ~a~%" "147.210.8.187")
+    ))
 
 (defun socket-command-server-commands::configure-unscoped-ptrace
   (context &optional allowed)

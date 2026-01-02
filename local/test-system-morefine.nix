@@ -1,6 +1,7 @@
 (import ./test-system.nix {}).extend ( self: super: {
   stage1 = super.stage1.extend (s1self: s1super: {
     kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux_latest;
+    #kernelPackages = pkgs: pkgs.linuxPackagesFor pkgs.linux;
 
     mountScript = ''
       modprobe atkbd
@@ -23,11 +24,22 @@
       ${builtins.readFile ./modprobe.conf}
     '';
 
-    firmwarePackages = p: [ p.firmwareLinuxNonfree ];
+    firmwarePackages = p: [ (p.runCommand "needed-firmware" {} ''
+      mkdir -p "$out"
+      ( cd "${p.linux-firmware}"; find . -type f ) | grep amdgpu | ( cd "$out" ; 
+        while read f; do
+          mkdir -p "$(dirname "$f")"
+          cp "${p.linux-firmware}/$f" "$f"
+        done
+      )
+    '') ];
   });
 
   swPackages = super.swPackages ++ (with self.pkgs; [
-    zsh pypy2 pypy3 expect firmwareLinuxNonfree
+    zsh 
+    (import ../marionette-python-packages.nix { inherit(self) pkgs; }).pypy27
+    pypy3
+    expect linux-firmware
     alsa-utils alsa-tools rxvt-unicode
     mlterm-wayland mlterm
     (mlterm.override 
@@ -51,7 +63,7 @@
 
   systemFonts = (import ./fonts.nix { inherit (self) pkgs; }).fonts;
 
-  fontconfigConfPackages = [ (self.pkgs.hiPrio (self.pkgs.runCommand
+  fontconfigConfPackages = [ (self.pkgs.lib.hiPrio (self.pkgs.runCommand
     "fontconfig-kill-conf" {} ''
       mkdir -p "$out/etc/fonts/conf.d"
       mkdir -p "$out/etc/fonts/2.11/conf.d"
@@ -78,8 +90,8 @@
   };
   
   openglPackages = with self.pkgs; [ 
-    vaapiIntel libvdpau-va-gl vaapiVdpau
-    mesa.opencl amdvlk vulkan-loader libcap.lib
+    libvdpau-va-gl libva-vdpau-driver
+    mesa.opencl vulkan-loader libcap.lib
   ];
 
   systemLispSettings = ./system-lisp-settings-morefine.lisp;
@@ -104,7 +116,7 @@
 
   grubTimeout = 3;
 
-  kernelParameters = [ "amdgpu.gttsize=63488" ];
+  kernelParameters = [ "ttm.pages_limit=15728640" ];
 
   setupScript = super.setupScript + ''
     ln -sf /var/current-system/graphics-drivers/* /run/

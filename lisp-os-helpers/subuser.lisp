@@ -1,7 +1,8 @@
 (defpackage :lisp-os-helpers/subuser
   (:use :common-lisp
 	:lisp-os-helpers/shell :lisp-os-helpers/global-sqlite
-        :lisp-os-helpers/timestamp :lisp-os-helpers/util)
+        :lisp-os-helpers/timestamp :lisp-os-helpers/util
+        :lisp-os-helpers/unix-users)
   (:export
     #:subuser-uid
     #:select-subuser
@@ -152,9 +153,15 @@
          (lambda (d) (alexandria:starts-with-subseq
                        (cl-ppcre:regex-replace "/*$" d "/") file))
          (cons home (extra-owned-locations user))))
+     (ownership-p
+       (unless in-home-p
+         (select-subuser user :uid (file-owner-uid file))))
      (gid (fourth passwd-line))
      (user-uid (third passwd-line)))
-    (unless in-home-p (error "File ~s is not in home of user ~s" file user))
+    (unless (or in-home-p ownership-p)
+      (error 
+        "File ~s is not in home of user ~s and not owned by a subuser" 
+        file user))
     (unless (or self subuser-uid)
       (error "Could not select subuser by uid ~s and name ~s for user ~s"
              uid name user))

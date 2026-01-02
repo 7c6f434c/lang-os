@@ -18,7 +18,7 @@ pkgs.lib.makeExtensible (self: with self; {
 
   swPieces = import ../system-sw-pieces.nix { inherit (self) pkgs; };
  
-  postgresql-package = self.pkgs.postgresql_13;
+  postgresql-package = self.pkgs.postgresql_18;
  
   lispOsHelpers = import ../lisp-os-helpers.nix {
     inherit (self) pkgs;
@@ -167,11 +167,11 @@ pkgs.lib.makeExtensible (self: with self; {
   };
   openglDriver32 = self.pkgs.buildEnv {
     name = "opengl-driver-32";
-    paths = [ NixOSWithX.config.hardware.opengl.package32 ] ++
+    paths = [ NixOSWithX.config.hardware.graphics.package32 ] ++
       openglPackages32;
   };
 
-  sbcl-for-stumpwm = self.pkgs.sbcl_2_4_10;
+  sbcl-for-stumpwm = self.pkgs.sbcl;
   stumpwmWithDeps = 
   self.sbcl-for-stumpwm.pkgs.stumpwm.overrideLispAttrs (x: {
     lispLibs = x.lispLibs ++ 
@@ -186,7 +186,7 @@ pkgs.lib.makeExtensible (self: with self; {
     '';
 
   swPackages = swPieces.corePackages ++ (with self.pkgs; [
-        (hiPrio glibcLocales) xorg.libX11
+        (lib.hiPrio glibcLocales) xorg.libX11
         vim monotone screen xterm xorg.xprop
         sbcl asdf
         #gerbil
@@ -198,6 +198,7 @@ pkgs.lib.makeExtensible (self: with self; {
         xdummy pv mercurial fossil lvm2 rsync gawk ntp mtr host iotop syslogng
         btrfs-progs
         sway swaybg tunctl
+        wireguard-tools
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
         (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
         (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])
@@ -325,7 +326,8 @@ pkgs.lib.makeExtensible (self: with self; {
   };
 
   extraHostsEntries = {
-    "${builtins.replaceStrings ["\n"] [""] (builtins.readFile ./vps-ip.private)}" = ["my-vm.local" "my-vm"];
+    "${builtins.replaceStrings ["\n"] [""] (builtins.readFile ./vps-ip.private)}" = ["my-vm.local" "my-vm" "my-vm.ipv4" "my-vm.ipv4.local"];
+    "${builtins.replaceStrings ["\n"] [""] (builtins.readFile ./vps-ipv6.private)}" = ["my-vm.local" "my-vm" "my-vm.ipv6" "my-vm.ipv6.local"];
   };
 
   etcPieces = (import ../system-etc-pieces.nix { inherit (self) pkgs nixos; }).extend (
@@ -408,7 +410,20 @@ pkgs.lib.makeExtensible (self: with self; {
           cupsd = { enable = true; };
           cups = { enable = true; };
           xscreensaver = { enable = true; };
+          login = { 
+            enable = true; 
+            startSession = self.pkgs.lib.mkForce false;
+            updateWtmp = self.pkgs.lib.mkForce false;
+            setLoginUid = true; 
+          };
+          su = { 
+            enable = true; 
+            startSession = self.pkgs.lib.mkForce false;
+            updateWtmp = self.pkgs.lib.mkForce false;
+            setLoginUid = true; 
+          };
         };
+        services.homed.enable = false;
         environment.sessionVariables = sessionVariables;
       })
       (etcPieces.deeplinkAttrset "etc-udev" 

@@ -1,0 +1,7 @@
+{
+  "name": "socket_listener",
+  "description": "Listen to the socket, pass commands to the extension, pass back replies",
+  "path": "@@@/bin/socket-listener",
+  "type": "stdio",
+  "allowed_extensions": ["socket-control@localhost.senebofo"]
+}

@@ -7,8 +7,10 @@ pkgs.lib.makeExtensible (self: with self; {
   #callPackage = pkgs.pypy27.pkgs.newScope self;
   #callPackage = pkgs.pythonInterpreters.pypy27_prebuilt.pkgs.newScope self;
   callPackage = pkgs.newScope self;
-  
-  inherit (pkgs.pypy27.pkgs) 
+
+  pypy27 = pkgs.pypy27;
+
+  inherit (self.pypy27.pkgs)
     python
     buildPythonPackage 
     pipInstallHook setuptoolsBuildHook

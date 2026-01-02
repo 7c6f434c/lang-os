@@ -1,0 +1,36 @@
+{
+        "manifest_version": 3,
+        "name": "Socket control",
+        "version": "0.0",
+        "description": "Simple WebExtension to relay browser commands via Native Messaging",
+        "background": {
+                "scripts": [
+                        "browser-polyfill.js",
+                        "background.js"
+                ]
+        },
+        "browser_action": {
+                "default_icon": "icons/128.png"
+        },
+        "permissions": [
+                "activeTab",
+                "scripting",
+                "nativeMessaging",
+                "tabs"
+        ],
+        "host_permissions": [
+                "*://*/*",
+                "<all_urls>"
+        ],
+        "icons": {
+                "16": "icons/16.png",
+                "48": "icons/48.png",
+                "128": "icons/128.png"
+        },
+        "browser_specific_settings": {
+                "gecko": {
+                        "id": "socket-control@localhost.senebofo",
+                        "strict_min_version": "56.0"
+                }
+        }
+}

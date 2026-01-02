@@ -25,6 +25,7 @@ pkgs.lib.makeExtensible (self: with self; {
   };
   _kernelPackages = maybeCall kernelPackages pkgs;
   _kernelModulePackages = [_kernelPackages.kernel] ++
+    [_kernelPackages.kernel.modules or _kernelPackages.kernel] ++
     maybeCall kernelModulePackages _kernelPackages;
   kernelModules = pkgs.aggregateModules _kernelModulePackages;
 
@@ -56,7 +57,7 @@ pkgs.lib.makeExtensible (self: with self; {
     name = "init-tools";
     paths = 
       (with pkgs; [
-        (lowPrio busybox)
+        (lib.lowPrio busybox)
         kmod bashInteractive lvm2 cryptsetup coreutils
         gnugrep gnused eudev strace util-linux e2fsprogs
       ])
@@ -122,6 +123,8 @@ pkgs.lib.makeExtensible (self: with self; {
 
     echo "$targetSystem ## $targetInit" >> /boot-log
     
+    cat /proc/cmdline | tr ' ' '\n' | grep 'early_usbhid=1' && modprobe usbhid
+
     cat /proc/cmdline | tr ' ' '\n' | grep 'debug_premount=1' && sh -i
 
     { 

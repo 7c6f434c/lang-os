@@ -115,7 +115,6 @@ rec {
   '';
   firefoxLauncher = pkgs.writeScriptBin name ''#! /bin/sh
     ${homeScript}
-    ${marionetteScript}
     ${displayScript}
     echo "$FIREFOX_EXTRA_PREFS" >> "$FIREFOX_PROFILE/prefs.js"
     if test -n "$MARIONETTE_PORT"; then
@@ -134,5 +133,7 @@ rec {
     mkdir -p "$out/bin"
     ln -s "${firefoxProfileCombiner}"/bin/* "$out/bin"
     ln -s "${firefoxLauncher}"/bin/* "$out/bin"
+    mkdir -p "$out/lib"
+    ln -s "${baseProfile}" "$out/lib/profile"
   '';
 }
