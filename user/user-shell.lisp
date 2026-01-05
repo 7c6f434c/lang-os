@@ -331,7 +331,6 @@
               *firefox-launcher* (third pack))))))
 
 (defun update-firefox-variants (&key fast)
-  (update-firefox-launcher :variant 'librewolf :fast fast :browser "librewolf" :set-default t)
   (update-firefox-launcher :variant 'ffde :fast fast :browser "ffde" :set-default t)
   (update-firefox-launcher :variant 'ffesr :fast fast :browser "ffesr" :set-default nil)
   (update-firefox-launcher :variant 'firefox :fast fast)
@@ -399,7 +398,7 @@
 
 (defun firefox (ff-args &rest args &key
                         (pass-stderr t) (pass-stdout t)
-                        (grab-dri nil)
+                        (grab-dri t)
                         (no-netns nil no-netns-p)
                         (netns t) mounts prefs
                         (socks-proxy nil)
@@ -1191,10 +1190,19 @@
               (ask-with-auth () `(rescan-lvm)))
 
 (defun firefox-profile-alive (path)
-  (ignore-errors
-    (sudo::fuser
-      (format nil "~a/cert9.db" (namestring path))
-      :lazy t)))
+  (multiple-value-bind
+    (val err)
+    (ignore-errors
+      (or
+        (sudo::fuser
+          (format nil "~a/cert9.db" (namestring path))
+          :lazy t)
+        (sudo::fuser
+          (format nil "~a/places.sqlite" (namestring path))
+          :lazy t)
+        )
+      )
+    (or err val)))
 
 (defun firefox-profile-p (path)
   (ignore-errors

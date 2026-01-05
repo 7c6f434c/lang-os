@@ -54,6 +54,7 @@ rec {
       _FIREFOX_PROFILE="$(mktemp -d -p "/''${TMPDIR:-/tmp}/ff.$USER/profiles/")"
     fi
     test -n "${baseProfile}" && yes n | cp -riT "${baseProfile}" "$_FIREFOX_PROFILE"
+    chmod u+rwX -R "$_FIREFOX_PROFILE"
   '';
   homeScript = ''
     if test -z "$HOME" || ! test -d "$HOME"; then

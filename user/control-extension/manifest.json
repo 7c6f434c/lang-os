@@ -9,7 +9,7 @@
                         "background.js"
                 ]
         },
-        "browser_action": {
+        "action": {
                 "default_icon": "icons/128.png"
         },
         "permissions": [

@@ -14,3 +14,8 @@ user_pref("distribution.nixos.bookmarksProcessed", false);
 user_pref("extensions.update.enabled", false);
 user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
 user_pref("media.videocontrols.picture-in-picture.video-toggle.enabled", false);
+user_pref("browser.ml.chat.enabled", false);
+user_pref("browser.ml.linkPreview.enabled", false);
+user_pref("browser.ml.chat.enabled", false);
+user_pref("places.semanticHistory.featureGate", false);
+user_pref("places.semanticHistory.initialized", false);

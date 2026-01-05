@@ -235,3 +235,8 @@ user_pref("browser.translations.automaticallyPopup", false);
 user_pref("dom.private-attribution.submission.enabled", false);
 user_pref("browser.quitShortcut.disabled", true);
 user_pref("media.videocontrols.picture-in-picture.video-toggle.enabled", false);
+user_pref("browser.ml.chat.enabled", false);
+user_pref("browser.ml.linkPreview.enabled", false);
+user_pref("browser.ml.chat.enabled", false);
+user_pref("places.semanticHistory.featureGate", false);
+user_pref("places.semanticHistory.initialized", false);

@@ -239,3 +239,8 @@ user_pref("browser.theme.content-theme", 2);
 user_pref("browser.theme.toolbar-theme", 2);
 user_pref("browser.tabs.opentabfor.middleclick", true);
 user_pref("browser.link.open_newwindow", 3);
+user_pref("browser.ml.chat.enabled", false);
+user_pref("browser.ml.linkPreview.enabled", false);
+user_pref("browser.ml.chat.enabled", false);
+user_pref("places.semanticHistory.featureGate", false);
+user_pref("places.semanticHistory.initialized", false);

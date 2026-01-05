@@ -670,7 +670,7 @@
       (list "setfacl" "-R" "-m" (format nil "u:~a:rwX" uid) combined-profile)
       :error-output t)
     (uiop:run-program
-      (list "chmod" "-R" "u=rwX" combined-profile) :error-output t)
+      (list "chmod" "-R" "u+rwX" combined-profile) :error-output t)
     (loop for e in drop-extensions do
           (uiop:run-program
             (list "rm" "-f" 

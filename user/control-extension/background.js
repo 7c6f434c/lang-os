@@ -546,7 +546,7 @@ browser.runtime.onInstalled.addListener(connectNativeMessaging);
 On a click on the browser action, send the app a message.
 */
 /*
-browser.browserAction.onClicked.addListener(() => {
+browser.action.onClicked.addListener(() => {
   console.log("Sending:  ping");
   connectNativeMessaging();
 });

@@ -199,6 +199,7 @@ pkgs.lib.makeExtensible (self: with self; {
         btrfs-progs
         sway swaybg tunctl
         wireguard-tools
+        xauth
         (swPieces.cProgram "vtlock" ../c/vtlock.c [] [])
         (swPieces.cProgram "file-lock" ../c/file-lock.c [] [])
         (swPieces.cProgram "in-pty" ../c/in-pty.c [] ["-lutil"])
@@ -448,7 +449,11 @@ pkgs.lib.makeExtensible (self: with self; {
         {"ssh" = "/var/lib/ssh";})
       (etcPieces.deeplinkAttrset "etc-openssh-config"
         (fromNixOS.etcSelectRenamed "ssh-config/sshd_config" "ssh/sshd_config"
-          {services.openssh.enable = true;}))
+          {
+            services.openssh.enable = true;
+            programs.ssh.setXAuthLocation = true;
+            services.openssh.settings.X11Forwarding = true;
+          }))
       (etcPieces.deeplinkAttrset "etc-bind"
         {"bind" = "/var/lib/bind";})
       (etcPieces.deeplinkAttrset "etc-xorg"

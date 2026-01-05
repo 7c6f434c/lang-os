@@ -42,7 +42,7 @@
         (format nil "/proc/~a/fd/*" (or pid "self"))))
     :test 'equal))
 
-(defparameter *file-use-cache* (make-hash-table :test 'equal))
+(defparameter *file-use-cache* (make-hash-table :test 'equal :synchronized t))
 
 (defun file-still-used (filename)
   (let*
