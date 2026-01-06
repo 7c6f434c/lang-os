@@ -240,3 +240,4 @@ user_pref("browser.ml.linkPreview.enabled", false);
 user_pref("browser.ml.chat.enabled", false);
 user_pref("places.semanticHistory.featureGate", false);
 user_pref("places.semanticHistory.initialized", false);
+user_pref("browser.zoom.siteSpecific", false);
