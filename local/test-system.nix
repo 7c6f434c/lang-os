@@ -329,6 +329,8 @@ pkgs.lib.makeExtensible (self: with self; {
   extraHostsEntries = {
     "${builtins.replaceStrings ["\n"] [""] (builtins.readFile ./vps-ip.private)}" = ["my-vm.local" "my-vm" "my-vm.ipv4" "my-vm.ipv4.local"];
     "${builtins.replaceStrings ["\n"] [""] (builtins.readFile ./vps-ipv6.private)}" = ["my-vm.local" "my-vm" "my-vm.ipv6" "my-vm.ipv6.local"];
+    "${builtins.replaceStrings ["\n"] [""] (builtins.readFile ./vps2-ip.private)}" = ["my-vm2.local" "my-vm2" "my-vm2.ipv4" "my-vm2.ipv4.local"];
+    "${builtins.replaceStrings ["\n"] [""] (builtins.readFile ./vps2-ipv6.private)}" = ["my-vm2.local" "my-vm2" "my-vm2.ipv6" "my-vm2.ipv6.local"];
   };
 
   etcPieces = (import ../system-etc-pieces.nix { inherit (self) pkgs nixos; }).extend (

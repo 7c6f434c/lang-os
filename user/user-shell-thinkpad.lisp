@@ -20,14 +20,14 @@
 (load *common-rc*)
 (defun edrc-common () (ed *common-rc*))
 
-(defun mccme-webmail-firefox ()
+(defun mccme-webmail-firefox (&key (socks-proxy 1080))
   (firefox (list "https://email.mccme.ru/")
            :pass-stderr nil :pass-stdout nil :wait nil
            :no-close t :stumpwm-tags "cat/em-email email mail mccme no-auto-tags mccme-webmail"
            :data "/home/raskin/fallout/"
            :javascript t
            :home t
-           :socks-proxy 1080
+           :socks-proxy socks-proxy
            :prefs `(("layout.css.devPixelsPerPx" "0.5"))
            ))
 
@@ -52,10 +52,15 @@
 
 (defun vps-term ()
   (& sh -c "ssh-window \"$(cat ~/.vps-ssh)\""))
+(defun vps2-term ()
+  (& sh -c "ssh-window \"$(cat ~/.vps2-ssh)\""))
 
 (defun ensure-vps-socks ()
   (unless (local-port-open-p 1080)
-    (vps-term)))
+    (vps-term))
+  (unless (local-port-open-p 1081)
+    (vps2-term))
+  )
 
 (defun subuser-signal (&key wait verbose)
   (let* ((home (format nil "~a/.local/share/signal-home"
@@ -401,8 +406,9 @@
   (loop for arglist in
         `(
           ("my-vps-ssh" vps-term)
+          ("my-vps2-ssh" vps2-term)
           ("telegram-web" subuser-telegram-firefox)
-          ("mccme-riot" subuser-riot-firefox)
+          ("mccme-riot" subuser-riot-firefox :socks-proxy 1081)
           ("nix-riot" subuser-nix-riot-firefox)
           ("github-web" github-notifications-firefox)
           ("ub-webmail" firefox (
@@ -456,7 +462,7 @@
            :pass-stderr nil :pass-stdout nil
            :stumpwm-tags 
            "cat/em-email|email|webmail|u-bordeaux|chat|im|webchat|ub-chat|ub-mail|ub-email|ub-msg|ub-messaging|no-auto-tags|ub-webmail")
-          ("mccme-webmail" mccme-webmail-firefox)
+          ("mccme-webmail" mccme-webmail-firefox :socks-proxy 1081)
           ("acx-discord" firefox 
            ("https://discordapp.com/") 
            :javascript t :tmp t :home t 
@@ -507,6 +513,7 @@
   (loop for role in 
         `(
           ("my-vps-ssh" 8)
+          ("my-vps2-ssh" 990)
           ("telegram-web" 0)
           ("mccme-riot" 1)
           ("nix-riot" 2)
