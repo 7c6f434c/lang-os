@@ -94,7 +94,8 @@
       :hostname "signal-nsjail"
       :wait wait
       :pass-stdout verbose
-      :pass-stderr verbose)))
+      :pass-stderr verbose
+      :fake-passwd t)))
 
 (defun subuser-telegram-firefox (&rest overrides)
   (let* ((home (format nil "~a/.local/share/telegram-home"
@@ -142,6 +143,48 @@
       :javascript t
       :socks-proxy socks-proxy
       :name "riot-sandbox"
+      :home home
+      :profile-storage (format nil "~a/firefox-profile" home)
+      :grant (list home))))
+
+(defun subuser-riot-vps-firefox (&key (socks-proxy 1080))
+  (let* ((home (format nil "~a/.local/share/riot-vps-home"
+                       (uiop:getenv "HOME"))))
+    (ignore-errors
+      (ask-with-auth 
+        ()
+        `(chown-subuser ,home "" t)))
+    (firefox
+      (list "https://michaelraskin.top/element-web/latest/")
+      :pass-stderr nil
+      :pass-stdout nil
+      :wait nil
+      :no-close t 
+      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags michaelraskin.top vps-riot"
+      :javascript t
+      :socks-proxy socks-proxy
+      :name "riot-vps-sandbox"
+      :home home
+      :profile-storage (format nil "~a/firefox-profile" home)
+      :grant (list home))))
+
+(defun subuser-riot-uguu-firefox (&key (socks-proxy 1080))
+  (let* ((home (format nil "~a/.local/share/riot-uguu-home"
+                       (uiop:getenv "HOME"))))
+    (ignore-errors
+      (ask-with-auth 
+        ()
+        `(chown-subuser ,home "" t)))
+    (firefox
+      (list "https://matrix.uguu.io/riot/")
+      :pass-stderr nil
+      :pass-stdout nil
+      :wait nil
+      :no-close t 
+      :stumpwm-tags "cat/e-im im riot matrix no-auto-tags matrix.uguu.io uguu-riot"
+      :javascript t
+      :socks-proxy socks-proxy
+      :name "riot-uguu-sandbox"
       :home home
       :profile-storage (format nil "~a/firefox-profile" home)
       :grant (list home))))
@@ -410,6 +453,8 @@
           ("telegram-web" subuser-telegram-firefox)
           ("mccme-riot" subuser-riot-firefox :socks-proxy 1081)
           ("nix-riot" subuser-nix-riot-firefox)
+          ("uguu-riot" subuser-riot-uguu-firefox)
+          ("vps-riot" subuser-riot-vps-firefox)
           ("github-web" github-notifications-firefox)
           ("ub-webmail" firefox (
                                  "https://webmel.u-bordeaux.fr/"
@@ -515,14 +560,16 @@
           ("my-vps-ssh" 8)
           ("my-vps2-ssh" 990)
           ("telegram-web" 0)
-          ("mccme-riot" 1)
+          ("mccme-riot" 992)
           ("nix-riot" 2)
+          ("uguu-riot" 6)
+          ("vps-riot" 1)
           ("github-web" 3)
           ("ub-webmail" 4)
           ("mccme-webmail" 5)
           ("nixpkgs-zulip"7)
           ("ub-discord" 9)
-          ("acx-discord" 6)
+          ("acx-discord" 991)
           )
         do
         (stumpwm-eval
